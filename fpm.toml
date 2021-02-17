@@ -1,6 +1,6 @@
 name = "y12m"
 maintainer = ["@ivan-pi"]
-author = ["Zahari Zlatev"]
+author = ["Zahari Zlatev", "Jerzy Wasniewski", "Kjeld Schaumburg"]
 homepage = "http://www.netlib.org/y12m/"
 keywords = ["sparse", "linear", "algebra", "direct", "method"]
 description = "Solution of Large and Sparse Systems of Linear Algebraic Equations"
