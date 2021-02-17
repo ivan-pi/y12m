@@ -13,6 +13,9 @@ module y12m
   ! Solve with Gaussian elimination and iterative refinement
   public :: y12mf
 
+  public :: y12mg
+  public :: y12mh
+
 
   !> Solve sparse systems of linear algebraic equations by
   !> Gaussian elimination
@@ -145,6 +148,46 @@ module y12m
       real, intent(inout) :: aflag(11)
       integer, intent(inout) :: iflag(12)
       integer, intent(out) :: ifail
+    end subroutine
+  end interface
+
+  !> Calculate the reciprocal condition number of matrix A
+  !>
+  interface y12mg
+    subroutine y12mge(n,nn,a,snr,w,pivot,anorm,rcond,iha,ha,iflag,ifail)
+      integer, intent(in) :: n
+      integer, intent(in) :: nn
+      real, intent(in) :: a(nn)
+      integer, intent(in) :: snr(nn)
+      real, intent(inout) :: w(n)
+      real, intent(in) :: pivot(n)
+      real, intent(in) :: anorm
+      real, intent(out) :: rcond
+      integer, intent(in) :: iha
+      integer, intent(in) :: ha(iha,3)
+      integer, intent(in) :: iflag(5)
+      integer, intent(inout) :: ifail
+    end subroutine
+  end interface
+
+  !> Compute the one-norm of a sparse matrix A
+  !>
+  interface y12mh
+    subroutine y12mhe(n,nz,a,snr,work,anorm)
+      integer, intent(in) :: n
+      integer, intent(in) :: nz
+      real, intent(in) :: a(nz)
+      integer, intent(in) :: snr(nz)
+      real, intent(inout) :: work(n)
+      real, intent(out) :: anorm
+    end subroutine
+    subroutine y12mhf(n,nz,a,snr,work,anorm)
+      integer, intent(in) :: n
+      integer, intent(in) :: nz
+      double precision, intent(in) :: a(nz)
+      integer, intent(in) :: snr(nz)
+      double precision, intent(inout) :: work(n)
+      double precision, intent(out) :: anorm
     end subroutine
   end interface
 
