@@ -1,0 +1,2508 @@
+
+The Y12M documentation:
+
+C                =================================
+C                Documentation of subroutine Y12MA
+C                =================================
+C
+C     1.  Purpose
+C
+C
+C     Y12MA   solves   sparse  systems  of  linear  algebraic
+C     equations by Gaussian elimination.  The subroutine is a
+C     "black  box  subroutine"  designed to solve efficiently
+C     problems which contain only one system  with  a  single
+C     right  hand side. The number of the input parameters is
+C     minimized. The user must assign values only to NN, NN1,
+C     N,  Z,  A,  SNR,  RNR, IHA and B according to the rules
+C     described in Section 2.4 (see below).  It is  extremely
+C     easy  to  modify  the  subroutine  to  the cases: (a) a
+C     sequence of systems with  the  same  matrix  is  to  be
+C     solved (note that one system with many right hand sides
+C     can be rewritten as a sequence of systems with the same
+C     matrix),  (b)  a sequence of systems whose matrices are
+C     different but of the same structure is to be solved and
+C     (c)  a  sequence  of  systems whose matrices are of the
+C     same structure and some of them are the same is  to  be
+C     solved.   These  cases  are  defined as case (ii), case
+C     (iii) and case (iv)  in  Section  1.1.  "Scope  of  the
+C     Y12M".   The recommendations in Section 1.3.6 should be
+C     followed in order to modify the  subroutine  Y12MA  for
+C     the  above  cases.  If  a  sequence  of  systems  whose
+C     matrices are of different structure (this case  appears
+C     as  case  (v)  in  Section  1.1)  is  to be solved then
+C     subroutine Y12MA should be called in  the  solution  of
+C     each system in the sequence.
+C
+C     2.  Calling sequence and declaration of the parameters
+C
+C     The  subroutine  is  written in FORTRAN and it has been
+C     extensively tested with the FOR and FTN compilers on  a
+C     UNIVAC  1100/82  computer,  at  the  Regional Computing
+C     Centre at the University of  Copenhagen  (RECKU).  Many
+C     examples  have  been run on an IBM 3033 computer at the
+C     Northern Europe University Computing Centre (NEUCC) and
+C     on  a  CDC Cyber 173 computer at the Regional Computing
+C     Centre  at  the  University  of  Aarhus  (RECAU).   Two
+C     different  versions  are  available: a single precision
+C     version named Y12MAE and  a  double  precision  version
+C     named  Y12MAF.  The calls of these two versions and the
+C     declarations of the parameters are as follows.
+C
+C     A). Single precision version: Y12MAE
+C
+C           SUBROUTINE Y12MAE(N, Z, A, SNR, NN, RNR, NN1,
+C          1  PIVOT, HA, IHA, AFLAG, IFLAG, B, IFAIL)
+C
+C           REAL A(NN), PIVOT(N), B(N), AFLAG(8)
+C           INTEGER SNR(NN), RNR(NN1), HA(IHA,11), IFLAG(10)
+C           INTEGER N, Z, NN, NN1, IHA, IFAIL
+C
+C     B). Double precision version: Y12MAF
+C
+C           SUBROUTINE Y12MAF(N, Z, A, SNR, NN, RNR, NN1,
+C          1  PIVOT, HA, IHA, AFLAG, IFLAG, B, IFAIL)
+C
+C           DOUBLE PRECISION A(NN), PIVOT(N), B(N), AFLAG(8)
+C           INTEGER SNR(NN), RNR(NN1), HA(IHA,11), IFLAG(10)
+C           INTEGER N, Z, NN, NN1, IHA, IFAIL
+C
+C     These two versions can be used on many other  computers
+C     also. However some alterations may be needed and/or may
+C     ensure greater efficiency of  the  performance  of  the
+C     subroutine. For example, it will be much more efficient
+C     to declare arrays SNR, RNR  and  (if  possible)  HA  as
+C     INTEGER*2 arrays on some IBM installations.
+C
+C
+C     3.  Method
+C
+C     The system Ax = b is solved  by  Gaussian  elimination.
+C     Pivotal interchanges are used in an attempt to preserve
+C     both the stability of the computations and the sparsity
+C     of  the original matrix. In this way a decomposition LU
+C     = PAQ is normally calculated. P and Q  are  permutation
+C     matrices, L is a lower triangular matrix, U is an upper
+C     triangular matrix. The right hand side vector b is also
+C     modified  during  the  decomposition so that the vector
+C     c=L**(-1)*P*b  is  available  after  the  decomposition
+C     stage.  In  this  way  there  is  no  need to store the
+C     non-zero elements of matrix L. Therefore these elements
+C     are  not  stored.  This  leads  to  a  reduction of the
+C     storage requirements (the length of arrays  A  and  SNR
+C     can  be  decreased).  An  approximation to the solution
+C     vector is found by solving U*tr(T)*x=c, where tr(T)  is
+C     the  transpose.  The  subroutine calculates the rate at
+C     which the  elements  of  the  matrix  grow  during  the
+C     decomposition  (see  parameter  AFLAG(5) below) and the
+C     minimal  in  absolute  value   pivotal   element   (see
+C     parameter  AFLAG(8)  below).  These  two numbers can be
+C     used to decide whether the  computed  approximation  is
+C     acceptable   or  not.  Positive  values  of  a  special
+C     parameter IFAIL indicate that the subroutine is  unable
+C     to  solve  the problem. The error diagnostics, given in
+C     Section 7, describe the probable cause.
+C
+C     4.  Parameters of the subroutine
+C
+C
+C     N     - INTEGER On entry N must contain the  number  of
+C             equations  in  the  system   Ax=b. Unchanged on
+C             exit.
+C
+C     Z     - INTEGER. On entry Z must contain the number  of
+C             non-zero  elements  in the coefficient matrix A
+C             of the system Ax = b. Unchanged on exit.
+C
+C     A     - REAL (in the single precision  version  Y12MAE)
+C             or  DOUBLE  PRECISION  (in the double precision
+C             version Y12MAF) array of length NN (see below).
+C             On  entry the first Z locations of array A must
+C             contain   the   non-zero   elements   of    the
+C             coefficient  matrix A of the system Ax = b. The
+C             order  of  the   non-zero   elements   may   be
+C             completely arbitrary. The content of array A is
+C             modified by  subroutine  Y12MA.  On  successful
+C             exit array A will contain the non-zero elements
+C             of the upper triangular matrix U  (without  the
+C             diagonal  elements  of  matrix  U  which can be
+C             found in array PIVOT, see below).
+C
+C     SNR   - INTEGER array of  length  NN  (see  below).  On
+C             entry  SNR(j),  j  =  1(1)Z,  must  contain the
+C             column number of the non-zero element stored in
+C             A(j).   The content of array SNR is modified by
+C             subroutine Y12MA.  On successful exit array SNR
+C             will contain the column numbers of the non-zero
+C             elements  of  the  upper  triangular  matrix  U
+C             (without  the  column  numbers  of the diagonal
+C             elements of matrix U).
+C
+C     NN    - INTEGER. On entry NN must contain the length of
+C             arrays   A  and  SNR.  Restriction:  NN.GE.2*Z.
+C             Recommended value: 2*Z.LE.NN.LE.3*Z.  Unchanged
+C             on exit.
+C
+C     RNR   - INTEGER  array  of  length  NN1 (see below). On
+C             entry RNR(i), i = 1(1)Z, must contain  the  row
+C             number  of the non-zero element stored in A(i).
+C             The  content  of  array  RNR  is  modified   by
+C             subroutine   Y12MA.   On  successful  exit  all
+C             components of array RNR will normally be  zero.
+C
+C     NN1   - INTEGER. On entry NN1 must contain  the  length
+C             of   the  array  RNR.   Restriction:  NN1.ge.Z.
+C             Recommended      value:      2*Z.LE.NN1.LE.3*Z.
+C             Unchanged on exit.
+C
+C     PIVOT - REAL  (in  the single precision version Y12MAE)
+C             or DOUBLE PRECISION (in  the  double  precision
+C             version  Y12MAF) array of length N. The content
+C             of array PIVOT is modified by subroutine Y12MA.
+C             On successful exit array PIVOT will contain the
+C             pivotal  elements  (the  diagonal  elements  of
+C             matrix  U). This means that a small element (or
+C             small elements) in  array  PIVOT  on  exit  may
+C             indicate    numerical    singularity   of   the
+C             coefficient matrix A. Note that the smallest in
+C             absolute  value  element in array PIVOT is also
+C             stored in AFLAG(8), see below.
+C
+C     HA    - INTEGER two-dimensional array.  The  length  of
+C             the  first  dimension  is  IHA (see below). The
+C             length of the  second  dimension  is  11.  This
+C             array  is  used  as  a work space by subroutine
+C             Y12MA.
+C
+C     IHA   - INTEGER. On entry IHA must contain  the  length
+C             of   the   first   dimension   of   array   HA.
+C             Restriction:  IHA.GE.N. Unchanged on exit.
+C
+C     AFLAG - REAL (in the single precision  version  Y12MAE)
+C             or  DOUBLE  PRECISION  (in the double precision
+C             version Y12MAF) array of length 8. The  content
+C             of array AFLAG is modified by subroutine Y12MA.
+C             The content of the components of this array can
+C             be described as follows.
+C
+C             AFLAG(1) - Stability factor. An element can  be
+C                        chosen  as  pivotal  element only if
+C                        this element is larger (in  absolute
+C                        value)  than  the  absolute value of
+C                        the  largest  element  in  its   row
+C                        divided   by  AFLAG(1).   Subroutine
+C                        Y12MA  sets  AFLAG(1)  =  16.   This
+C                        value  has  been  found satisfactory
+C                        for a wide range of test-examples.
+C
+C             AFLAG(2) - Drop-tolerance. An element, which in
+C                        the   process  of  the  computations
+C                        becomes smaller (in absolute  value)
+C                        than  the drop-tolerance, is removed
+C                        from array A (and its column and row
+C                        numbers  are removed from arrays SNR
+C                        and  RNR).   Subroutine  Y12MA  sets
+C                        AFLAG(2)  =  1.0E-12. This value has
+C                        been found satisfactory for  a  wide
+C                        range   of  test-matrices.  By  this
+C                        choice it is assumed that the matrix
+C                        is not too badly scaled and that the
+C                        magnitude of the elements is 1.
+C
+C             AFLAG(3) - The   subroutine   will   stop   the
+C                        computations  when the growth factor
+C                        (parameter  AFLAG(5),   see   below)
+C                        becomes  larger  than  AFLAG(3). Our
+C                        experiments show that if AFLAG(3)  >
+C                        1.0E6  then the solution is normally
+C                        quite wrong.   Therefore  subroutine
+C                        Y12MA sets AFLAG(3) = 1.0E6.
+C
+C             AFLAG(4) - The   subroutine   will   stop   the
+C                        computations when the absolute value
+C                        of  a  current  pivotal  element  is
+C                        smaller    than    AFLAG(4)*AFLAG(6)
+C                        (where  the  absolute  value  of the
+C                        largest (in absolute value)  element
+C                        of  the original matrix is stored in
+C                        AFLAG(6),    see     below).     Our
+C                        experiments show that
+C                        AFLAG(4)=1.0E-12  will normally be a
+C                        good  choice.  Therefore  subroutine
+C                        Y12MA sets  AFLAG(4)=1.0E-12.
+C
+C             AFLAG(5) - Growth factor. After each  stage  of
+C                        the   elimination  subroutine  Y12MA
+C                        sets  AFLAG(5)  =  AFLAG(7)/AFLAG(6)
+C                        (the   description   of   parameters
+C                        AFLAG(6)  and  AFLAG(7)   is   given
+C                        below).  Large  values  of  AFLAG(5)
+C                        indicate that an  appreciable  error
+C                        in    the   computed   solution   is
+C                        possible. In an  extreme  case  when
+C                        AFLAG(5)  becomes larger than 1.0E6,
+C                        see parameter  AFLAG(3),  subroutine
+C                        Y12MA  will stop the computations in
+C                        an attempt to prevent overflows.
+C
+C             AFLAG(6) - Subroutine Y12MA sets AFLAG(6) equal
+C                        to  max(abs(a(i,j))), i = 1(1)N, j =
+C                        1(1)N.
+C
+C             AFLAG(7) - Subroutine Y12MA sets AFLAG(7) equal
+C                        to max(abs(a(i,j;s))),  1.lt.s.lt.k,
+C                        after each step  k,   k=1(1)N-1,  of
+C                        the elimination.
+C
+C             AFLAG(8) - Subroutine Y12MA sets AFLAG(8) equal
+C                        to min(abs(a(i,i))), i= 1(1)N.  This
+C                        means   that   the  minimal  pivotal
+C                        element (in absolute value) will  be
+C                        stored  in  AFLAG(8)  on  successful
+C                        exit.   Small  values  of   AFLAG(8)
+C                        indicate  numerical  singularity  of
+C                        the original matrix.  We advise  the
+C                        user to check this parameter on exit
+C                        very carefully.
+C
+C     IFLAG - INTEGER array of length 10. The content of this
+C             array is  modified  by  subroutine  Y12MA.  The
+C             content  of the components of this array can be
+C             described as follows.
+C
+C             IFLAG(1) - Subroutine  Y12MA uses IFLAG(1) as a
+C                        work space.
+C
+C             IFLAG(2) - Subroutine Y12MA sets IFLAG(2) =  3.
+C                        This means that at each stage of the
+C                        Gaussian  elimination  (except   the
+C                        last  one)  the  pivotal  search  is
+C                        carried out in the 3 rows which have
+C                        least  numbers of non-zero elements.
+C
+C             IFLAG(3) - Subroutine  Y12MA sets IFLAG(3) = 1.
+C                        This means that the pivotal strategy
+C                        for  general  matrices will be used.
+C                        For  some  special   matrices   (for
+C                        example positive definite) this will
+C                        be  inefficient.   Subroutine  Y12MA
+C                        can  easily  be  modified  for  such
+C                        matrices;   only    the    statement
+C                        IFLAG(3)  = 1 should be changed (for
+C                        positive  definite   matrices   e.g.
+C                        IFLAG(3)  =  2  can  be  used). More
+C                        details  about  the  use   of   this
+C                        parameter  with special matrices are
+C                        given in Section 1.3.1
+C
+C             IFLAG(4) - Subroutine Y12MA sets IFLAG(4) =  0.
+C                        This  is the best choice in the case
+C                        where only one system Ax = b  is  to
+C                        be   solved,  see  more  details  in
+C                        Section 1.3.
+C
+C             IFLAG(5) - Subroutine Y12MA sets IFLAG(5) =  1.
+C                        This   means   that   the   non-zero
+C                        elements  of  the  lower  triangular
+C                        matrix  L will be removed during the
+C                        decomposition   stage,   see    more
+C                        details in Section 1.3.3.
+C
+C             IFLAG(6) - On  successful exit IFLAG(6) will be
+C                        equal to  the  number  of  "garbage"
+C                        collections in the row ordered list.
+C                        If IFLAG(6)  is  large  then  it  is
+C                        better  to  choose a larger value of
+C                        NN in the next calls  of  subroutine
+C                        Y12MA  with  the  same  or a similar
+C                        matrix  A.  This  will  lead  to   a
+C                        reduction in the computing time.
+C
+C             IFLAG(7) - On  successful exit IFLAG(7) will be
+C                        equal to  the  number  of  "garbage"
+C                        collections  in  the  column ordered
+C                        list.  If IFLAG(7) is large then  it
+C                        is  better  to choose a larger value
+C                        of  NN1  in  the   next   calls   of
+C                        subroutine  Y12MA with the same or a
+C                        similar matrix A. This will lead  to
+C                        a reduction in the computing time.
+C
+C             IFLAG(8) - On  successful exit IFLAG(8) will be
+C                        equal  to  the  maximal  number   of
+C                        non-zero elements kept in array A at
+C                        any   stage    of    the    Gaussian
+C                        elimination.  If  IFLAG(8)  is  much
+C                        smaller then NN (or  NN1)  then  the
+C                        length  NN  (or  NN1)  can be chosen
+C                        smaller  in  the   next   calls   of
+C                        subroutine  Y12MA with the same or a
+C                        similar matrix A. This will lead  to
+C                        a reduction of the storage needed.
+C
+C             IFLAG(9) - This   parameter   is   ignored   by
+C                        subroutine Y12MA.  It will  be  used
+C                        in  some  of  the  other subroutines
+C                        when IFLAG(4) = 1  is  specified  on
+C                        entry.
+C
+C             IFLAG(10)- This   parameter   is   ignored   by
+C                        subroutine Y12MA.  It will  be  used
+C                        in  some  of  the  other subroutines
+C                        when IFLAG(4) = 1  is  specified  on
+C                        entry.
+C
+C     B     - REAL (in the single precision  version  Y12MAE)
+C             or  DOUBLE  PRECISION  (in the double precision
+C             version Y12MAF) array of length N. On entry the
+C             right  hand  side vector b of the system Ax = b
+C             must be stored in array B. The content of array
+C             B   is   modified   by  subroutine  Y12MA.   On
+C             successful exit the  computed  solution  vector
+C             will be stored in array B.
+C
+C     IFAIL - Error  diagnostic  parameter.  The  content  of
+C             parameter  IFAIL  is  modified  by   subroutine
+C             Y12MA.  On exit IFAIL = 0 if the subroutine has
+C             not detected  any  error.  Positive  values  of
+C             IFAIL  on  exit  show  that some error has been
+C             detected by the subroutine. Many of  the  error
+C             diagnostics  are  common for all subroutines in
+C             the package.  Therefore the  error  diagnostics
+C             are listed in a separate section, Section 7, of
+C             this book. We advise  the  user  to  check  the
+C             value of this parameter on exit.
+C
+C     5.  Error diagnostics
+C
+C     Error diagnostics are given by positive values  of  the
+C     parameter  IFAIL  (see  above).   We advise the user to
+C     check carefully the value of this  parameter  on  exit.
+C     The error messages are listed in Section 7.
+C
+C     6.  Auxiliary subroutines
+C
+C     Y12MA  calls  three other subroutines: Y12MB, Y12MC and
+C     Y12MD.
+C
+C     7.  Timing
+C
+C     The time taken depends  on  the  order  of  the  matrix
+C     (parameter  N),  the number of the non-zero elements in
+C     the matrix (parameter Z), the magnitude of the non-zero
+C     elements and their distribution in the matrix.
+C
+C     8.  Storage
+C
+C     There are no internally declared arrays.
+C
+C     9.  Accuracy
+C
+C     It  is  difficult  to  evaluate  the  accuracy  of  the
+C     computed solution. Large values of parameter  AFLAG(5),
+C     the   growth  factor,  indicate  unstable  computations
+C     during  the  decomposition  stage.  Small   values   of
+C     parameter  AFLAG(8)  can  be considered as a signal for
+C     numerical singularity.  We  must  emphasize  here  that
+C     normally much more reliable evaluations of the accuracy
+C     achieved  can  be  found  by  the  use   of   iterative
+C     refinement, i.e. by the use of subroutine Y12MF. By the
+C     use of the latter subroutine the  computing  time  will
+C     often be reduced too. However, the storage requirements
+C     may be increased sometimes.
+C
+C     10.  Some remarks
+C
+C     Remark 1   Subroutine  Y12MA  may also be considered as
+C                an example of how to initialize the first  4
+C                components  of  array  AFLAG and the first 5
+C                components of  array  IFLAG  when  only  one
+C                system  with  a single right hand side is to
+C                be  solved.  An   efficient   use   of   the
+C                subroutines  Y12MB,  Y12MC and Y12MD for the
+C                other cases discussed in Section 1.1 may  be
+C                achieved  by  a single modification of Y12MA
+C                according to  the  rules  given  in  Section
+C                1.3.6   (a   change   of  only  one  or  two
+C                statements in Y12MA is needed to obtain such
+C                a modification).
+C
+C     Remark 2   The last 4 components of array AFLAG and the
+C                last 5 components of array IFLAG can be used
+C                as  output  parameters.   The  user  is  not
+C                obliged to do this.  However,  we  recommend
+C                the check of these parameters on exit.
+C                =================================
+C                Documentation of subroutine Y12MB
+C                =================================
+C
+C     1.  Purpose
+C
+C     Y12MB prepares a system of linear  algebraic  equations
+C     to  be  factorized (by subroutine Y12MC) and solved (by
+C     subroutine Y12MD).  Each call of subroutine Y12MC  must
+C     be  preceded  by a call of Y12MB. It is very convenient
+C     to perform some operations on the non-zero elements  of
+C     the  coefficient  matrix  between  calls  of  Y12MB and
+C     Y12MC.  For  example,  when  iterative  refinement   is
+C     carried  out  the information needed in the calculation
+C     of the residual vector is copied in some  extra  arrays
+C     between  the  calls of Y12MB and Y12MC. It is also very
+C     easy to perform any kind of scaling after the  call  of
+C     Y12MB.
+C
+C     2.  Calling sequence and declaration of the parameters
+C
+C     The  subroutine  is  written  in  FORTRAN  and has been
+C     extensively tested with the FOR and FTN compilers on  a
+C     UNIVAC  1100/82  computer  at  the  Regional  Computing
+C     Centre at the University of  Copenhagen  (RECKU).  Many
+C     examples  have  been run on an IBM 3033 computer at the
+C     Northern Europe University Computing Centre (NEUCC) and
+C     on  a  CDC Cyber 173 computer at the Regional Computing
+C     Centre  at  the  University  of  Aarhus  (RECAU).   Two
+C     different  versions  are available:  a single precision
+C     version Y12MBE and a double precision  version  Y12MBF.
+C     The  calls of these two versions and the declaration of
+C     the parameters are as follows:
+C
+C     A) Single precision version Y12MBE
+C
+C           SUBROUTINE Y12MBE(N, Z, A, SNR, NN, RNR, NN1,
+C          1  HA, IHA, AFLAG, IFLAG, IFAIL)
+C
+C           REAL A(NN), AFLAG(8)
+C           INTEGER SNR(NN), RNR(NN1), HA(N,11), IFLAG(10)
+C           INTEGER N, Z, IHA, IFAIL
+C
+C     B) Double precision version Y12MBF
+C
+C           SUBROUTINE Y12MBF(N, Z, A, SNR, NN, RNR, NN1,
+C          1  HA, IHA, AFLAG, IFLAG, IFAIL)
+C
+C           DOUBLE PRECISION A(NN), AFLAG(8)
+C           INTEGER SNR(NN), RNR(NN1), HA(N,11), IFLAG(10)
+C           INTEGER N, Z, IHA, IFAIL
+C
+C     These  two versions can be used on many other computers
+C     also. However some alterations may be needed and/or may
+C     ensure  greater  efficiency  of  the performance of the
+C     subroutine. For example, it will be much more efficient
+C     to  declare  arrays  SNR,  RNR  and (if possible) HA as
+C     INTEGER*2 arrays on some IBM installations.
+C
+C
+C     3.  Method
+C
+C     The  non-zero  elements of matrix A are ordered by rows
+C     and stored in the first Z positions  of  array  A.  The
+C     order   of  the  non-zero  elements  within  a  row  is
+C     arbitrary. The column numbers of the non-zero  elements
+C     are  stored  in  the  first Z positions of array SNR so
+C     that if  A(J)=a(i,j),  J=1(1)Z, then  SNR(J)=j. The row
+C     numbers  of  the  non-zero  elements  are stored in the
+C     first Z positions of array RNR so that the row  numbers
+C     of  the non-zero elements in the first column of matrix
+C     A are located before the row numbers  of  the  non-zero
+C     elements  in  the  second  column  of matrix A, the row
+C     numbers of the non-zero elements in the  second  column
+C     of  matrix  A are located before the row numbers of the
+C     non-zero elements in the third column of matrix  A  and
+C     so  on. Some additional information, e.g. about the row
+C     starts, row ends, column starts  and  column  ends,  is
+C     stored  in  the  work array HA. This storage scheme has
+C     been proposed by Gustavson.
+C
+C     4.  Parameters of the subroutine
+C
+C
+C     N     - INTEGER. On entry N must contain the number  of
+C             equations  in  the  system   Ax=b. Unchanged on
+C             exit.
+C
+C     Z     - INTEGER. On entry Z must contain the number  of
+C             non-zero  elements  in the coefficient matrix A
+C             of the system Ax = b. Unchanged on exit.
+C
+C     A     - REAL (in the single precision  version  Y12MBE)
+C             or  DOUBLE  PRECISION  (in the double precision
+C             version Y12MBF) array of length NN (see below).
+C             On  entry the first Z locations of array A must
+C             contain   the   non-zero   elements   of    the
+C             coefficient  matrix A of the system Ax = b. The
+C             order  of  the   non-zero   elements   may   be
+C             completely arbitrary. The content of array A is
+C             modified by  subroutine  Y12MB.  On  successful
+C             exit  the  first  Z  positions  of array A will
+C             contain the non-zero elements of the  matrix  A
+C             ordered by rows.
+C
+C     SNR   - INTEGER  array  of  length  NN  (see below). On
+C             entry SNR(j),  j  =  1(1)Z,  must  contain  the
+C             column number of the non-zero element stored in
+C             A(j).  The content of array SNR is modified  by
+C             subroutine  Y12MB.   On successful exit SNR(j),
+C             j=1(1)Z, will contain the column number of  the
+C             non-zero element stored in A(j).
+C
+C     NN    - INTEGER. On entry NN must contain the length of
+C             arrays  A  and  SNR.  Restriction:   NN.ge.2*Z.
+C             Recommended  value: 2*Z.le.NN.le.3*Z.  See also
+C             the description of NN in Y12MC.   Unchanged  on
+C             exit.
+C
+C     RNR   - INTEGER  array  of  length  NN1 (see below). On
+C             entry RNR(i), i = 1(1)Z, must contain  the  row
+C             number  of the non-zero element stored in A(i).
+C             The  content  of  array  RNR  is  modified   by
+C             subroutine  Y12MB.  On  successful exit the row
+C             numbers of the non-zero elements  of  matrix  A
+C             are  stored  in  the first Z positions of array
+C             RNR, so that the row numbers  of  the  non-zero
+C             elements  in  the  first column of matrix A are
+C             before the row numbers of the non-zero elements
+C             in  the  second  column  of  matrix  A, the row
+C             numbers of the non-zero elements in the  second
+C             column  of  matrix A are before the row numbers
+C             of the non-zero elements in the third column of
+C             matrix A and so on. This means that on exit the
+C             row number of the non-zero  element  stored  in
+C             A(i),  i  =  1(1)Z, is not stored in RNR(i), in
+C             general.
+C
+C     NN1   - INTEGER. On entry NN1 must contain  the  length
+C             of   the  array  RNR.   Restriction:  NN1.ge.Z.
+C             Recommended value: 2*Z.le.NN1.le.3*Z.  See also
+C             the  desription  of NN1 in Y12MC.  Unchanged on
+C             exit.
+C
+C     HA    - INTEGER two-dimensional array.  The  length  of
+C             the  first  dimension of HA is IHA (see below).
+C             The length of the second dimension of HA is 11.
+C             The contents of some elements of this array are
+C             modified by subroutine Y12MB, the  contents  of
+C             the others are ignored. On successful exit:
+C
+C             (1) HA(i,1) contains the position  in  array  A
+C                         where the first element of row i, i
+C                         = 1(1)N, is stored.
+C             (2) HA(i,3) contains  the  position  in array A
+C                         where the last element of row i,  i
+C                         =  1(1)N,  is  stored (all non-zero
+C                         elements of  row   i   are  located
+C                         between    HA(i,1)    and   HA(i,3)
+C                         compactly; the number  of  non-zero
+C                         elements  in  row  i  is  HA(i,3) -
+C                         HA(i,1) + 1).
+C             (3) HA(i,4) contains  the position in array RNR
+C                         where the row number of  the  first
+C                         non-zero  element  of  column  j is
+C                         stored (j = 1(1)N).
+C             (4) HA(j,6) contains  the position in array RNR
+C                         where the row number  of  the  last
+C                         element  in column j, j = 1(1)N, is
+C                         stored  (all  row  numbers  of  the
+C                         non-zero  elements  of column j are
+C                         located between HA(j,4) and HA(j,6)
+C                         compactly,  the  number of non-zero
+C                         elements    in    column    j    is
+C                         HA(j,6)-HA(j,4)+1).
+C
+C             (5)         Some   information  needed  in  the
+C                         pivotal    search    during     the
+C                         decomposition  is stored in columns
+C                         7,8 and 11 of array HA.
+C
+C             (6)         The other columns of HA are  either
+C                         ignored  by Y12MB or used as a work
+C                         space.
+C
+C     IHA   - INTEGER.  On  entry IHA must contain the length
+C             of   the   first   dimension   of   array   HA.
+C             Restriction:  IHA.ge.N. Unchanged on exit.
+C
+C     AFLAG - REAL  (in  the single precision version Y12MBE)
+C             or DOUBLE PRECISION (in  the  double  precision
+C             version Y12MBF) array of length 8. The contents
+C             of  all  locations  of  array   AFLAG,   except
+C             AFLAG(6), are ignored by subroutine Y12MB.  The
+C             content of AFLAG(6) is modified  by  Y12MB.  On
+C             successful exit AFLAG(6) contains
+C             max(abs(i,j)).
+C
+C     IFLAG - INTEGER array of length 10. The user should set
+C             IFLAG(1).ge.0  before  the call of package Y12M
+C             (i.e. before the first call of a subroutine  of
+C             this  package).  IFLAG(1)  is used in the error
+C             checks by the subroutines  and  should  not  be
+C             altered  by the user between any two successive
+C             calls of subroutines of the  package.  IFLAG(1)
+C             will  be  equal to  -1  on successful exit from
+C             subroutine Y12MB. Thus, the content of IFLAG(1)
+C             is  modified  by  subroutine  Y12MB.  On  entry
+C             IFLAG(4) must contain 0, 1 or 2. IFLAG(4)  =  0
+C             is  the  best choice when only one system is to
+C             be solved, when the first system of a  sequence
+C             of systems with the same matrix is to be solved
+C             and when any system of a  sequence  of  systems
+C             whose matrices are of different structure is to
+C             be solved. IFLAG(4) = 1 is the best choice when
+C             the  first system in a sequence of systems with
+C             the same structure is to be solved. IFLAG(4)  =
+C             2  is the best choice when any system after the
+C             first  one  in  a  sequence  of  systems  whose
+C             matrices  are  of  the  same structure is to be
+C             solved. The content of IFLAG(4) is unchanged by
+C             subroutine  Y12MB. The other locations of IFLAG
+C             are either ignored by Y12MB or used as  a  work
+C             space.
+C
+C     IFAIL - Error  diagnostic  parameter.  The  content  of
+C             parameter  IFAIL  is  modified  by   subroutine
+C             Y12MB.  On exit IFAIL = 0 if the subroutine has
+C             not detected  any  error.  Positive  values  of
+C             IFAIL  on  exit  show  that some error has been
+C             detected by the subroutine. Many of  the  error
+C             diagnostics  are  common for all subroutines in
+C             the package.  Therefore the  error  diagnostics
+C             are listed in a separate section, Section 7, of
+C             this book. We advise  the  user  to  check  the
+C             value of this parameter on exit.
+C
+C     5.  Error diagnostics
+C
+C     Error diagnostics are given by positive values  of  the
+C     parameter  IFAIL  (see  above).  We  advise the user to
+C     check carefully the value of this  parameter  on  exit.
+C     The error messages are listed in Section 7.
+C
+C     6.  Auxiliary subroutines
+C
+C     None.
+C
+C     7.  Timing
+C
+C     The  time  taken  depends  on  the  number  of non-zero
+C     elements (parameter Z) in matrix A.
+C
+C     8.  Storage
+C
+C     There are no internally declared arrays.
+C
+C     9.  Some remarks
+C
+C     Remark 1 The use of subroutine Y12MB is followed by the
+C              use of Y12MC and Y12MD. Subroutines Y12MA  and
+C              Y12MF  can be considered as examples of how to
+C              use Y12MB, Y12MC and Y12MD.
+C
+C     Remark 2 The contents of N, Z, A, SNR,  NN,  RNR,  NN1,
+C              columns  1,  3,  4, 6, 7, 8 and 11 of HA, IHA,
+C              AFLAG(6), IFLAG(1), IFLAG(4) and IFAIL  should
+C              not  be  altered  between  calls  of Y12MB and
+C              Y12MC.
+C
+C     Remark 3 If IFAIL > 0 on exit  of  Y12MB  there  is  no
+C              sense  in  calling  Y12MC and Y12MD. Therefore
+C              the computations should  be  stopped  in  this
+C              case  and  one  should  investigate (using the
+C              error diagnostics  given  in  Section  7)  why
+C              Y12MB  has assigned a positive value to IFAIL.
+C                =================================
+C                Documentation of subroutine Y12MC
+C                =================================
+C
+C     1.  Purpose
+C
+C     Y12MC   decomposes  a  matrix  A  into  two  triangular
+C     matrices L and U. Each call of subroutine Y12MC  should
+C     be  preceded  by  a  call of Y12MB. Subroutine Y12MD is
+C     normally called one or several times after the call  of
+C     Y12MC.
+C
+C     2.  Calling sequence and declaration of the parameters
+C
+C     The  subroutine  is  written  in  FORTRAN  and has been
+C     extensively tested with the FOR and  FTN  compilers  on
+C     the  UNIVAC  1100/82 computer at the Regional Computing
+C     Centre at the University of  Copenhagen  (RECKU).  Many
+C     examples  have  been run on an IBM 3033 computer at the
+C     Northern Europe University Computing Centre (NEUCC) and
+C     on  a  CDC Cyber 173 computer at the Regional Computing
+C     Centre  at  the  University  of  Aarhus  (RECAU).   Two
+C     different  versions  are  available: a single precision
+C     version named Y12MCE and  a  double  precision  version
+C     named  Y12MCF.  The calls of these two versions and the
+C     declaration of the parameters are as follows.
+C
+C     A). Single precision version: Y12MCE
+C
+C           SUBROUTINE Y12MCE(N, Z, A, SNR, NN, RNR, NN1,
+C          1  PIVOT, B, HA, IHA, AFLAG, IFLAG, IFAIL)
+C
+C           REAL A(NN), PIVOT(N), B(N), AFLAG(8)
+C           INTEGER SNR(NN), RNR(NN1), HA(IHA,11), IFLAG(10)
+C           INTEGER N, Z, NN, NN1, IHA, IFAIL
+C
+C     B). Double precision version: Y12MCF
+C
+C           SUBROUTINE Y12MCF(N, Z, A, SNR, NN, RNR, NN1,
+C          1  PIVOT, B, HA, IHA, AFLAG, IFLAG, IFAIL)
+C
+C           DOUBLE PRECISION A(NN), PIVOT(N), B(N), AFLAG(8)
+C           INTEGER SNR(NN), RNR(NN1), HA(IHA,11), IFLAG(10)
+C           INTEGER N, Z, NN, NN1, IHA, IFAIL
+C
+C     These  two versions can be used on many other computers
+C     also. However some alterations may be needed and/or may
+C     ensure  greater  efficiency  of  the performance of the
+C     subroutine. For example, it will be much more efficient
+C     to  declare  arrays  SNR,  RNR  and (if possible) HA as
+C     INTEGER*2 arrays on some IBM installations.
+C
+C
+C     3.  Method
+C
+C     Gaussian  elimination  is  used in the decomposition of
+C     matrix A. Pivotal interchanges are  implemented  as  an
+C     attempt   to   preserve   both  the  stability  of  the
+C     computations  and  the  sparsity  of  the   coefficient
+C     matrix. Two triangular matrices L and U are computed so
+C     that  LU=PAQ  (where P and Q are permutation matrices).
+C     The  right  hand side vector b is also modified so that
+C     vector c = L**(-1)*P*b is computed on successful  exit.
+C     In  this  way  matrix  L is sometimes not needed in the
+C     further computations and may be removed if this is  so.
+C
+C     4.  Parameters of the subroutine
+C
+C
+C     N     - INTEGER. On entry N must contain the number  of
+C             equations  in  the  system   Ax=b. Unchanged on
+C             exit.
+C
+C     Z     - INTEGER. On entry Z must contain the number  of
+C             non-zero  elements  in the coefficient matrix A
+C             of the system  Ax=b. Unchanged on exit.
+C
+C     A     - REAL (in the single precision  version  Y12MCE)
+C             or  DOUBLE  PRECISION  (in the double precision
+C             version Y12MCF) array of length NN (see below).
+C             On  entry the first Z locations of array A must
+C             contain   the   non-zero   elements   of    the
+C             coefficient  matrix  A  of  the  system  Ax = b
+C             ordered by  rows  (in  the  preceding  call  of
+C             Y12MB).  The  content of array A is modified by
+C             subroutine Y12MC.  On successful exit  array  A
+C             will contain the non-zero elements of the upper
+C             triangular  matrix  U  (without  the   diagonal
+C             elements  of  matrix  U  which  can be found in
+C             array PIVOT, see below) and sometimes also  the
+C             non-zero   elements  of  the  lower  triangular
+C             matrix  L (without the diagonal elements  which
+C             are not stored).
+C
+C     SNR   - INTEGER  array  of  length  NN  (see below). On
+C             entry SNR(j),  j  =  1(1)Z,  must  contain  the
+C             column number of the non-zero element stored in
+C             A(j).   This  is  accomplished  by   subroutine
+C             Y12MB.  The content of array SNR is modified by
+C             subroutine Y12MC.  On successful exit array SNR
+C             will contain the column numbers of the non-zero
+C             elements  of  the  upper  triangular  matrix  U
+C             (without  the  column  numbers  of the diagonal
+C             elements of matrix U) and  sometimes  also  the
+C             column  numbers of the non-zero elements of the
+C             lower triangular matrix L (without  the  column
+C             numbers of the diagonal elements of L).
+C
+C     NN    - INTEGER. On entry NN must contain the length of
+C             array  A  and  SNR.   Restriction:   NN.ge.2*Z.
+C             Recommended  value:  2*Z .le.NN.le.  3*Z if the
+C             non-zero elements of matrix L will  be  removed
+C             by  subroutine  Y12MC  (i.e. if Y12MC is called
+C             with IFLAG(5) = 1) or 3*Z.le.  NN.le.5*Z if the
+C             non-zero  elements  of matrix L will be kept by
+C             subroutine Y12MC (i.e. if Y12MC is called  with
+C             IFLAG(5) = 2).  Unchanged on exit.
+C
+C     RNR   - INTEGER  array  of  length  NN1 (see below). On
+C             entry the first Z locations of array  RNR  must
+C             contain   the   row  numbers  of  the  non-zero
+C             elements of the coefficient  matrix  A  of  the
+C             system  Ax  =  b so that the row numbers of the
+C             non-zero elements in the first column of matrix
+C             A  are  located  before  the row numbers of the
+C             non-zero  elements  in  the  second  column  of
+C             matrix  A,  the  row  numbers  of  the non-zero
+C             elements in the second column of matrix  A  are
+C             located  before the row numbers of the non-zero
+C             elements in the third column of matrix A and so
+C             on  (this  ordereing  is prepared by subroutine
+C             Y12MB). The content of array RNR is modified by
+C             subroutine   Y12MC.   On  successful  exit  all
+C             components of array RNR will normally be  zero.
+C
+C     NN1   - INTEGER. On entry NN1 must contain  the  length
+C             of   the  array  RNR.   Restriction:  NN1.ge.Z.
+C             Recommended     value:       2*Z.le.NN1.le.3*Z.
+C             Unchanged on exit.
+C
+C     PIVOT - REAL  (in  the single precision version Y12MCE)
+C             or DOUBLE PRECISION (in  the  double  precision
+C             version  Y12MCF) array of length N. The content
+C             of array PIVOT is modified by subroutine Y12MC.
+C             On successful exit array PIVOT will contain the
+C             pivotal elements (  the  diagonal  elements  of
+C             matrix  U). This means that a small element (or
+C             small elements) in  array  PIVOT  on  exit  may
+C             indicate    numerical    singularity   of   the
+C             coefficient matrix A. Note that the smallest in
+C             absolute value element in array PIVOT is stored
+C             in AFLAG(8), see below.
+C
+C     B -     REAL (in the single precision  version  Y12MCE)
+C             or  DOUBLE  PRECISION  (in the double precision
+C             version Y12MCF) array of length  N.  The  right
+C             hand side vector b of the system Ax = b must be
+C             stored in B on entry. The content of array B is
+C             modified  by  subroutine  Y12MC.  On successful
+C             exit array B will  contain  the  components  of
+C             vector c = L**(-1)*P*b.
+C
+C     HA    - INTEGER  two-dimensional  array.  The length of
+C             the first dimension of HA is IHA  (see  below).
+C             The length of the second dimension of HA is 11.
+C             The content of columns 1, 3, 4, 6, 7, 8 and  11
+C             is  prepared by Y12MB (and thus they should not
+C             be altered between calls of Y12MB  and  Y12MC).
+C             The   content   of  array  HA  is  modified  by
+C             subroutine   Y12MC.   The   non-zero   elements
+C             (without  the  diagonal  elements)  of row i in
+C             matrix L  (when  this  matrix  is  stored)  are
+C             between HA(i,1) and HA(i,2) -1. If the non-zero
+C             elements  of  matrix  L  are  not  stored  then
+C             HA(i,1)=HA(i,2), i=1(1)N. The non-zero elements
+C             of row i in  matrix  U  (without  the  diagonal
+C             elements)   are   stored  between  HA(i,2)  and
+C             HA(i,3).  Information concerning  the  row  and
+C             column  interchanges  is  stored in HA(i,7) and
+C             HA(i,8),   i=1(1)N-1.   Information  about  the
+C             largest  number  of  non-zero elements found in
+C             row i /  column  j  during  any  stage  of  the
+C             elimination  is  stored (when IFLAG(4)=1  only)
+C             in  HA(i,9)/HA(j,10).  The  other   information
+C             stored  in  array HA is not used in the further
+C             computations.
+C
+C     IHA   - INTEGER. On entry IHA must contain  the  length
+C             of   the   first   dimension   of   array   HA.
+C             Restriction: IHA
+C            .ge.N. Unchanged on exit.
+C
+C     AFLAG - REAL  (in  the single precision version Y12MCE)
+C             or DOUBLE PRECISION (in  the  double  precision
+C             version  Y12MCF) array of length 8. The content
+C             of the array can be described as follows:
+C
+C             AFLAG(1) -  Stability factor. An element can be
+C                         chosen as pivotal element  only  if
+C                         this element is larger (in absolute
+C                         value) than the absolute  value  of
+C                         the  largest  element  in  its  row
+C                         divided  by  AFLAG(1).   On   entry
+C                         AFLAG(1)   should  contain  a  real
+C                         number larger than 1.0. If this  is
+C                         not  so  then  the  subroutine sets
+C                         AFLAG(1)  =   1.0005.   Recommended
+C                         values:   AFLAG(1) ranging from 4.0
+C                         to 16.0.  Unchanged on  exit  (when
+C                         correctly initialized).
+C
+C             AFLAG(2)  - Drop-tolerance. An element which in
+C                         the  process  of  the  computations
+C                         becomes smaller (in absolute value)
+C                         than the drop-tolerance is  removed
+C                         from  array  A  (and  its  row  and
+C                         column  numbers  are  removed  from
+C                         arrays   RNR  and  SNR).  On  entry
+C                         AFLAG(2)   should   contain    some
+C                         positive   small  number  or  zero.
+C                         Recommended   value   AFLAG(2)    =
+C                         1.0E-12  when  matrix  A is not too
+C                         badly scaled and the  magnitude  of
+C                         the   elements   is   1,  otherwise
+C                         smaller values of  AFLAG(2)  should
+C                         be used.  Unchanged on exit.
+C
+C              AFLAG(3) - The   subroutine   will   stop  the
+C                         computation when the growth  factor
+C                         (parameter   AFLAG(5),  see  below)
+C                         becomes larger  than  AFLAG(3).  On
+C                         entry  AFLAG(3)  should  contain  a
+C                         large    positive    number.     If
+C                         AFLAG(3)<1.0e5  then the subroutine
+C                         sets  AFLAG(3)=1.0e5.   Recommended
+C                         value   AFLAG(3)=1.0E6.   Unchanged
+C                         on     exit     (when     correctly
+C                         initialized).
+C
+C              AFLAG(4) - The   subroutine   will   stop  the
+C                         computation when the absolute value
+C                         of  a  current  pivotal  element is
+C                         smaller   than    AFLAG(4)*AFLAG(6)
+C                         (parameter  AFLAG(6)  is  described
+C                         below).  On  entry  AFLAG(4)   must
+C                         contain    a   small   non-negative
+C                         number.  If  AFLAG(4)<0   on  entry
+C                         then     the     subroutine    sets
+C                         AFLAG(4)=-AFLAG(4).     Recommended
+C                         value  AFLAG(4)=1.0E-12.  Unchanged
+C                         on     exit     (when     correctly
+C                         initialized).
+C
+C             AFLAG(5)  - Growth   factor.   The  content  of
+C                         parameter AFLAG(5) is  modified  by
+C                         subroutine  Y12MC. After each stage
+C                         of   the    Gaussian    elimination
+C                         subroutine  Y12MC  sets  AFLAG(5) =
+C                         AFLAG(7)/AFLAG(6)       (parameters
+C                         AFLAG(6) and AFLAG(7) are described
+C                         below). On  exit  large  values  of
+C                         parameters  AFLAG(5)  indicate that
+C                         an   appreciable   error   in   the
+C                         computed  solution  is possible. In
+C                         an    extreme    case    ,    where
+C                         AFLAG(5)>AFLAG(3)   the  subroutine
+C                         will terminate the computations  in
+C                         an attempt to prevent overflow (and
+C                         IFAIL will be set equal to 4).
+C
+C             AFLAG(6)  - On entry AFLAG(6) is equal  to  the
+C                         largest  element in the coefficient
+C                         matrix A of the system Ax = b  (set
+C                         by subroutine Y12MB).  Unchanged on
+C                         exit.
+C
+C             AFLAG(7)  - On exit the  largest  (in  absolute
+C                         value)  element  found  during  any
+C                         stage of the  elimination  will  be
+C                         stored  in AFLAG(7). The content of
+C                         parameter AFLAG(7) is  modified  by
+C                         subroutine Y12MC.
+C
+C             AFLAG(8)  - On  entry  the minimal (in absolute
+C                         value)  pivotal  element  will   be
+C                         stored in AFLAG(8). Small values of
+C                         AFLAG(8)     indicate     numerical
+C                         singularity   of   the  coefficient
+C                         matrix A. We  advise  the  user  to
+C                         check  this  parameter on exit from
+C                         the calculation very carefully. The
+C                         content  of  parameter  AFLAG(8) is
+C                         modified by the subroutine Y12MC.
+C
+C     IFLAG - INTEGER array of length 10. The content of this
+C             array is  modified  by  subroutine  Y12MC.  The
+C             contents of the components of this array can be
+C             described as follows.
+C
+C             IFLAG(1) - This parameter is used in connection
+C                        with the error diagnostics. The user
+C                        should  set IFLAG(1).ge.0 before the
+C                        call of package  Y12M  (i.e.  before
+C                        the  first  call  of a subroutine of
+C                        this package). IFLAG(1) is  used  in
+C                        the  error checks by the subroutines
+C                        and should not  be  altered  by  the
+C                        user   between  any  two  successive
+C                        calls of subroutines of the package.
+C                        IFLAG(1)  will  be  equal  to  -2 on
+C                        successful  exit   from   subroutine
+C                        Y12MC. Thus, the content of IFLAG(1)
+C                        is modified by subroutine Y12MC.
+C
+C             IFLAG(2) - On entry IFLAG(2) must contain  some
+C                        positive  integer smaller than N. We
+C                        recommend IFLAG(2).le.3. If IFLAG(3)
+C                        =  0  then this parameter is ignored
+C                        by     subroutine     Y12MC.      If
+C                        IFLAG((3).ge.0   then   the  pivotal
+C                        search   at   any   stage   of   the
+C                        elimination (except possibly some of
+C                        the last stages) is carried  out  in
+C                        the  IFLAG(2)  rows which have least
+C                        numbers   of   non-zero    elements.
+C                        Unchanged on exit.
+C
+C             IFLAG(3) - On  entry IFLAG(3) must contain 0, 1
+C                        or 2.  For  general  pivotal  search
+C                        IFLAG(3)  should  be set equal to 1.
+C                        If IFLAG(3) = 2 then  only  diagonal
+C                        elements of the coefficient matrix A
+C                        will   be   selected   as    pivotal
+C                        elements.  If  IFLAG(3) = 0 then the
+C                        Gaussian elimination will be carried
+C                        out     without     any    pivoting.
+C                        IFLAG(3)=0 or IFLAG(3)=2  (i.e.  one
+C                        of the special pivotal strategies is
+C                        to be applied) should be  used  very
+C                        carefully    because    the    error
+C                        diagnostics algorithm may not  trace
+C                        all   errors   in  this  case.   For
+C                        example, if the user attempts to use
+C                        IFLAG(3)=0   for   matrix   A  which
+C                        contains zero elements on  the  main
+C                        diagonal, then the run will often be
+C                        stopped because a division  by  zero
+C                        occurs.  Unchanged on exit.
+C
+C             IFLAG(4) - On  entry IFLAG(4) must contain 0, 1
+C                        or 2.  IFLAG(4)  =  0  is  the  best
+C                        choice  when  (i) only one system is
+C                        to be solved, (ii) the first  system
+C                        of  a  sequence  of systems with the
+C                        same matrix (Ax = b1, Ax = b2,  ...,
+C                        Ax = bp) is to be solved, (iii) when
+C                        any system in a sequence of  systems
+C                        whose   matrices  are  of  different
+C                        structure is to be solved.  IFLAG(4)
+C                        =  1  is  the  best  choice when the
+C                        first  system  of  a   sequence   of
+C                        systems  whose  matrices  are of the
+C                        same structure is to be  solved.  In
+C                        this case IFLAG(4) = 2 is to be used
+C                        in the solution of any system  after
+C                        the first one.  Unchanged on exit.
+C
+C             IFLAG(5) - On  entry IFLAG(5) must contain 1 or
+C                        2.   If  IFLAG(5)  =  1   then   the
+C                        non-zero  elements  of matrix L will
+C                        be removed. If IFLAG(5) = 2 then the
+C                        non-zero  elements  of matrix L will
+C                        be stored.  Unchanged on exit.
+C
+C             IFLAG(6) - On successful exit IFLAG(6) will  be
+C                        equal  to  the  number  of "garbage"
+C                        collections in the row ordered list.
+C                        If  IFLAG(6)  is  large  then  it is
+C                        better to choose a larger  value  of
+C                        NN  with  next  calls  of subroutine
+C                        Y12MC with the  same  or  a  similar
+C                        matrix   A.  This  will  lead  to  a
+C                        reduction  in  the  computing  time.
+C                        The  content of IFLAG(6) is modified
+C                        by the subroutine Y12MC.
+C
+C             IFLAG(7) - On successful exit IFLAG(7) will  be
+C                        equal  to  the  number  of "garbage"
+C                        collections in  the  column  ordered
+C                        list.   If IFLAG(7) is large then it
+C                        is better to choose a  larger  value
+C                        of   NN1   in   the  next  calls  of
+C                        subroutine Y12MC with the same or  a
+C                        similar  matrix A. This will lead to
+C                        a reduction in the  computing  time.
+C                        The  content of IFLAG(7) is modified
+C                        by subroutine Y12MC.
+C
+C             IFLAG(8) - On successful exit IFLAG(8) will  be
+C                        equal   to  the  maximal  number  of
+C                        non-zero elements kept in array A at
+C                        any    stage    of    the   Gaussian
+C                        elimination.  If  IFLAG(8)  is  much
+C                        smaller  then  NN  (or NN1) then the
+C                        length NN (or  NN1)  can  be  chosen
+C                        smaller  in next calls of subroutine
+C                        Y12MC with the  same  or  a  similar
+C                        matrix   A.  This  will  lead  to  a
+C                        reduction of the storage needed. The
+C                        content  of  IFLAG(8) is modified by
+C                        subroutine Y12MC.
+C
+C             IFLAG(9) - The content of IFLAG(3) is  modified
+C                        by  subroutine Y12MC when IFLAG(4) =
+C                        1  and   ignored   otherwise.    The
+C                        minimal  length  NN1 such that Y12MC
+C                        can solve systems whose matrices are
+C                        of   the   same   structure  without
+C                        "garbage" collections in the  column
+C                        ordered   list   and   "movings"  of
+C                        columns at the  end  of  the  column
+C                        ordered  list  is stored in IFLAG(9)
+C                        after  the  solution  of  the  first
+C                        system   in   the   sequence   (with
+C                        IFLAG(4) = 1).
+C
+C             IFLAG(10)- The content of IFLAG(10) is modified
+C                        by   the   subroutine   Y12MC   when
+C                        IFLAG(4) = 1 and ignored  otherwise.
+C                        The  minimal  length  NN  such  that
+C                        subroutine Y12MC can  solve  systems
+C                        whose   matrices  are  of  the  same
+C                        structure     without      "garbage"
+C                        collections  in the row ordered list
+C                        and "movings" of rows to the end  of
+C                        the  row  ordered  list is stored in
+C                        IFLAG(10) after the solution of  the
+C                        first  system  in the sequence (with
+C                        IFLAG(4) = 1).
+C
+C     IFAIL - Error  diagnostics  parameter.  The  content of
+C             parameter  IFAIL  is  modified  by   subroutine
+C             Y12MC.  On exit IFAIL = 0 if the subroutine has
+C             not detected  any  error.  Positive  values  of
+C             IFAIL  on  exit  show  that some error has been
+C             detected by the subroutine. Many of  the  error
+C             diagnostics  are  common for all subroutines in
+C             the package.  Therefore the  error  diagnostics
+C             are listed in a separate section, Section 7, of
+C             this book. We advise  the  user  to  check  the
+C             value of this parameter on exit.
+C
+C     5.  Error diagnostics
+C
+C     Error diagnostics are given by positive values  of  the
+C     parameter  IFAIL  (see  above).   We advise the user to
+C     check carefully the value of this  parameter  on  exit.
+C     The error messages are listed in Section 7.
+C
+C     6.  Auxiliary subroutines
+C
+C     None.
+C
+C     7.  Timing
+C
+C     The  time  taken  depends  on  the  order of the matrix
+C     (parameter N), the number of the non-zero  elements  in
+C     the matrix (parameter Z), the magnitude of the non-zero
+C     elements and their distribution in the matrix.
+C
+C     8.  Storage
+C
+C     There are no internally declared arrays.
+C
+C     9.  Accuracy
+C
+C     It  is  difficult  to  evaluate  the  accuracy  of  the
+C     computed  solution. Large values of parameter AFLAG(5),
+C     the  growth  factor,  indicate  unstable   computations
+C     during   the   decomposition  stage.  Small  values  of
+C     parameter AFLAG(8) can be considered as  a  signal  for
+C     numerical  singularity.  We  must  emphasize  here that
+C     normally much more reliable evaluations of the accuracy
+C     achieved   can   be  found  by  the  use  of  iterative
+C     refinement, i.e. by the use of subroutine Y12MF. By the
+C     use  of  the  latter subroutine the computing time will
+C     often be reduced too.
+C
+C     10.  Some remarks
+C
+C     Remark 1   The values on entry of Y12MC are the same as
+C                the  values  on  exit  of  Y12MB  for   many
+C                parameters.  Therefore  the content of N, Z,
+C                A, SNR, NN, RNR, NN1, columns 1, 3, 4, 6, 7,
+C                8 and 11 of HA, AFLAG(6), IFLAG(1), IFLAG(4)
+C                and IFAIL  should  not  be  changed  between
+C                calls of Y12MB and Y12MC.
+C
+C     Remark 2   The  call  of  Y12MC is normally followed by
+C                one or several calls of Y12MD.  The  content
+C                of N, A, SNR, NN, B, PIVOT, columns 1, 2, 3,
+C                7  and  8  of  HA,  IHA,  AFLAG,   IFLAG(1),
+C                IFLAG(3),  IFLAG(4)  and IFAIL should not be
+C                altered between calls of Y12MC and Y12MD.
+C
+C     Remark 3   If IFAIL > 0 on exit from Y12MC there is  no
+C                justification  for  calling Y12MD. Therefore
+C                the computations should  be  terminated  and
+C                the user should investigate (using the error
+C                diagnostics given in Section  7)  why  Y12MC
+C                has assigned a positive value to IFAIL.
+C                =================================
+C                Documentation of subroutine Y12MD
+C                =================================
+C
+C     1.  Purpose
+C
+C     Y12MD   solves   sparse  systems  of  linear  algebraic
+C     equations.
+C
+C     2.  Calling sequence and declaration of the parameters
+C
+C     The subroutine is written in FORTRAN and  it  has  been
+C     extensively  tested  with  the FOR and FTN compilers on
+C     the UNIVAC 1100/82 computer at the  Regional  Computing
+C     Centre  at  the  University of Copenhagen (RECKU). Many
+C     examples have been run on an IBM 3033 computer  at  the
+C     Northern Europe University Computing Centre (NEUCC) and
+C     on a CDC Cyber 173 computer at the  Regional  Computing
+C     Centre  at  the  University  of  Aarhus  (RECAU).   Two
+C     different versions are available:  a  single  precision
+C     version  named  Y12MDE  and  a double precision version
+C     named Y12MDF. The calls of these two versions  and  the
+C     declarations of the parameters are as follows.
+C
+C     A). Single precision version: Y12MDE
+C
+C           SUBROUTINE Y12MDE(N, A, NN, B, PIVOT, SNR,
+C          1                  HA, IHA,, IFLAG, IFAIL)
+C           REAL A(NN), PIVOT(N), B(N)
+C           INTEGER SNR(NN), HA(IHA,11), IFLAG(10)
+C           INTEGER N, NN, IHA, IFAIL
+C
+C     B). Double precision version: Y12MDF
+C
+C           SUBROUTINE Y12MDF(N, A, NN, B, PIVOT, SNR,
+C          1                  HA, IHA,, IFLAG, IFAIL)
+C           DOUBLE PRECISION A(NN), PIVOT(N), B(N)
+C           INTEGER SNR(NN), HA(IHA,11), IFLAG(10)
+C           INTEGER N, NN, IHA, IFAIL
+C
+C     These two versions can be used on many others computers
+C     also. However some alterations may be needed and/or may
+C     ensure  greater  efficiency  of  the performance of the
+C     subroutine. For example, it will be much more efficient
+C     to declare arrays SNR and (if possible) HA as INTEGER*2
+C     arrays on some IBM installations.
+C
+C
+C     3.  Method
+C
+C     The  LU  decomposition  (or  only  the upper triangular
+C     matrix U if the  vector  c  =  L**(-1)*P*b  is  already
+C     computed)  is  used  to  obtain an approximation to the
+C     solution vector  x  of  the  system  Ax  =  b.  The  LU
+C     decomposition  (or only matrix U ) must be available on
+C     entry. This means that if a system with a new matrix is
+C     solved  then  the  call  of  subroutine  Y12MD  must be
+C     preceded by a call of Y12MC and the  contents  of  some
+C     parameters and arrays should not be altered between the
+C     calls of Y12MC and Y12MD. If a  system  with  the  same
+C     matrix  has already been solved, then Y12MD only should
+C     be called (but the  contents  of  some  parameters  and
+C     arrays  used  in the preceding call of Y12MD should not
+C     be altered).
+C
+C     4.  Parameters of the subroutine
+C
+C     N     - INTEGER.  On entry N must contain the number of
+C             equations in the  system   Ax=b.  Unchanged  on
+C             exit.
+C
+C     A     - REAL  (in  the single precision version Y12MDE)
+C             or DOUBLE PRECISION (in  the  double  precision
+C             version Y12MDF) array of length NN (see below).
+C             On entry array  A  must  contain  the  non-zero
+C             elements  of  the  upper  triangular  matrix  U
+C             (without the diagonal elements)  and  sometimes
+C             also   the   non-zero  elements  of  the  lower
+C             triangular matrix L under the  diagonal  (these
+C             elements   are  calculated  by  the  subroutine
+C             Y12MC, the non-zero elements of L are stored by
+C             Y12MC  only when this subroutine is called with
+C             IFLAG(5) = 2). The content of the  array  A  is
+C             not modified by subroutine Y12MD.
+C
+C     NN   -  INTEGER. On entry NN must contain the length of
+C             the arrays A and SNR.   Restriction:  NN  >  Z.
+C             Recommended  value:  2*Z  <  NN  <  3*Z  if the
+C             non-zero elements of matrix L will  be  removed
+C             during  the  decomposition  (i.e. if subroutine
+C             Y12MC is called with IFLAG(5) = 1) and 3*Z < NN
+C             < 5*Z if the non-zero elements of matrix L will
+C             be stored during the decomposition (i.e. if the
+C             subroutine  Y12MC is called with IFLAG(5) = 2).
+C             Unchanged on exit.
+C
+C     B -     REAL (in the single precision  version  Y12MDE)
+C             or  DOUBLE  PRECISION  (in the double precision
+C             version  Y12MDF)  array   of   length   N.   If
+C             subroutine   Y12MC   has  been  called  in  the
+C             solution  of  system   Ax   =   b   (i.e.    if
+C             IFLAG(5)<3), then on entry array B must contain
+C             vector c = L**(-1)*P*b (computed by Y12MC).  If
+C             subroutine  Y12MC  has  not  been called in the
+C             solution of system Ax = b (i.e  a  system  with
+C             the  same matrix has been solved before solving
+C             Ax = b and the old LU decomposition is used  by
+C             setting  IFLAG(5)  =  3, see below) the array B
+C             must contain the right hand side  vector  b  on
+C             entry.   The content of the array B is modified
+C             by the subroutine Y12MD. On successful exit  an
+C             approximation  to  the  true solution x will be
+C             found in B.
+C
+C     PIVOT - REAL (in the single precision  version  Y12MDE)
+C             or  DOUBLE  PRECISION  (in the double precision
+C             version Y12MDF) array of length N. On entry the
+C             diagonal   elements  of  the  upper  triangular
+C             matrix U must be stored in array  PIVOT  (these
+C             elements  are calculated and stored in PIVOT by
+C             subroutine Y12MC).  Unchanged on exit.
+C
+C     SNR   - INTEGER array of  length  NN  (see  below).  On
+C             entry   the  column  numbers  of  the  non-zero
+C             elements  of  the  upper  triangular  matrix  U
+C             (without  the  column  numbers  of the non-zero
+C             elements on the diagonal)  and  sometimes  also
+C             the  column numbers of the non-zero elements of
+C             the lower  triangular  matrix  L  (without  the
+C             column  numbers of the non-zero elements on the
+C             diagonal) must be stored in  array  SNR.   This
+C             structure  is prepared by Y12MC. The content of
+C             array SNR is not  modified  by  the  subroutine
+C             Y12MD.
+C
+C     HA    - INTEGER  two-dimesional  array.   The length of
+C             the first dimension of HA is IHA  (see  below).
+C             The length of the second dimension of HA is 11.
+C             The content of columns 4, 5, 6, 9, 10 and 11 is
+C             ignored  by  subroutine  Y12MD.  The content of
+C             columns  1,  2,  3,  7  and  8  is  stored   by
+C             subroutine  Y12MC  and  should  not  be altered
+C             between calls of Y12MC and Y12MD. Unchanged  on
+C             exit.
+C
+C     IHA   - INTEGER.  On  entry IHA must contain the length
+C             of   the   first   dimension   of   array   HA.
+C             Restriction: IHA .ge. N. Unchanged on exit.
+C
+C     IFLAG - INTEGER array of length 10. The contents of all
+C             locations   in   this  array  except  IFLAG(1),
+C             IFLAG(3), IFLAG(4) and IFLAG(5) are ignored  by
+C             subroutine  Y12MD. The user should set IFLAG(1)
+C             .ge. 0 before the call of  package  Y12M  (i.e.
+C             before  the  first call of a subroutine of this
+C             package). IFLAG(1) is used in the error  checks
+C             by the subroutines and should not be altered by
+C             the user between any two  successive  calls  of
+C             subroutines  of  the package. IFLAG(1) is equal
+C             to  -2  both on entry and  on  successful  exit
+C             from  subroutine  Y12MD.  Thus,  the content of
+C             IFLAG(1) is not modified by  subroutine  Y12MD.
+C             The  same  values  of  IFLAG(3) and IFLAG(4) as
+C             those in the preceding call of Y12MC should  be
+C             used.  If  subroutine  Y12MC has been called in
+C             the solution of the system  Ax  =  b,  then  on
+C             entry  IFLAG(5)  must have the same value as on
+C             entry of Y12MC. If  subroutine  Y12MC  has  not
+C             been  called in the solution of the system Ax =
+C             b (i.e. a system with the same matrix has  been
+C             solved  before  solving  Ax  =  b  and  the  LU
+C             decomposition of matrix A  is  thus  available)
+C             then  on entry IFLAG(5) must contain the number
+C             3. The content of array IFLAG is  unchanged  on
+C             exit.
+C
+C     IFAIL - Error  diagnostics  parameter.  The  content of
+C             parameter  IFAIL  is  modified  by   subroutine
+C             Y12MA.  On exit IFAIL = 0 if the subroutine has
+C             not detected  any  error.  Positive  values  of
+C             IFAIL  on  exit  show  that some error has been
+C             detected by the subroutine. Many of  the  error
+C             diagnostics  are  common for all subroutines in
+C             the package.  Therefore the  error  diagnostics
+C             are listed in a separate section, Section 7, of
+C             this book. We advise  the  user  to  check  the
+C             value of this parameter on exit.
+C
+C     5.  Error diagnostics
+C
+C     Error diagnostics are given by positive values  of  the
+C     parameter  IFAIL  (see  above).   We advise the user to
+C     check carefully the value of this  parameter  on  exit.
+C     The error messages are listed in Section 7.
+C
+C     6.  Auxiliary subroutines
+C
+C     None.
+C
+C     7.  Timing
+C
+C     The  time  taken  depends  on  the  order of the matrix
+C     (parameter N) and the number of the  non-zero  elements
+C     in the LU-decomposition of matrix A.
+C
+C     8.  Storage
+C
+C     There are no internally declared arrays.
+C
+C     9.  Accuracy
+C
+C     It  is  difficult  to  evaluate  the  accuracy  of  the
+C     computed solution. Large values of parameter  AFLAG(5),
+C     the   growth  factor,  indicate  unstable  computations
+C     during  the  decomposition  stage.  Small   values   of
+C     parameter AFLAG(8), the minimal pivotal element, can be
+C     considered as a signal for  numerical  singularity.  We
+C     must  emphasize  here  that normally much more reliable
+C     evaluations of the accuracy achieved can  be  found  by
+C     the  use  of  iterative  refinement, i.e. by the use of
+C     subroutine Y12MF. By the use of the  latter  subroutine
+C     the  computing time will often be reduced too. However,
+C     the storage requirements may sometimes be increased.
+C
+C     10.  Some remarks
+C
+C     Remark 1 The content of N, A, SNR, NN, columns 1, 2, 3,
+C              7 and 8 of HA,  IHA,  IFLAG(3),  IFLAG(4)  and
+C              IFAIL  should  not be altered between calls of
+C              Y12MC and Y12MD.
+C
+C     Remark 2 If   the  LU  decomposition  of  matrix  A  is
+C              available (i.e. a system  with  matrix  A  has
+C              already  been  solved)  then  Y12MB  and Y12MC
+C              should not be called.  The  user  should  only
+C              assign the new right hand side vector to array
+C              B, set IFLAG(5) = 3 and call Y12MD.
+C                =================================
+C                Documentation of subroutine Y12MF
+C                =================================
+C
+C     1.  Purpose
+C
+C     Large  and sparse systems of linear algebraic equations
+C     with  real  coefficients  are  solved  by  the  use  of
+C     Gaussian   elimination  and  sparse  matrix  technique.
+C     Iterative refinement is applied in order to improve the
+C     accuracy.
+C
+C     2.  Calling sequence and declaration of the parameters
+C
+C     The  subroutine  is  written  in  FORTRAN  and has been
+C     extensively tested with the FOR and  FTN  compilers  on
+C     the  UNIVAC  1100/82 computer at the Regional Computing
+C     Centre at the University of  Copenhagen  (RECKU).  Many
+C     examples  have  been run on an IBM 3033 computer at the
+C     Northern Europe University Computing Centre (NEUCC) and
+C     on  a  CDC Cyber 173 computer at the Regional Computing
+C     Centre at the University of  Aarhus  (RECAU).   Only  a
+C     single precision version, Y12MFE, of this subroutine is
+C     available.  The  call  of  the   subroutine   and   the
+C     declarations of the parameters are as follows.
+C
+C           SUBROUTINE Y12MFE(N, A, SNR, NN, RNR, NN1, A1,
+C     SN, NZ,
+C          1                  HA, IHA, B, B1, X, Y, AFLAG,
+C     IFLAG, IFAIL)
+C           REAL A(NN), B(N), B1(N), X(N), Y(N), A1(NZ),
+C     AFLAG(11)
+C           INTEGER SNR(NN), RNR(NN1), HA(IHA,13), SN(NZ),
+C     IFLAG(12)
+C           INTEGER N, NN, NN1, NZ, IHA, IFAIL
+C
+C     This  subroutine  can  be  used on many other computers
+C     also. However, some alterations may  be  needed  and/or
+C     may ensure greater efficiency of the performance of the
+C     subroutine.   For  example,  it  will  be   much   more
+C     efficient  to  declare  arrays  SNR,  RNR,  SN  and (if
+C     possible)  HA  as  INTEGER*2   arrays   on   some   IBM
+C     instalations.  Note too that the subroutine accumulates
+C     some inner products in double precision and then rounds
+C     them  to  single  precision.  Therefore  if  the use of
+C     double precision is very expensive (in comparison  with
+C     the  use  of  single  precision) on the computer at the
+C     user's disposal then it will not be  efficient  to  use
+C     subroutine  Y12MF. The single precision versions of the
+C     other subroutines should be used in this situation.
+C
+C     3.  Method
+C
+C     Consider the system Ax = b, where matrix A  is  sparse.
+C     The  non-zero  elements of matrix A are ordered by rows
+C     (subroutine Y12MB is called to perform this  operation)
+C     and  then  factorized  into two triangular matrices, an
+C     upper triangular matrix U and a unit  lower  triangular
+C     matrix  L  (subroutine Y12MC is called to calculate the
+C     non-zero elements of U amd L). The factorized system is
+C     solved  (subroutine  Y12MD  is  called  to calculate an
+C     approximation x1 to  the  solution  vector  x)  and  an
+C     attempt  to  improve  the  first  solution by iterative
+C     refinement is carried out in the following way:
+C
+C                      r(k-1) = b - A*x(k-1)
+C
+C                d(k-1) = Q*U**(-1)*L(-1)*P*r(k-1)
+C
+C                    x(k)    = X(k-1) + d(k-1)
+C
+C                     where k = 2, 3, ..., p.
+C
+C     Normally, this process will improve the accuracy of the
+C     first solution x1. If the process is not convergent  or
+C     the convegence is very slow, then information about the
+C     trouble can be  obtained  by  checking  the  parameters
+C     AFLAG(10)  (the  max-norm  of  the last residual vector
+C     r(p-1) computed by Y12MF) and AFLAG(9) (the max-norm of
+C     the last correction vector, d(p-1), computed by Y12MF).
+C     We advise the user to check carefully these  parameters
+C     on exit. Large values of these parameters show that the
+C     computed solution is not very accurate.
+C
+C     4.  Parameters of the subroutine
+C
+C     N     - INTEGER.  On entry N must contain the number of
+C             equations in the  system   Ax=b.  Unchanged  on
+C             exit.
+C
+C     A     - REAL  array  of  length  NN (see below). If the
+C             coefficient matrix must be factorized (in  this
+C             case  IFLAG(5) = 2), then on entry the first NZ
+C             locations of array A must contain the  non-zero
+C             elements of matrix A, the order of the elements
+C             can  be  arbitrary.  If  the  factorization  of
+C             matrix  A  is available (i.e. a system with the
+C             same matrix has been solved in a previous  call
+C             of  Y12MF)  then  on entry array A must contain
+C             the non-zero elements of U and L (IFLAG(5) =  3
+C             should  also  be  assigned  in  this case). The
+C             content of array A is modified  by  Y12MF  when
+C             the  coefficient  matrix  has to be factorized.
+C             Unchanged on exit when an old LU  factorization
+C             is  used.  The content of array A should not be
+C             altered between successive calls of  Y12MF  for
+C             the solution of systems with the same matrices.
+C
+C     SNR   - INTEGER  array of the length NN (see below). If
+C             the coefficient matrix  A  must  be  factorized
+C             then on entry the first NZ positions of array A
+C             must contain the column numbers of the non-zero
+C             elements  of  matrix A (ordered as the non-zero
+C             elements in array A). The content of array  SNR
+C             is  modified  by  the  subroutine Y12MF in this
+C             case. If the LU factorization of  matrix  A  is
+C             available  then on entry array SNR must contain
+C             the column numbers of the non-zero elements  of
+C             U  and L. The content of array SNR is unchanged
+C             on exit in this case. The content of array  SNR
+C             should  not be altered between successive calls
+C             of Y12MF for the solution of systems  with  the
+C             same matrices.
+C
+C     NN    - INTEGER. On entry NN must contain the length of
+C             array A and  SNR.  Restriction:  NN  .ge.  2*Z.
+C             Recommended  value:  2*Z   .le.  NN  .le.   3*Z
+C             Unchanged on exit.
+C
+C     RNR   - INTEGER array of length NN1 (see below). If the
+C             coefficient  matrix  A must be factorized, then
+C             on entry the first NZ positions  of  array  RNR
+C             must  contain  the  row numbers of the non-zero
+C             elements of matrix A (ordered as  the  non-zero
+C             elements  in array A). The content of array RNR
+C             is modified by the subroutine in this case.  If
+C             the  LU  factorization of matrix A is available
+C             then the content of array RNR is ignored by the
+C             subroutine Y12MF.
+C
+C     NN1   - INTEGER.  On  entry NN1 must contain the length
+C             of the array RNR.   Restriction:  NN1  .ge.  Z.
+C             Recommended  value:  1.5*Z  .le.  NN1 .le. 2*Z.
+C             Unchanged on exit.
+C
+C     A1    - REAL array  of  length  NZ  (see  below).   The
+C             content  of  array A1 is modified by subroutine
+C             Y12MF  when  the  LU   factorization   of   the
+C             coefficient   matrix   A   is   not  available.
+C             Subroutine Y12MF copies the first NZ  locations
+C             of  array  A  into array A1 in this case (after
+C             the internal call of  Y12MB;  this  means  that
+C             array  A1 contains the non-zero elements of the
+C             coefficient matrix A ordered by rows on  exit).
+C             If  the  LU  factorization  of  the coefficient
+C             matrix A is available then the content of array
+C             A1  is unchanged on exit.  The content of array
+C             A1 should  not  be  altered  between  successve
+C             calls  of Y12MF in the solution of systems with
+C             the same matrices.
+C
+C     SN    - INTEGER array of length  NZ  (see  below).  The
+C             content  of  array SN is modified by subroutine
+C             Y12MF  when  the  LU   factorization   of   the
+C             coefficient   matrix   A   is   not  available.
+C             Subroutine Y12MF copies the first NZ  locations
+C             of  array SNR into array SN in this case (after
+C             the internal call of  Y12MB;  this  means  that
+C             array  SN  contains  the  column numbers of the
+C             non-zero elements ordered by rows on exit).  If
+C             the  LU  factorization  is  available  then the
+C             content of array SN is unchanged on  exit.  The
+C             content  of  array  SN  should  not  be altered
+C             between  successive  calls  of  Y12MF  in   the
+C             solution of systems with the same matrices.
+C
+C     NZ    - INTEGER. On entry NZ must contain the number of
+C             non-zero elements in the coefficient  matrix  A
+C             of the system Ax = b. Unchanged on exit.
+C
+C     HA    - INTEGER  two-dimensional  array.  The length of
+C             the first dimension of HA is IHA  (see  below).
+C             The length of the second dimension of HA is 13.
+C             If a new decomposition  should  be  calculated,
+C             then  subroutine Y12MF modifies the contents of
+C             HA. The contents on exit of some of the columns
+C             of  array HA are described in the documentation
+C             of  subroutine  Y12MC.  The  last  two  columns
+C             (12'th  and  13'th) contain on exit information
+C             about the row starts and the row  ends  in  the
+C             original matrix (after the non-zero elements of
+C             this matrix have been ordered  by  rows);  this
+C             means  that  the  non-zero elements in row i of
+C             the coefficient matrix A  are  located  between
+C             positions  HA(i,12)  and  HA(i,13)  in array A1
+C             (the column numbers of the non-zero elements in
+C             row   i  are  also  located  between  positions
+C             HA(i,12) and HA(i,13)  in  array  SN).  If  the
+C             matrix  of the system has the same structure as
+C             the matrix of a system which is already solved,
+C             then  subroutine Y12MF will use the information
+C             stored in columns 7, 8, 9 and 10 of  HA  during
+C             the  previous  call (therefore this information
+C             should not be altered). If the LU decomposition
+C             of  the  coefficient  matrix is available, then
+C             the contents of array HA are unchanged on exit.
+C             The  contents  of columns 1, 2, 3, 7, 8, 12 and
+C             13 of array HA should not  be  altered  between
+C             successive  calls  of  Y12MF in the solution of
+C             systems with the same matrix.
+C
+C     IHA   - INTEGER. On entry IHA must contain  the  length
+C             of   the   first   dimension   of   array   HA.
+C             Restriction: IHA .ge. N. Unchanged on exit.
+C
+C     B     - REAL array of length N. On entry the right-hand
+C             side vector b of  the  system   Ax=b   must  be
+C             stored  in  array  B. The content of array B is
+C             modified by subroutine  Y12MF.   On  successful
+C             exit  the  components  of  the  last correction
+C             vector d(p-1) are stored in array B.
+C
+C     B1 -    REAL array of length N. The content of array B1
+C             is modified by subroutine Y12MF. The right hand
+C             side vector of the system Ax = b is  stored  in
+C             array B1 on successful exit.
+C
+C     X -     REAL  array of length N. The content of array X
+C             is  modified  by  the  subroutine   Y12MF.   On
+C             successful  exit  the corrected solution vector
+C             is stored in array X.
+C
+C     Y -     REAL array of length N. The content of array  Y
+C             is  modified by subroutine Y12MF. On successful
+C             exit array Y will contain the pivotal  elements
+C             (the diagonal elements of matrix U). This means
+C             that a small element  (or  small  elements)  in
+C             array   Y   on   exit  may  indicate  numerical
+C             singularity of the coefficient matrix  A.  Note
+C             that  the smallest in absolute value element in
+C             array Y is also stored in AFLAG(8), see  below.
+C
+C     AFLAG - REAL array of length 11.  The  content  of  the
+C             array can be described as follows:
+C
+C             AFLAG(1) -  Stability factor. An element can be
+C                         chosen  as  pivotal element only if
+C                         this element is larger (in absolute
+C                         value)  than  the absolute value of
+C                         the  largest  element  in  its  row
+C                         divided   by   AFLAG(1).  On  entry
+C                         AFLAG(1)  should  contain  a   real
+C                         number  larger than 1.0. If this is
+C                         not so  then  the  subroutine  sets
+C                         AFLAG(1)   =   1.0005.  Recommended
+C                         values of AFLAG(1) ranging from 4.0
+C                         to  16.0.   Unchanged on exit (when
+C                         correctly initialized).
+C
+C             AFLAG(2) -  Drop-tolerance. An element which in
+C                         the  process  of  the  computations
+C                         becomes smaller(in absolute  value)
+C                         than  the drop-tolerance is removed
+C                         from  array  A  (and  its  row  and
+C                         column  numbers  are  removed  from
+C                         arrays RNR  and  SNR).  Recommended
+C                         value:   on entry  AFLAG(2)  should
+C                         be in the interval
+C                         (a*1.0E-4,a*1.0E-1)  where a is the
+C                         magnitude of the elements.  If  the
+C                         magnitude    a    of  the  non-zero
+C                         elements is  not  known,  then  the
+C                         user  should intialize the required
+C                         drop-tolerance multiplied  by   -1.
+C                         Let a(i) be the maximal element (in
+C                         absolute value) in row i (  i=1(1)N
+C                         ).   Let  a  be  the minimal number
+C                         among all a(i). If a negative value
+C                         of   AFLAG(2)   is   assigned,  the
+C                         subroutine computes  a  and uses  a
+C                         drop-tolerance       equal       to
+C                         -AFLAG(2)*a.     In    the    above
+C                         considerations  it  is assumed that
+C                         the coefficient matrix A is not too
+C                         badly  scaled.  If  this  is not so
+C                         then perform  row  scaling  of  the
+C                         coefficient   matrix  so  that  the
+C                         largest elements in the rows are of
+C                         magnitude  1 and choose AFLAG(2) in
+C                         the    interval    (1.0E-5,1.0E-3).
+C                         Unchanged on exit.
+C
+C             AFLAG(3) -  The   subroutine   will   stop  the
+C                         computation when the growth  factor
+C                         (parameter   AFLAG(5),  see  below)
+C                         becomes larger  than  AFLAG(3).  On
+C                         entry  AFLAG(3)  should  contain  a
+C                         large    positive    number.     If
+C                         AFLAG(3)<1.0E5  then the subroutine
+C                         sets  AFLAG(3)=1.0E5.   Recommended
+C                         value   AFLAG(3)=1.0E16.  Unchanged
+C                         on     exit     (when     correctly
+C                         initialized).
+C
+C             AFLAG(4) -  The   subroutine   will   stop  the
+C                         computation when the absolute value
+C                         of  a  current  pivotal  element is
+C                         smaller   than    AFLAG(4)*AFLAG(6)
+C                         (parameter  AFLAG(6)  is  described
+C                         below).  On  entry  AFLAG(4)   must
+C                         contain    a   small   non-negative
+C                         number.  If  AFLAG(4)<0   then  the
+C                         subroutine sets
+C                         AFLAG(4)=-AFLAG(4).     Recommended
+C                         value   AFLAG(4)=1.0E-12. Unchanged
+C                         on     exit     (when     correctly
+C                         intialized).
+C
+C             AFLAG(5) -  Growth   factor.   The  content  of
+C                         parameter AFLAG(5) is  modified  by
+C                         subroutine  Y12MF. After each stage
+C                         of   the    Gaussian    elimination
+C                         subroutine  Y12MF  sets  AFLAG(5) =
+C                         AFLAG(7)/AFLAG(6)       (parameters
+C                         AFLAG(6) and AFLAG(7) are described
+C                         below). On  exit  large  values  of
+C                         parameters  AFLAG(5)  indicate that
+C                         an   appreciable   error   in   the
+C                         computed  solution  is possible. In
+C                         an extreme case, where
+C                         AFLAG(5)>AFLAG(3),  the  subroutine
+C                         will terminate the computations  in
+C                         an attempt to prevent overflow.
+C
+C             AFLAG(6) -  On  exit  AFLAG(6)  is equal to the
+C                         largest element in the  coefficient
+C                         matrix  A of the system  Ax=b  (set
+C                         by subroutine Y12MB). Unchanged  on
+C                         exit.
+C
+C             AFLAG(7) -  On  exit  the  largest (in absolute
+C                         value)  element  found  during  any
+C                         stage  of  the  elimination will be
+C                         stored in AFLAG(7). The content  of
+C                         parameter  AFLAG(7)  is modified by
+C                         subroutine Y12MF.
+C
+C             AFLAG(8) -  On exit the  minimal  (in  absolute
+C                         value)   pivotal  element  will  be
+C                         stored in AFLAG(8). Small values of
+C                         AFLAG(8)     indicate     numerical
+C                         singularity  of   the   coefficient
+C                         matrix  A.  We  advise  the user to
+C                         check this parameter on  exit  from
+C                         the calculation very carefully. The
+C                         content of  parameter  AFLAG(8)  is
+C                         modified by the subroutine Y12MF.
+C
+C             AFLAG(9) -  The content of AFLAG(9) is modified
+C                         by  the   subroutine   Y12MF.   The
+C                         max-norm  of  the  last  correction
+C                         vector d(p-1)  will  be  stored  in
+C                         AFLAG(9)  on  successful  exit.  We
+C                         advise the user to check  carefully
+C                         this parameter.
+C
+C             AFLAG(10) - The   content   of   AFLAG(10)   is
+C                         modified by the  subroutine  Y12MF.
+C                         The  max-norm  of the last residual
+C                         vector r(p-1)  will  be  stored  in
+C                         AFLAG(10)  on  successful  exit. We
+C                         advise the user to check  carefully
+C                         this parameter.
+C
+C             AFLAG(11) - The   content   of   AFLAG(11)   is
+C                         modified by the  subroutine  Y12MF.
+C                         On  exit AFLAG(11) will contain the
+C                         max-norm of the corrected  solution
+C                         vector.  If  the value of AFLAG(11)
+C                         is  not  to  close  to  zero   then
+C                         AFLAG(9)/AFLAG(11)   will  normally
+C                         give an excellent evaluation of the
+C                         relative   error  in  the  solution
+C                         vector.
+C
+C     IFLAG - INTEGER array of length 12. The content of this
+C             array can be described as follows:
+C
+C             IFLAG(1) - This  parameter  is  used  as a work
+C                        space by subroutine Y12MF.
+C
+C             IFLAG(2) - On entry IFLAG(2) must contain  some
+C                        positive  integer smaller than N. We
+C                        recommend  IFLAG(2)   .le.   3.   If
+C                        IFLAG(3)  = 0 then this parameter is
+C                        ignored  by  subroutine  Y12MF.   If
+C                        IFLAG((2)  .ge.  0  then the pivotal
+C                        search   at   any   stage   of   the
+C                        elimination (except possibly some of
+C                        the last stages) is carried  out  in
+C                        the  IFLAG(2)  rows which have least
+C                        number   of    non-zero    elements.
+C                        Unchanged on exit.
+C
+C             IFLAG(3) - On  entry IFLAG(3) must contain 0, 1
+C                        or 2.  For  general  pivotal  search
+C                        IFLAG(3)  should  be set equal to 1.
+C                        If IFLAG(3) = 2 then  only  diagonal
+C                        elements of the coefficient matrix A
+C                        can be selected as pivotal elements.
+C                        If  IFLAG(3)  =  0 then the Gaussian
+C                        elimination  will  be  carried   out
+C                        without any pivoting.  IFLAG(3)=0 or
+C                        IFLAG(3)=2 (i.e. one of the  special
+C                        pivotal strategies is to be applied)
+C                        should  be   used   very   carefully
+C                        because    the   error   diagnostics
+C                        algorithm may not trace  all  errors
+C                        in this case.  Unchanged on exit.
+C
+C             IFLAG(4) - On  entry IFLAG(4) must contain 0, 1
+C                        or 2.  IFLAG(4)  =  0  is  the  best
+C                        choice  when  (i) only one system is
+C                        to be solved, (ii) the first  system
+C                        of  a  sequence  of systems with the
+C                        same  matrix  (Ax   =   b1,   Ax   =
+C                        b2,......Ax  =  bp) is to be solved,
+C                        (iii) when any system in a  sequence
+C                        of  systems  whose  matrices  are of
+C                        different structure is to be solved.
+C                        IFLAG(4) = 1 is the best choice when
+C                        the first system of  a  sequence  of
+C                        systems  whose  matrices  are of the
+C                        same structure is to be  solved.  In
+C                        this  case  IFLAG(4) = 2 can be used
+C                        in the solution of any system  after
+C                        the first one.  Unchanged on exit.
+C
+C             IFLAG(5) - If   the  LU  factorization  of  the
+C                        coefficient matrix is not available,
+C                        then  IFLAG(5)  must  be set to 2 on
+C                        entry. If the  LU  factorization  of
+C                        the coefficient matrix is available,
+C                        then IFLAG(5) must be set  to  3  on
+C                        entry.  Unchanged on exit.
+C
+C             IFLAG(6) - On  successful exit IFLAG(6) will be
+C                        equal to  the  number  of  "garbage"
+C                        collections in the row ordered list.
+C                        If IFLAG(6)  is  large  then  it  is
+C                        better  to  choose a larger value of
+C                        NN with  next  calls  of  subroutine
+C                        Y12MF   with  the  same  or  similar
+C                        matrix  A.  This  will  lead  to   a
+C                        reduction  in  the  computing  time.
+C                        The content of IFLAG(6) is  modified
+C                        by the subroutine Y12MF.
+C
+C             IFLAG(7) - On  successful exit IFLAG(7) will be
+C                        equal to  the  number  of  "garbage"
+C                        collections  in  the  column ordered
+C                        list.  If IFLAG(7) is large then  it
+C                        is  better  to choose a larger value
+C                        of  NN1  in  the   next   calls   of
+C                        subroutine  Y12MF  with  the same or
+C                        similar matrix A. This will lead  to
+C                        a  reduction  of the computing time.
+C                        The content of IFLAG(7) is  modified
+C                        by subroutine Y12MF.
+C
+C             IFLAG(8) - On  successful exit IFLAG(8) will be
+C                        equal  to  the  maximal  number   of
+C                        non-zero elements kept in array A at
+C                        any   stage    of    the    Gaussian
+C                        elimination.  If  IFLAG(8)  is  much
+C                        smaller than NN (or  NN1)  then  the
+C                        length  NN  (or  NN1)  can be chosen
+C                        smaller in next calls of  subroutine
+C                        Y12MF   with  the  same  or  similar
+C                        matrix  A.  This  will  lead  to   a
+C                        reduction of the storage needed. The
+C                        content of IFLAG(8) is  modified  by
+C                        subroutine Y12MF.
+C
+C             IFLAG(9) - The  minimal  length  NN1  such that
+C                        Y12MF  can   solve   systems   whose
+C                        matrices  are  of the same structure
+C                        without "garbage" collections in the
+C                        column ordered list and "movings" of
+C                        columns at the  end  of  the  column
+C                        ordered  list  is stored in IFLAG(9)
+C                        after  the  solution  of  the  first
+C                        system   in   the   sequence   (with
+C                        IFLAG(4)=1).    The    content    of
+C                        IFLAG(9)  is  modified by subroutine
+C                        Y12MF when IFLAG(4) = 1 and  ignored
+C                        otherwise.
+C
+C             IFLAG(10)  The  minimal  length  NN  such  that
+C                        subroutine Y12MF can  solve  systems
+C                        whose   matrices  are  of  the  same
+C                        structure     without      "garbage"
+C                        collections  in the row ordered list
+C                        and "movings" of rows to the end  of
+C                        the  row  ordered  list is stored in
+C                        IFLAG(10) after the solution of  the
+C                        first  system  in the sequence (with
+C                        IFLAG(4)  =  1).  The   content   of
+C                        IFLAG(10)   is   modified   by   the
+C                        subroutine Y12MF when IFLAG(4)  =  1
+C                        and ignored otherwise.
+C
+C             IFLAG(11)  The   maximum   allowed   number  of
+C                        iterations  must  be  contained   in
+C                        IFLAG(11)  on  entry.   Restriction:
+C                        IFLAG(11)>1.   Recommended  value  :
+C                        IFLAG(11)< 33.  Unchanged on exit.
+C
+C             IFLAG(12)  The content of IFLAG(12) is modified
+C                        by the subroutine  Y12MF.   On  exit
+C                        the  number  of  iterations actually
+C                        performed   will   be   stored    in
+C                        IFLAG(12).
+C
+C     IFAIL - Error  diagnostic  parameter.  The  content  of
+C             parameter   IFAIL  is  modified  by  subroutine
+C             Y12MF.  On exit IFAIL = 0 if the subroutine has
+C             not  detected  any  error.  Positive  values of
+C             IFAIL on exit show that  some  error  has  been
+C             detected  by  the subroutine. Many of the error
+C             diagnostics are common for all  subroutines  in
+C             the  package.   Therefore the error diagnostics
+C             are listed in a separate section, Section 7, of
+C             this  book.  We  advise  the  user to check the
+C             value of this parameter on exit.
+C
+C     5.  Error diagnostics
+C
+C     Error  diagnostics  are  given  by  positive  values of
+C     parameter IFAIL (see above).  We  advise  the  user  to
+C     check  carefully  the  value of this parameter on exit.
+C     The error messages are listed in Section 7.
+C
+C     6.  Auxiliary subroutines
+C
+C     Y12MF calls three other subroutines: Y12MB,  Y12MC  and
+C     Y12MD.
+C
+C     7.  Timing
+C
+C     The  time  taken  depends  on  the  order of the matrix
+C     (parameter N), the number of the non-zero  elements  in
+C     the matrix (parameter Z), the magnitude of the non-zero
+C     elements and their distribution in the matrix.
+C
+C     8.  Storage
+C
+C     There are no internally declared arrays.
+C
+C     9.  Accuracy
+C
+C     Normally the accuracy achieved can  be  estimated  very
+C     well  by  means  of  AFLAG(9)  and  AFLAG(10).  Further
+C     information  about  the  accuracy  can   sometimes   be
+C     obtained  by  inspection of the growth factor AFLAG(5),
+C     and the smallest pivotal element  (in  absolute  value)
+C     stored in AFLAG(8).
+C
+C     10.  Some remarks
+C
+C     Remark 1 Following the recommendations given in Section
+C              1.3.6 the user can write a subroutine (similar
+C              to the subroutine Y12MA) where the recommended
+C              values of the parameters AFLAG(1) to AFLAG(4),
+C              IFLAG(2)  to  IFLAG(5)   and   IFLAG(11)   are
+C              initialized.  If this is done then only N, NN,
+C              NN1, IHA, A, SNR, RNR and B should be assigned
+C              before the call of this new subroutine.
+C
+C     Remark 2 The  information  stored in some of the arrays
+C              should not be altered between successive calls
+C              of  subroutine  Y12MF  (see  more  details  in
+C              Section 1.3.6).
+C                        =================
+C                        Error diagnostics
+C                        =================
+C
+C     IFAIL is the error diagnostics parameter.  On exit from
+C     each  subroutine  IFAIL  =  0  if  no  error  has  been
+C     detected. IFAIL > 0 indicates that some error has  been
+C     detected  and  the  computations  have  been terminated
+C     immediately after  the  detection  of  the  error.  The
+C     errors  corresponding  to the different positive values
+C     of IFAIL are listed below.
+C
+C     IFAIL = 1    The    coefficient   matrix   A   is   not
+C                  factorized, i.e. the  call  of  subroutine
+C                  Y12MD  was not preceded by a call of Y12MC
+C                  during the solution of   Ax=b   or  during
+C                  the  solution  of  the  first  system in a
+C                  sequence ( Ax1 = b1 , Ax2 = b2,.....,Axp =
+C                  bp)  of  systems with the same coefficient
+C                  matrix. This will work in all  cases  only
+C                  if  the  user  sets IFLAG(1) .ge. 0 before
+C                  the call of package Y12M (i.e. before  the
+C                  first   call   of  a  subroutine  of  this
+C                  package).
+C
+C     IFAIL = 2    The coefficient matrix A is  not  ordered,
+C                  i.e.  the call of subroutine Y12MC was not
+C                  preceded by a call  of  Y12MB.  This  will
+C                  work  in  all  cases only if the user sets
+C                  IFLAG(1) .ge. 0 before the call of package
+C                  Y12M  (i.e.  before  the  first  call of a
+C                  subroutine of this package).
+C
+C     IFAIL = 3    A pivotal element abs(a(i,i;j)) < AFLAG(4)
+C                  *  AFLAG(6) is selected.  When AFLAG(4) is
+C                  sufficiently small this is  an  indication
+C                  that the coefficient matrix is numerically
+C                  singular.
+C
+C     IFAIL = 4    AFLAG(5), the  growth  factor,  is  larger
+C                  than    AFLAG(3).    When    AFLAG(3)   is
+C                  sufficiently large this indicates that the
+C                  elements  of the coefficient matrix A grow
+C                  so quickly during the  factorization  that
+C                  the continuation of the computation is not
+C                  justified.  The  choice   of   a   smaller
+C                  stability   factor,   AFLAG(1),  may  give
+C                  better results in this case.
+C
+C     IFAIL = 5    The length NN of arrays A and SNR  is  not
+C                  sufficient.   Larger  values  of  NN  (and
+C                  possibly of NN1) should be used.
+C
+C     IFAIL = 6    The  length  NN1  of  array  RNR  is   not
+C                  sufficient.   Larger  values  of  NN1 (and
+C                  possibly of NN) should be used.
+C
+C     IFAIL = 7    A row without  non-zero  elements  in  its
+C                  active    part   is   found   during   the
+C                  decomposition.  If   the   drop-tolerance,
+C                  AFLAG(2),   is  sufficiently  small,  then
+C                  IFAIL = 7 indicates  that  the  matrix  is
+C                  numerically  singular. If a large value of
+C                  the drop-tolerance AFLAG(2) is used and if
+C                  IFAIL = 7  on exit, this is not certain. A
+C                  run  with  a  smaller  value  of  AFLAG(2)
+C                  and/or  a  careful check of the parameters
+C                  AFLAG(8) and AFLAG(5)  is  recommended  in
+C                  the latter case.
+C
+C     IFAIL = 8    A  column without non-zero elements in its
+C                  active   part   is   found   during    the
+C                  decomposition.   If   the  drop-tolerance,
+C                  AFLAG(2),  is  sufficiently  small,   then
+C                  IFAIL  =  8  indicates  that the matrix is
+C                  numerically singular. If a large value  of
+C                  the drop-tolerance AFLAG(2) is used and if
+C                  IFAIL = 8  on exit, this is not certain. A
+C                  run  with  a  smaller  value  of  AFLAG(2)
+C                  and/or a careful check of  the  parameters
+C                  AFLAG(8)  and  AFLAG(5)  is recommended in
+C                  the latter case.
+C
+C     IFAIL = 9    A pivotal element  is  missing.  This  may
+C                  occur  if  AFLAG(2)  >  0 and IFLAG(4) = 2
+C                  (i.e. some system after the first one in a
+C                  sequence   of   systems   with   the  same
+C                  structure is solved using a positive value
+C                  for  the drop-tolerance). The value of the
+C                  drop-tolerance   AFLAG(2),    should    be
+C                  decreased  and  the  coefficient matrix of
+C                  the system refactorized.  This  error  may
+C                  also occur when one of the special pivotal
+C                  strategies (IFLAG(3)=0 or  IFLAG(3)=2)  is
+C                  used  and  the  matrix is not suitable for
+C                  such a strategy.
+C
+C     IFAIL = 10   Subroutine Y12MF is called with IFLAG(5) =
+C                  1  (i.e.  with  a  request  to  remove the
+C                  non-zero elements of the lower  triangular
+C                  matrix    L).     IFLAG(5)=2     must   be
+C                  initialized instead of IFLAG(5)=1.
+C
+C     IFAIL = 11   The coefficient matrix A contains at least
+C                  two  elements  in the same position (i,j).
+C                  The  input   data   should   be   examined
+C                  carefully in this case.
+C
+C     IFAIL = 12   The number of equations in the system Ax=b
+C                  is smaller than 2 (i.e.  N<2).  The  value
+C                  of N should be checked.
+C
+C     IFAIL = 13   The  number  of  non-zero  elements of the
+C                  coefficient matrix is  non-positive  (i.e.
+C                  Z.le.0  ).   The  value of the parameter Z
+C                  (renamed NZ in Y12MF) should be checked.
+C
+C     IFAIL = 14   The number of  non-zero  elements  in  the
+C                  coefficient  matrix  is  smaller  than the
+C                  number of equations (i.e. Z  <  N  ).   If
+C                  there  is no mistake (i.e. if parameter Z,
+C                  renamed NZ in Y12MF, is correctly assigned
+C                  on  entry)  then the coefficient matrix is
+C                  structurally singular in this case.
+C
+C     IFAIL = 15   The length IHA of the first  dimension  of
+C                  array  HA  is  smaller  than  N.  IHA.ge.N
+C                  should be assigned.
+C
+C     IFAIL = 16   The value of  parameter  IFLAG(4)  is  not
+C                  assigned  correctly.  IFLAG(4)  should  be
+C                  equal to 0, 1 or 2. See  more  details  in
+C                  the description of this parameter.
+C
+C     IFAIL = 17   A  row  without non-zero elements has been
+C                  found in the coefficient matrix A  of  the
+C                  system  before the Gaussian elimination is
+C                  initiated.  Matrix   A   is   structurally
+C                  singular.
+C
+C     IFAIL = 18   A  column  without  non-zero  elements has
+C                  been found in the coefficient matrix A  of
+C                  the system before the Gaussian elimination
+C                  is initiated.  Matrix  A  is  structurally
+C                  singular.
+C
+C     IFAIL = 19   Parameter  IFLAG(2) is smaller than 1. The
+C                  value of IFLAG(2)  should  be  a  positive
+C                  integer (IFLAG(2) = 3 is recommended).
+C
+C     IFAIL = 20   Parameter   IFLAG(3)   is  out  of  range.
+C                  IFLAG(3) should be equal to 0, 1 or 2.
+C
+C     IFAIL = 21   Parameter  IFLAG(5)  is  out   of   range.
+C                  IFLAG(5) should be equal to 1, 2 or 3 (but
+C                  when IFLAG(5) = 3 Y12MB and  Y12MC  should
+C                  not  be  called;  see also the message for
+C                  IFAIL = 22 below).
+C
+C     IFAIL = 22   Either  subroutine  Y12MB  or   subroutine
+C                  Y12MC is called with IFLAG(5) = 3. Each of
+C                  these subroutines should  be  called  with
+C                  IFLAG(5) equal to 1 or 2.
+C
+C     IFAIL = 23   The    number    of   allowed   iterations
+C                  (parameter IFLAG(11) when Y12MF  is  used)
+C                  is  smaller  than  2.   IFLAG(11)  .ge.  2
+C                  should be assigned.
+C
+C     IFAIL = 24   At least one element whose  column  number
+C                  is  either larger than N or smaller than 1
+C                  is found.
+C
+C     IFAIL = 25   At least one element whose row  number  is
+C                  either  larger than N or smaller than 1 is
+C                  found.
+C                           ==========
+C                           References
+C                           ==========
+C        1.  Bjorck, A. -
+C                  "Methods for Sparse  Linear  Least-Squares
+C                  Problems".
+C                  In: "Sparse Matrix Computations"
+C                  (J.Bunch and D.Rose, eds.), pp.177-199.
+C                  Academic Press, New York, 1976.
+C
+C        2.  Clasen, R.J. -
+C                  "Techniques  for  Automatic  Tolerance  in
+C                  Linear Programming",
+C                  Comm. ACM 9, pp. 802-803, 1966.
+C
+C        3.  Cline, A.K.,  Moler,  C.B.,  Stewart,  G.W.  and
+C            Wilkinson, J.H. -
+C                  "An estimate for the condition number of a
+C                  matrix",
+C                  SIAM J. Numer. Anal. 16, 368-375, 1979.
+C
+C        4.  Dongarra,  J.J.,  Bunch,  J.R.,  Moler, C.B. and
+C            Stewart, G.W. -
+C                  "LINPACK User's Guide",
+C                  SIAM, Philadelphia, 1979.
+C
+C        5.  Duff, I.S. -
+C                  "MA28 - a Set of FORTRAN Subroutines
+C                  for Sparse Unsymmetric Matrices",
+C                  Report    No.   R8730,   A.E.R.E.,Harwell,
+C                  England, 1977.
+C
+C        6.  Duff, I.S. and Reid, J.K. -
+C                  "Some  Design  Features of a Sparse Matrix
+C                  Code",
+C                  ACM Trans. Math. Software  5,  pp.  18-35,
+C                  1979.
+C
+C        7.  Forsythe, G.E., Malcolm, M.A., and Moler, C.B. -
+C                  "Computer   Methods    for    Mathematical
+C                  Computations",
+C                  Prentice-Hall,   Englewood  Cliffs,  N.J.,
+C                  1977.
+C
+C        8.  Forsythe, G.E. and Moler, C.B. -
+C                  "Computer  Solution  of  Linear  Algebraic
+C                  Equations",
+C                  Prentice-Hall,  Englewood  Cliffs,   N.J.,
+C                  1967.
+C
+C        9.  Gustavson, F.G. -
+C                  "Some Basic Techniques for Solving Sparse
+C                  Systems of Linear Equations".
+C                  In:    "Sparse    Matrices    and    Their
+C                  Applications",
+C                  (D.J.  Rose and R.A. Willoughby, eds.), pp
+C                  41-52,
+C                  Plenum Press, New York, 1972.
+C
+C       10.  Gustavson, F.G. -
+C                  "Two  Fast Algorithms for Sparse Matrices:
+C                  Multiplication and Permuted
+C                  Transposition",
+C                  ACM Trans. Math. Software, 4, pp. 250-269,
+C                  1978.
+C
+C       11.  Houbak, N. and Thomsen, P.G. -
+C                  "SPARKS  -  a   FORTRAN   Subroutine   for
+C                  Solution
+C                  of  Large  Systems  of  Stiff  ODE's  with
+C                  Sparse Jacobians",
+C                  Report  79-02,  Institute  for   Numerical
+C                  Analysis,
+C                  Technical  University  of Denmark, Lyngby,
+C                  Denmark, 1979.
+C
+C       12.  Moler, C.B. -
+C                  "Three  Research  Problems  in   Numerical
+C                  Linear Algebra".
+C                  In:   "Proceedings   of  the  Symposia  in
+C                  Applied Mathematics"
+C                  (G.H. Golub and J. Oliger, eds.), Vol. 22,
+C                  pp. 1-18,
+C                  American Mathematical Society,
+C                  Providence, Rhode Island, 1978.
+C
+C       13.  NAG Library -
+C                  Fortran Manual, Mark 7, Vol. 3, 4,
+C                  Numerical Algorithms Group,
+C                  7 Banbury Road,  Oxford  OX2  6NN,  United
+C                  Kingdom.
+C
+C       14.  Reid, J.K. -
+C                  "A  Note  on  the  Stability  of  Gaussian
+C                  Elimination",
+C                  J.  Inst.  Math.  Appl.,  8,  pp. 374-375,
+C                  1971.
+C
+C       15.  Reid, J.K. -
+C                  "Fortran  Subroutines  for Handling Sparse
+C                  Linear Programming Bases",
+C                  Report R8269, A.E.R.E., Harwell,  England,
+C                  1976.
+C
+C       16.  Schaumburg, K. and Wasniewski, J. -
+C                  "Use   of   a   Semiexplicit   Runge-Kutta
+C                  Integration  Algorithm  in a Spectroscopic
+C                  Problem"
+C                  Computers  and  Chemistry  2,  pp.  19-25,
+C                  1978.
+C
+C       17.  Schaumburg, K., Wasniewski, J. and Zlatev, Z. -
+C                  "Solution   of    Ordinary    Differential
+C                  Equations.   Development of a Semiexplicit
+C                  Runge-Kutta Algorithm and Application to a
+C                  Spectroscopic Problem",
+C                  Computers  and  Chemistry,  3,  pp. 57-63,
+C                  1979.
+C
+C       18.  Schaumburg, K., Wasniewski, J. and Zlatev, Z. -
+C                  "The Use of Sparse Matrix Technique in the
+C                  Numerical Integration of Stiff Systems  of
+C                  Linear Ordinary Differential Equations",
+C                  Computers  and  Chemistry,  4,  pp.  1-12,
+C                  1980.
+C
+C       19.  Stewart, G.W. -
+C                  "Introduction to Matrix Computations",
+C                  Academic Press, New York, 1973.
+C
+C       20.  Tewarson, R.P. -
+C                  "Sparse Matrices",
+C                  Academic Press, New York, 1973.
+C
+C       21.  Thomsen, P.G. -
+C                  "Numerical  Solution of Large Systems with
+C                  Sparse Jacobians".
+C                  In: "Working Papers for  the  1979  SIGNUM
+C                  Meeting on Numerical Ordinary Differential
+C                  Equations" (R.D. Skeel, ed.),
+C                  Computer Science Department,
+C                  University  of  Illinois   at   Urbana   -
+C                  Champaign, Urbana, Illinois, 1979.
+C
+C       22.  Wasniewski, J., Zlatev, Z. and Schaumburg, K. -
+C                  "A Multibanking  Option  of  an  Iterative
+C                  Refinement Subroutine".
+C                  In:  "Conference Proceedings and Technical
+C                  Papers",
+C                  Spring   Conference   of   Univac    Users
+C                  Assotiation/Europe, Geneva, 1981.
+C
+C       23.  Wilkinson, J.H. -
+C                  "Rounding Errors in Algebraic Processes",
+C                  Prentice-Hall,  Englewood  Cliffs,   N.J.,
+C                  1963.
+C
+C       24.  Wilkinson, J.H. -
+C                  "The Algebraic Eigenvalue Problem",
+C                  Oxford University Press, London, 1965.
+C
+C       25.  Wilkinson, J.H and Reinsch, C. -
+C                  "Handbook for Automatic Computation",
+C                  Vol II, Linear Algebra, pp. 50-56,
+C                  Springer, Heidelberg, 1971.
+C
+C       26.  Wolfe, P. -
+C                  "Error   in   the   Solution   of   Linear
+C                  Programming Problems",
+C                  In:   "Error   in   Digital   Computation"
+C                  (L.B.Rall, ed.), Vol 2, pp. 271-284,
+C                  Wiley, New York, 1965.
+C
+C       27.  Zlatev, Z. -
+C                  "Use   of   Iterative  Refinement  in  the
+C                  Solution of Sparse Linear Systems",
+C                  Report 1/79, Institute of Mathematics  and
+C                  Statistics,   The   Royal  Veterinary  and
+C                  Agricultural University,
+C                  Copenhagen, Denmark, 1979
+C                  (to appear in SIAM J. Numer. Anal.).
+C
+C       28.  Zlatev, Z. -
+C                  "On  Some  Pivotal  Strategies in Gaussian
+C                  Elimination by Sparse Technique",
+C                  SIAM J. Numer. Anal. 17, pp. 18-30,  1980.
+C
+C       29.  Zlatev, Z. -
+C                  "On Solving Some Large Linear Problems  by
+C                  Direct Methods",
+C                  Report   111,   Department   of   Computer
+C                  Science,  University  of  Aarhus,  Aarhus,
+C                  Denmark, 1980.
+C
+C       30.  Zlatev, Z. -
+C                  "Modified  Diagonally Implicit Runge-Kutta
+C                  Methods",
+C                  Report No.  112,  Department  of  Computer
+C                  Science,  University  of  Aarhus,  Aarhus,
+C                  Denmark, 1980
+C                  (to appear in SIAM Journal  on  Scientific
+C                  and Statistical Computing).
+C
+C       31.  Zlatev, Z. -
+C                  "Comparison  of  Two Pivotal Strategies in
+C                  Sparse Plane Rotations",
+C                  Report   122,   Department   of   Computer
+C                  Science,  University  of  Aarhus,  Aarhus,
+C                  Denmark, 1980.
+C                  (to appear in  Computers  and  Mathematics
+C                  with Applications).
+C
+C       32.  Zlatev, Z., Barker, V.A. and Thomsen, P.G. -
+C                  "SSLEST -  a  FORTRAN  IV  Subroutine  for
+C                  Solving Sparse Systems of Linear Equations
+C                  (USER's GUIDE)",
+C                  Report  78-01,  Institute  for   Numerical
+C                  Analysis,
+C                  Technical  University  of Denmark, Lyngby,
+C                  Denmark, 1978.
+C
+C       33.  Zlatev, Z. and Nielsen, H.B. -
+C                  "Least  - Squares Solution of Large Linear
+C                  Problems".
+C                  In:  "Symposium i Anvendt Statistik 1980"
+C                  (A. Hoskuldsson, K.  Conradsen,  B.  Sloth
+C                  Jensen and K.Esbensen, eds.), pp. 17-52.
+C                  NEUCC, Technical University of Denmark,
+C                  Lyngby, Denmark, 1980.
+C
+C       34.  Zlatev, Z., Schaumburg, K. and Wasniewski, J. -
+C                  "Implementation of an Iterative Refinement
+C                  Option in a  Code  for  Large  and  Sparse
+C                  Systems".
+C                  Computers  and  Chemistry,  4,  pp. 87-99,
+C                  1980.
+C
+C       35.  Zlatev, Z. and Thomsen., P.G. -
+C                  "ST  -  a  FORTRAN  IV  Subroutine for the
+C                  Solution  of  Large  Systems   of   Linear
+C                  Algebraic Equations with Real Coefficients
+C                  by Use of Sparse Technique",
+C                  Report  76-05,  Institute  for   Numerical
+C                  Analysis,
+C                  Technical  University  of Denmark, Lyngby,
+C                  Denmark, 1976.
+C
+C       36.  Zlatev, Z. and Thomsen, P.G. -
+C                  "An   Algorithm   for   the   Solution  of
+C                  Parabolic Partial  Differential  Equations
+C                  Based on Finite Element Discretization",
+C                  Report   77-09,  Institute  for  Numerical
+C                  Analysis,
+C                  Technical University of  Denmark,  Lyngby,
+C                  Denmark, 1977.
+C
+C       37.  Zlatev, Z. and Thomsen, P.G. -
+C                  "Application of  Backward  Differentiation
+C                  Methods  to the Finite Element Solution of
+C                  Time Dependent Problems",
+C                  International   Journal   for    Numerical
+C                  Methods  in  Engineering,  14,  pp. 1051 -
+C                  1061, 1979.
+C
+C       38.  Zlatev, Z., Wasniewski, J. and Schaumburg, K. -
+C                  "Comparison  of Two Algorithms for Solving
+C                  Large Linear Systems".
+C                  Report No 80/9,
+C                  Regional   Computing   Centre    at    the
+C                  University  of Copenhagen, Vermundsgade 5,
+C                  DK-2100 Copenhagen, Denmark, 1980.
+C
+C       39.  Zlatev, Z., Wasniewski, J. and Schaumburg, K. -
+C                  "Classification of the Systems of Ordinary
+C                  Differential   Equations   and   Practical
+C                  Aspects in the  Numerical  Integration  of
+C                  Large Systems",
+C                  Computers  and  Chemistry,  4,  pp. 13-18,
+C                  1980.
+C
+C       40.  Zlatev, Z., Wasniewski, J., Schaumburg, K. -
+C                  "A Testing Scheme For Subroutines  Solving
+C                  Large Linear Problems",
+C                  Report No 81/1,
+C                  Regional    Computing    Centre   at   the
+C                  University of Copenhagen, Vermundsgade  5,
+C                  DK-2100 Copenhagen, Denmark, 1981
+C                  (to  appear in Computers and Chemistry, 5,
+C                  1981).
+Acknowledge-To: <NEUJW@vm.uni-c.dk>
+
