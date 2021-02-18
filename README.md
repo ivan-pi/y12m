@@ -2,7 +2,7 @@
 
 Solution of Large and Sparse Systems of Linear Algebraic Equations
 
-**Original version at netlib:** http://www.netlib.org/y12m/
+**Original version at Netlib:** http://www.netlib.org/y12m/
 
 **Book:**
 
