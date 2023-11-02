@@ -18,16 +18,19 @@ c
       if(it.lt.2)ifail=23
       if(ifail.ne.0)go to 160
       do 10 i=1,n
-   10 b1(i)=b(i)
+      b1(i)=b(i)
+   10 continue
       if(state.eq.3)go to 70
       call y12mbe(n,nz,a,snr,nn,rnr,nn1,ha,iha,aflag,iflag,ifail)
       if(ifail.ne.0)go to 160
       do 20 i=1,nz
       sn(i)=snr(i)
-   20 a1(i)=a(i)
+      a1(i)=a(i)
+   20 continue
       do 30 i=1,n
       ha(i,12)=ha(i,1)
-   30 ha(i,13)=ha(i,3)
+      ha(i,13)=ha(i,3)
+   30 continue
       if(aflag(2).ge.0.0)go to 60
       gt1=aflag(6)
       do 50 i=1,n
@@ -36,8 +39,10 @@ c
       gt2=0.0
       do 40 j=l1,l2
       d=abs(a(j))
-   40 if(gt2.lt.d)gt2=d
-   50 if(gt2.lt.gt1)gt1=gt2
+      if(gt2.lt.d)gt2=d
+   40 continue
+      if(gt2.lt.gt1)gt1=gt2
+   50 continue
       aflag(2)=-gt1*aflag(2)
 c
 c  find the first solution.
@@ -53,7 +58,8 @@ c
       do 80 i=1,n
       x(i)=b(i)
       xx=abs(b(i))
-   80 if(dd.lt.xx)dd=xx
+      if(dd.lt.xx)dd=xx
+   80 continue
       xm=dd
       if(dd.eq.0.)go to 160
 c
@@ -69,13 +75,15 @@ c
       er1=a1(j)
       l3=sn(j)
       er2=x(l3)
-  100 er=er-er1*er2
+      er=er-er1*er2
+  100 continue
 c
 c  store residuals rounded to single precision.
 c
       b(i)=er
       xx=dabs(er)
-  110 if(dres.lt.xx)dres=xx
+      if(dres.lt.xx)dres=xx
+  110 continue
       if(dres.eq.0.)go to 160
       if(nres.eq.1) go to 150
       if(dres.gt.1.0e+4*xm)go to 150
@@ -89,7 +97,8 @@ c
       dd=0.
       do 120 i=1,n
       xx=abs(b(i))
-  120 if(dd.lt.xx)dd=xx
+      if(dd.lt.xx)dd=xx
+  120 continue
       if(dd.eq.0.0)go to 160
 c
 c  check the convergence criterion.
@@ -103,7 +112,8 @@ c
       do 130 i=1,n
       x(i)=x(i)+b(i)
       xx=abs(x(i))
-  130 if(xx.gt.xm) xm=xx
+      if(xx.gt.xm) xm=xx
+  130 continue
 c
 c  check the stopping criteria.
 c

@@ -28,7 +28,8 @@ c
       if(rr1.gt.rr2)go to 1040
       do 1030 j=rr1,rr2
       l1=snr(j)
- 1030 b(i)=b(i)-a(j)*b(l1)
+      b(i)=b(i)-a(j)*b(l1)
+ 1030 continue
  1040 continue
  1050 continue
 c
@@ -42,9 +43,11 @@ c
       if(rr2.lt.rr1)   go to 1080
       do 1070 j=rr1,rr2
       r2=snr(j)
- 1070 b(r1)=b(r1)-a(j)*b(r2)
+      b(r1)=b(r1)-a(j)*b(r2)
+ 1070 continue
  1080 continue
- 1090 b(r1)=b(r1)/pivot(r1)
+      b(r1)=b(r1)/pivot(r1)
+ 1090 continue
 c
 c if interchanges were used during the  elimination then a reordering in
 c the solution vector is made.
@@ -55,6 +58,7 @@ c
       r2=ha(r1,8)
       t=b(r2)
       b(r2)=b(r1)
- 1100 b(r1)=t
+      b(r1)=t
+ 1100 continue
  1110 return
       end

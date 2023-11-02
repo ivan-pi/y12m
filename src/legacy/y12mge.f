@@ -65,7 +65,8 @@ c
 c
       w(1)=1.0/pivot(1)
       do   20   i=2,n
-   20 w(i)=0.0
+      w(i)=0.0
+   20 continue
       do   50   i=2,n
       l1=ha(i,2)
       l2=ha(i,3)
@@ -73,10 +74,12 @@ c
       t=w(i-1)
       do   30   j=l1,l2
       l=snr(j)
-   30 w(l)=w(l)+t*a(j)
+      w(l)=w(l)+t*a(j)
+   30 continue
    40 if(w(i).gt.0.0) w(i)=w(i)+1.0
       if(w(i).le.0.0) w(i)=w(i)-1.0
-   50 w(i)=-w(i)/pivot(i)
+      w(i)=-w(i)/pivot(i)
+   50 continue
 c
 c
 c   solve a system of the form   l1*y=w   where   l1   is the
@@ -94,7 +97,8 @@ c
       t=w(l+1)
       do   60   j=l1,l2
       l3=snr(j)
-   60 w(l3)=w(l3)-t*a(j)
+      w(l3)=w(l3)-t*a(j)
+   60 continue
    70 continue
    80 continue
 c
@@ -104,7 +108,8 @@ c
 c
       ynorm=0.0
       do   90   i=1,n
-   90 ynorm=ynorm+abs(w(i))
+      ynorm=ynorm+abs(w(i))
+   90 continue
 c
 c
 c   compute the solution of    (lu)z=y .  this means that
@@ -119,7 +124,8 @@ c
       if(l1.gt.l2) go to 120
       do 110 j=l1,l2
       l=snr(j)
-  110 w(i)=w(i)-a(j)*w(l)
+      w(i)=w(i)-a(j)*w(l)
+  110 continue
   120 continue
   130 continue
       do 160 i=1,n
@@ -129,9 +135,11 @@ c
       if(l1.gt.l2) go to 150
       do 140 j=l1,l2
       l=snr(j)
-  140 w(l3)=w(l3)-a(j)*w(l)
+      w(l3)=w(l3)-a(j)*w(l)
+  140 continue
   150 continue
-  160 w(l3)=w(l3)/pivot(l3)
+      w(l3)=w(l3)/pivot(l3)
+  160 continue
 c
 c
 c   compute the one-norm of vector   z   (vector   z   is
@@ -140,7 +148,8 @@ c
 c
       znorm=0.0
       do   170   i=1,n
-  170 znorm=znorm+abs(w(i))
+      znorm=znorm+abs(w(i))
+  170 continue
 c
 c
 c   find the value of the required estimate for the reciprocal

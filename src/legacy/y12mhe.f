@@ -33,7 +33,8 @@ c  set all locations of array     work     equal to zero.
 c
 c
       do 10 i=1,n
-   10 work(i)=0.0
+      work(i)=0.0
+   10 continue
 c
 c
 c  calculate the sums of the absolute values of the non-zero
@@ -43,7 +44,8 @@ c
 c
       do 20 i=1,nz
       l=snr(i)
-   20 work(l)=work(l)+abs(a(i))
+      work(l)=work(l)+abs(a(i))
+   20 continue
 c
 c
 c  calculate the one-norm of matrix     a .
@@ -51,7 +53,8 @@ c
 c
       anorm=0.0
       do 30 i=1,n
-   30 if(work(i).gt.anorm) anorm=work(i)
+      if(work(i).gt.anorm) anorm=work(i)
+   30 continue
 c
 c
 c  stop the computations.

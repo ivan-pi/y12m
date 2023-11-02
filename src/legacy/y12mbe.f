@@ -24,7 +24,8 @@ c
       do 10 i=1,n
       ha(i,2)=0
       ha(i,3)=0
-   10 ha(i,6)=0
+      ha(i,6)=0
+   10 continue
 c
 c  find the number of the non-zero elements in each row and column;move
 c  the non-zero elements in the end of the arrays a and snr;find the
@@ -40,7 +41,8 @@ c
       ha(l4,6)=ha(l4,6)+1
       if(t.gt.gt1)gt1=t
       a(z+i)=a(i)
-   20 snr(z+i)=snr(i)
+      snr(z+i)=snr(i)
+   20 continue
       if(ifail.gt.0)go to 22
 c
 c  store the information of the row starts(in ha(i,1))and of the column
@@ -68,7 +70,8 @@ c
       l1=l1+l3
       l2=l2+l4
       ha(i,3)=0
-   40 ha(i,6)=0
+      ha(i,6)=0
+   40 continue
 c
 c  store the non-zero elements of matrix a(ordered in rows) in the
 c  first z locations of the array a.do the same for their column numbers
@@ -79,7 +82,8 @@ c
       l2=ha(l3,1)+ha(l3,3)
       a(l2)=a(l1)
       snr(l2)=snr(l1)
-   50 ha(l3,3)=ha(l3,3)+1
+      ha(l3,3)=ha(l3,3)+1
+   50 continue
 c
 c  store the row numbers of the non-zero elements ordered by columns in
 c  the first z locations of the array rnr. store information about row
@@ -95,17 +99,19 @@ c
    60 ha(i,3)=ha(i,1)+ha(i,3)-1
       l1=ha(i,1)
       l2=ha(i,3)
-      do 70 j=l1,l2
+      do 72 j=l1,l2
       l3=snr(j)
       r=ha(l3,6)
       index=ha(l3,4)+r
       rnr(index)=i
-      if(r.eq.0)go to 70
-      if(j.eq.l1)go to 70
-      if(rnr(index-1).ne.i)go to 70
+      if(r.eq.0)go to 72
+      if(j.eq.l1)go to 72
+      if(rnr(index-1).ne.i)go to 72
       ifail=11
       go to 22
-   70 ha(l3,6)=r+1
+      ha(l3,6)=r+1
+   72 continue
+   70 continue
       do 90 i=1,n
       if(mode.eq.2)go to 80
       l3=ha(i,5)
@@ -114,7 +120,8 @@ c
       ha(i,7)=l5
       ha(l3,2)=ha(l3,2)+1
    80 continue
-   90 ha(i,6)=ha(i,4)+ha(i,6)-1
+      ha(i,6)=ha(i,4)+ha(i,6)-1
+   90 continue
       aflag(6)=gt1
       iflag(6)=0
       iflag(7)=0

@@ -42,16 +42,19 @@ c
       l3=l2-ha(l,1)
       do 10 j=1,l3
       snr(l5-j)=snr(l2-j)
-   10 a(l5-j)=a(l2-j)
+      a(l5-j)=a(l2-j)
+   10 continue
       ha(l,3)=l1
       ha(l,1)=l5-l3
       l6=l1-l3
       l5=l5-ha(l,9)
       if(l5.gt.l6)go to 30
       do 20 j=l5,l6
-   20 snr(j)=0
+      snr(j)=0
+   20 continue
    30 continue
-   40 l1=l5-1
+      l1=l5-1
+   40 continue
    50 if(iflag(9).gt.nn1)go to 100
       l2=iflag(9)
       l5=l2+1
@@ -61,16 +64,19 @@ c
       l1=ha(l,6)+1
       l4=l1-ha(l,4)
       do 60 j=1,l4
-   60 rnr(l5-j)=rnr(l1-j)
+      rnr(l5-j)=rnr(l1-j)
+   60 continue
       ha(l,4)=l5-l4
       ha(l,6)=l2
       l6=l2-l4
       l5=l5-ha(l,10)
       if(l5.gt.l6)go to 80
       do 70 j=l5,l6
-   70 rnr(j)=0
+      rnr(j)=0
+   70 continue
    80 continue
-   90 l2=l5-1
+      l2=l5-1
+   90 continue
   100 r4=ha(n,3)
       r5=ha(n,6)
       aflag(7)=aflag(6)
@@ -78,7 +84,8 @@ c
       do 110 i=1,n
       pivot(i)=0.0 d0
       ha(i,2)=ha(i,1)
-  110 ha(i,5)=ha(i,4)
+      ha(i,5)=ha(i,4)
+  110 continue
       index=ha(n,8)
 c
 c  start of gaussian elimination.
@@ -113,9 +120,10 @@ c
       t=0.0 d0
       do 140 k=r7,r8
       td=dabs(a(k))
-  140 if(t.lt.td)t=td
+      if(t.lt.td)t=td
+  140 continue
       t=t/u
-      do 160 k=r7,r8
+      do 161 k=r7,r8
       td=dabs(a(k))
       if(td.lt.t)go to 150
       r6=snr(k)
@@ -129,6 +137,7 @@ c
       r=r3
       rpivot=l1
   150 continue
+  161 continue
   160 continue
   170 r3=ha(rcoll,10)
       ha(rcoll,10)=ha(i,10)
@@ -179,7 +188,8 @@ c
   240 r=r+1
       if(rnr(r).ne.i)go to 240
       rnr(r)=rnr(r10)
-  250 rnr(r10)=rrow
+      rnr(r10)=rrow
+  250 continue
       rr3=ha(rrow,2)
       rr4=ha(rrow,3)
       do 270 j=rr3,rr4
@@ -187,14 +197,16 @@ c
       r=ha(l1,5)-1
   260 r=r+1
       if(rnr(r).ne.rrow)go to 260
-  270 rnr(r)=i
+      rnr(r)=i
+  270 continue
       do 280 j=1,3
       r3=ha(rrow,j)
       ha(rrow,j)=ha(i,j)
 c
 c  column interchanges.
 c
-  280 ha(i,j)=r3
+      ha(i,j)=r3
+  280 continue
   290 if(rcoll.eq.i)go to 350
       do 310 j=c1,cr4
       l1=rnr(j)
@@ -206,7 +218,8 @@ c
       a(r10)=a(r)
       a(r)=t
       snr(r)=snr(r10)
-  310 snr(r10)=rcoll
+      snr(r10)=rcoll
+  310 continue
       c1=ha(rcoll,4)
       cr4=ha(rcoll,6)
       do 330 j=c1,cr4
@@ -214,7 +227,8 @@ c
       r=ha(l1,2)-1
   320 r=r+1
       if(snr(r).ne.rcoll)go to 320
-  330 snr(r)=i
+      snr(r)=i
+  330 continue
       do 340 j=4,6
       r3=ha(rcoll,j)
       ha(rcoll,j)=ha(i,j)
@@ -223,7 +237,8 @@ c end of the interchanges.
 c the row ordered list and the column ordered list are prepared to
 c begin step i of the elimination.
 c
-  340 ha(i,j)=r3
+      ha(i,j)=r3
+  340 continue
   350 r9=rr4-rr3
       do 360 rr=rr3,rr4
       if(snr(rr).eq.i)go to 370
@@ -251,7 +266,8 @@ c
       if(r9.le.0)go to 431
       do 430 j=rr3,rr4
       index=snr(j)
-  430 pivot(index)=a(j)
+      pivot(index)=a(j)
+  430 continue
   431 r7=cr4-cr3+1
       do 880 k=1,r7
       r1=rnr(cr3-1+k)
@@ -394,7 +410,8 @@ c
       l5=l3+ll
       a(l4)=a(l5)
       snr(l4)=snr(l5)
-  570 snr(l5)=0
+      snr(l5)=0
+  570 continue
   579 rr1=r4+rr1-i1+1
       ha(r1,3)=rr2
       ha(r1,2)=rr1
@@ -435,7 +452,8 @@ c
       do 640 jj=i,n
       l1=ha(jj,6)
       ha(jj,6)=rnr(l1)
-  640 rnr(l1)=-jj
+      rnr(l1)=-jj
+  640 continue
       l3=0
       l4=1
       do 670 jj=1,r5
@@ -472,7 +490,8 @@ c
       l4=r5+l
       l5=l3+l
       rnr(l4)=rnr(l5)
-  690 rnr(l5)=0
+      rnr(l5)=0
+  690 continue
   699 cr1=r5+cr1-c2+1
       c2=r5+1
       ha(r2,6)=cr2
@@ -561,11 +580,13 @@ c
       if(r9.le.0)go to 882
       do 881 j=rr3,rr4
       index=snr(j)
-  881 pivot(index)=0.0 d0
+      pivot(index)=0.0 d0
+  881 continue
   882 continue
       cr3=ha(i,4)
       do 890 j=cr3,cr4
-  890 rnr(j)=0
+      rnr(j)=0
+  890 continue
       if(r9.le.0)go to 930
       l2=ha(i,2)-1
       do 920 ll=1,r9
@@ -580,7 +601,8 @@ c
   910 r3=r3+1
       if(rnr(r3).ne.i)go to 910
       rnr(r3)=rnr(r1)
-  920 rnr(r1)=i
+      rnr(r1)=i
+  920 continue
   930 aflag(5)=aflag(7)/aflag(6)
       if(aflag(5).lt.aflag(3))go to 940
       ifail=4
@@ -611,7 +633,8 @@ c
       r2=ha(r1,j-2)
       r6=ha(r2,j)
       ha(r2,j)=ha(r1,j)
-  970 ha(r1,j)=r6
+      ha(r1,j)=r6
+  970 continue
   980 continue
   990 continue
 1060  continue
