@@ -1,7 +1,7 @@
       subroutine y12mfe(n,a,snr,nn,rnr,nn1,a1,sn,nz,ha,iha,b,b1,x,y,
      1 aflag,iflag,ifail)
       implicit real(a-b,d,g,p,t-y),integer(c,f,h-n,r-s,z)
-      double precision ext,er,er1,er2,err,e
+      double precision er,er1,er2
       real a(nn),b(n),b1(n),x(n),y(n),a1(nz),aflag(11)
       integer snr(nn),rnr(nn1),ha(iha,13),sn(nz),iflag(12)
 c
@@ -81,7 +81,7 @@ c
 c  store residuals rounded to single precision.
 c
       b(i)=er
-      xx=dabs(er)
+      xx=abs(er)
       if(dres.lt.xx)dres=xx
   110 continue
       if(dres.eq.0.)go to 160

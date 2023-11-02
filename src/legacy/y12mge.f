@@ -37,7 +37,7 @@ c
 c  declaration of the internal variables.
 c
 c
-      real  aa, ynorm, znorm, t
+      real  ynorm, znorm, t
       integer  l1, l2, l3, l, n7, n8
 c
 c
