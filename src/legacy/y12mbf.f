@@ -99,7 +99,7 @@ c
    60 ha(i,3)=ha(i,1)+ha(i,3)-1
       l1=ha(i,1)
       l2=ha(i,3)
-      do 72 j=l1,l2
+      do 70 j=l1,l2
       l3=snr(j)
       r=ha(l3,6)
       index=ha(l3,4)+r
@@ -109,8 +109,8 @@ c
       if(rnr(index-1).ne.i)go to 72
       ifail=11
       go to 22
-      ha(l3,6)=r+1
    72 continue
+      ha(l3,6)=r+1
    70 continue
       do 90 i=1,n
       if(mode.eq.2)go to 80

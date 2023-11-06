@@ -18,3 +18,14 @@ add_library(y12m src/y12m.f90
     src/legacy/y12mge.f
     src/legacy/y12mhe.f
     src/legacy/y12mhf.f)
+
+
+include(CTest)
+
+add_executable(test_y12m test/test_y12m.f90)
+target_link_libraries(test_y12m y12m)
+add_test(NAME test_y12m COMMAND test_y12m)
+
+add_executable(test_y12m_random test/test_y12m_random.f90)
+target_link_libraries(test_y12m_random y12m)
+add_test(NAME test_y12m_random COMMAND test_y12m_random)
