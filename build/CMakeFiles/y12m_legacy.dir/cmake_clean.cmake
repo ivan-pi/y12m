@@ -9,6 +9,7 @@ file(REMOVE_RECURSE
   "CMakeFiles/y12m_legacy.dir/src/legacy/y12mde.f.o"
   "CMakeFiles/y12m_legacy.dir/src/legacy/y12mdf.f.o"
   "CMakeFiles/y12m_legacy.dir/src/legacy/y12mfe.f.o"
+  "CMakeFiles/y12m_legacy.dir/src/legacy/y12mff.f90.o"
   "CMakeFiles/y12m_legacy.dir/src/legacy/y12mge.f.o"
   "CMakeFiles/y12m_legacy.dir/src/legacy/y12mhe.f.o"
   "CMakeFiles/y12m_legacy.dir/src/legacy/y12mhf.f.o"

@@ -21,6 +21,8 @@ CMakeFiles/y12m_legacy.dir/src/legacy/y12mdf.f.o
  /home/runner/work/y12m/y12m/src/legacy/y12mdf.f
 CMakeFiles/y12m_legacy.dir/src/legacy/y12mfe.f.o
  /home/runner/work/y12m/y12m/src/legacy/y12mfe.f
+CMakeFiles/y12m_legacy.dir/src/legacy/y12mff.f90.o
+ /home/runner/work/y12m/y12m/src/legacy/y12mff.f90
 CMakeFiles/y12m_legacy.dir/src/legacy/y12mge.f.o
  /home/runner/work/y12m/y12m/src/legacy/y12mge.f
 CMakeFiles/y12m_legacy.dir/src/legacy/y12mhe.f.o

@@ -7,6 +7,7 @@
 /home/runner/work/y12m/y12m/build/test/CMakeFiles/test_y12mb_mc_md_sp.dir
 /home/runner/work/y12m/y12m/build/test/CMakeFiles/test_y12mb_mc_md_dp.dir
 /home/runner/work/y12m/y12m/build/test/CMakeFiles/test_y12mf_sp.dir
+/home/runner/work/y12m/y12m/build/test/CMakeFiles/test_y12mf_dp.dir
 /home/runner/work/y12m/y12m/build/test/CMakeFiles/test_y12mg_mh.dir
 /home/runner/work/y12m/y12m/build/test/CMakeFiles/test_y12mc_z_intent.dir
 /home/runner/work/y12m/y12m/build/test/CMakeFiles/test_y12ma_5x5.dir

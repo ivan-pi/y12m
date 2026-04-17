@@ -241,9 +241,22 @@ CMakeFiles/y12m_legacy.dir/src/legacy/y12mhf.f.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling Fortran source to assembly CMakeFiles/y12m_legacy.dir/src/legacy/y12mhf.f.s"
 	/usr/bin/f95 $(Fortran_DEFINES) $(Fortran_INCLUDES) $(Fortran_FLAGS) -S /home/runner/work/y12m/y12m/src/legacy/y12mhf.f -o CMakeFiles/y12m_legacy.dir/src/legacy/y12mhf.f.s
 
+CMakeFiles/y12m_legacy.dir/src/legacy/y12mff.f90.o: CMakeFiles/y12m_legacy.dir/flags.make
+CMakeFiles/y12m_legacy.dir/src/legacy/y12mff.f90.o: /home/runner/work/y12m/y12m/src/legacy/y12mff.f90
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_14) "Building Fortran object CMakeFiles/y12m_legacy.dir/src/legacy/y12mff.f90.o"
+	/usr/bin/f95 $(Fortran_DEFINES) $(Fortran_INCLUDES) $(Fortran_FLAGS) -c /home/runner/work/y12m/y12m/src/legacy/y12mff.f90 -o CMakeFiles/y12m_legacy.dir/src/legacy/y12mff.f90.o
+
+CMakeFiles/y12m_legacy.dir/src/legacy/y12mff.f90.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing Fortran source to CMakeFiles/y12m_legacy.dir/src/legacy/y12mff.f90.i"
+	/usr/bin/f95 $(Fortran_DEFINES) $(Fortran_INCLUDES) $(Fortran_FLAGS) -E /home/runner/work/y12m/y12m/src/legacy/y12mff.f90 > CMakeFiles/y12m_legacy.dir/src/legacy/y12mff.f90.i
+
+CMakeFiles/y12m_legacy.dir/src/legacy/y12mff.f90.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling Fortran source to assembly CMakeFiles/y12m_legacy.dir/src/legacy/y12mff.f90.s"
+	/usr/bin/f95 $(Fortran_DEFINES) $(Fortran_INCLUDES) $(Fortran_FLAGS) -S /home/runner/work/y12m/y12m/src/legacy/y12mff.f90 -o CMakeFiles/y12m_legacy.dir/src/legacy/y12mff.f90.s
+
 CMakeFiles/y12m_legacy.dir/src/y12m.f90.o: CMakeFiles/y12m_legacy.dir/flags.make
 CMakeFiles/y12m_legacy.dir/src/y12m.f90.o: /home/runner/work/y12m/y12m/src/y12m.f90
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_14) "Building Fortran object CMakeFiles/y12m_legacy.dir/src/y12m.f90.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_15) "Building Fortran object CMakeFiles/y12m_legacy.dir/src/y12m.f90.o"
 	/usr/bin/f95 $(Fortran_DEFINES) $(Fortran_INCLUDES) $(Fortran_FLAGS) -c /home/runner/work/y12m/y12m/src/y12m.f90 -o CMakeFiles/y12m_legacy.dir/src/y12m.f90.o
 
 CMakeFiles/y12m_legacy.dir/src/y12m.f90.i: cmake_force
@@ -269,6 +282,7 @@ y12m_legacy_OBJECTS = \
 "CMakeFiles/y12m_legacy.dir/src/legacy/y12mge.f.o" \
 "CMakeFiles/y12m_legacy.dir/src/legacy/y12mhe.f.o" \
 "CMakeFiles/y12m_legacy.dir/src/legacy/y12mhf.f.o" \
+"CMakeFiles/y12m_legacy.dir/src/legacy/y12mff.f90.o" \
 "CMakeFiles/y12m_legacy.dir/src/y12m.f90.o"
 
 # External object files for target y12m_legacy
@@ -287,10 +301,11 @@ liby12m_legacy.a: CMakeFiles/y12m_legacy.dir/src/legacy/y12mfe.f.o
 liby12m_legacy.a: CMakeFiles/y12m_legacy.dir/src/legacy/y12mge.f.o
 liby12m_legacy.a: CMakeFiles/y12m_legacy.dir/src/legacy/y12mhe.f.o
 liby12m_legacy.a: CMakeFiles/y12m_legacy.dir/src/legacy/y12mhf.f.o
+liby12m_legacy.a: CMakeFiles/y12m_legacy.dir/src/legacy/y12mff.f90.o
 liby12m_legacy.a: CMakeFiles/y12m_legacy.dir/src/y12m.f90.o
 liby12m_legacy.a: CMakeFiles/y12m_legacy.dir/build.make
 liby12m_legacy.a: CMakeFiles/y12m_legacy.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_15) "Linking Fortran static library liby12m_legacy.a"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_16) "Linking Fortran static library liby12m_legacy.a"
 	$(CMAKE_COMMAND) -P CMakeFiles/y12m_legacy.dir/cmake_clean_target.cmake
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/y12m_legacy.dir/link.txt --verbose=$(VERBOSE)
 

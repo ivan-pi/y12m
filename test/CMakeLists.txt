@@ -10,6 +10,7 @@ foreach(tname
     test_y12mb_mc_md_sp
     test_y12mb_mc_md_dp
     test_y12mf_sp
+    test_y12mf_dp
     test_y12mg_mh
     test_y12mc_z_intent
     test_y12ma_5x5)

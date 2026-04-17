@@ -1,10 +1,10 @@
-Start testing: Apr 17 23:14 UTC
+Start testing: Apr 17 23:28 UTC
 ----------------------------------------------------------
-1/15 Testing: test_y12ma_sp
-1/15 Test: test_y12ma_sp
+1/16 Testing: test_y12ma_sp
+1/16 Test: test_y12ma_sp
 Command: "/home/runner/work/y12m/y12m/build/test/test_y12ma_sp"
 Directory: /home/runner/work/y12m/y12m/build/test
-"test_y12ma_sp" start time: Apr 17 23:14 UTC
+"test_y12ma_sp" start time: Apr 17 23:28 UTC
 Output:
 ----------------------------------------------------------
 PASS y12ma_sp n=1 error-diag: ifail=12 (N<2) as expected
@@ -14,18 +14,18 @@ PASS y12ma_sp n=4 tridiag max_err= 0.000E+00
 PASS y12ma_sp n=5 arrow max_err= 2.980E-06
 All test_y12ma_sp tests PASSED
 <end of output>
-Test time =   0.04 sec
+Test time =   0.00 sec
 ----------------------------------------------------------
 Test Passed.
-"test_y12ma_sp" end time: Apr 17 23:14 UTC
+"test_y12ma_sp" end time: Apr 17 23:28 UTC
 "test_y12ma_sp" time elapsed: 00:00:00
 ----------------------------------------------------------
 
-2/15 Testing: test_y12ma_dp
-2/15 Test: test_y12ma_dp
+2/16 Testing: test_y12ma_dp
+2/16 Test: test_y12ma_dp
 Command: "/home/runner/work/y12m/y12m/build/test/test_y12ma_dp"
 Directory: /home/runner/work/y12m/y12m/build/test
-"test_y12ma_dp" start time: Apr 17 23:14 UTC
+"test_y12ma_dp" start time: Apr 17 23:28 UTC
 Output:
 ----------------------------------------------------------
 PASS y12ma_dp n=6 tridiag max_err= 0.00000E+00
@@ -38,15 +38,15 @@ All test_y12ma_dp tests PASSED
 Test time =   0.00 sec
 ----------------------------------------------------------
 Test Passed.
-"test_y12ma_dp" end time: Apr 17 23:14 UTC
+"test_y12ma_dp" end time: Apr 17 23:28 UTC
 "test_y12ma_dp" time elapsed: 00:00:00
 ----------------------------------------------------------
 
-3/15 Testing: test_y12mb_mc_md_sp
-3/15 Test: test_y12mb_mc_md_sp
+3/16 Testing: test_y12mb_mc_md_sp
+3/16 Test: test_y12mb_mc_md_sp
 Command: "/home/runner/work/y12m/y12m/build/test/test_y12mb_mc_md_sp"
 Directory: /home/runner/work/y12m/y12m/build/test
-"test_y12mb_mc_md_sp" start time: Apr 17 23:14 UTC
+"test_y12mb_mc_md_sp" start time: Apr 17 23:28 UTC
 Output:
 ----------------------------------------------------------
 PASS y12mb_mc_md_sp n=1 error-diag: ifail=12 as expected
@@ -59,15 +59,15 @@ All test_y12mb_mc_md_sp tests PASSED
 Test time =   0.00 sec
 ----------------------------------------------------------
 Test Passed.
-"test_y12mb_mc_md_sp" end time: Apr 17 23:14 UTC
+"test_y12mb_mc_md_sp" end time: Apr 17 23:28 UTC
 "test_y12mb_mc_md_sp" time elapsed: 00:00:00
 ----------------------------------------------------------
 
-4/15 Testing: test_y12mb_mc_md_dp
-4/15 Test: test_y12mb_mc_md_dp
+4/16 Testing: test_y12mb_mc_md_dp
+4/16 Test: test_y12mb_mc_md_dp
 Command: "/home/runner/work/y12m/y12m/build/test/test_y12mb_mc_md_dp"
 Directory: /home/runner/work/y12m/y12m/build/test
-"test_y12mb_mc_md_dp" start time: Apr 17 23:14 UTC
+"test_y12mb_mc_md_dp" start time: Apr 17 23:28 UTC
 Output:
 ----------------------------------------------------------
 PASS y12mb_mc_md_dp n=6 tridiag max_err= 0.00000E+00
@@ -80,15 +80,15 @@ All test_y12mb_mc_md_dp tests PASSED
 Test time =   0.00 sec
 ----------------------------------------------------------
 Test Passed.
-"test_y12mb_mc_md_dp" end time: Apr 17 23:14 UTC
+"test_y12mb_mc_md_dp" end time: Apr 17 23:28 UTC
 "test_y12mb_mc_md_dp" time elapsed: 00:00:00
 ----------------------------------------------------------
 
-5/15 Testing: test_y12mf_sp
-5/15 Test: test_y12mf_sp
+5/16 Testing: test_y12mf_sp
+5/16 Test: test_y12mf_sp
 Command: "/home/runner/work/y12m/y12m/build/test/test_y12mf_sp"
 Directory: /home/runner/work/y12m/y12m/build/test
-"test_y12mf_sp" start time: Apr 17 23:14 UTC
+"test_y12mf_sp" start time: Apr 17 23:28 UTC
 Output:
 ----------------------------------------------------------
 PASS y12mf_sp n=3 tridiag max_err= 0.000E+00
@@ -100,15 +100,35 @@ All test_y12mf_sp tests PASSED
 Test time =   0.00 sec
 ----------------------------------------------------------
 Test Passed.
-"test_y12mf_sp" end time: Apr 17 23:14 UTC
+"test_y12mf_sp" end time: Apr 17 23:28 UTC
 "test_y12mf_sp" time elapsed: 00:00:00
 ----------------------------------------------------------
 
-6/15 Testing: test_y12mg_mh
-6/15 Test: test_y12mg_mh
+6/16 Testing: test_y12mf_dp
+6/16 Test: test_y12mf_dp
+Command: "/home/runner/work/y12m/y12m/build/test/test_y12mf_dp"
+Directory: /home/runner/work/y12m/y12m/build/test
+"test_y12mf_dp" start time: Apr 17 23:28 UTC
+Output:
+----------------------------------------------------------
+PASS y12mf_dp n=3 tridiag max_err= 0.00000E+00
+PASS y12mf_dp n=5 tridiag max_err= 0.00000E+00
+PASS y12mf_dp n=7 tridiag max_err= 0.00000E+00
+PASS y12mf_dp n=10 tridiag max_err= 0.00000E+00
+All test_y12mf_dp tests PASSED
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_y12mf_dp" end time: Apr 17 23:28 UTC
+"test_y12mf_dp" time elapsed: 00:00:00
+----------------------------------------------------------
+
+7/16 Testing: test_y12mg_mh
+7/16 Test: test_y12mg_mh
 Command: "/home/runner/work/y12m/y12m/build/test/test_y12mg_mh"
 Directory: /home/runner/work/y12m/y12m/build/test
-"test_y12mg_mh" start time: Apr 17 23:14 UTC
+"test_y12mg_mh" start time: Apr 17 23:28 UTC
 Output:
 ----------------------------------------------------------
 PASS y12mhe n=5 anorm=   5.00000
@@ -120,15 +140,15 @@ All test_y12mg_mh tests PASSED
 Test time =   0.00 sec
 ----------------------------------------------------------
 Test Passed.
-"test_y12mg_mh" end time: Apr 17 23:14 UTC
+"test_y12mg_mh" end time: Apr 17 23:28 UTC
 "test_y12mg_mh" time elapsed: 00:00:00
 ----------------------------------------------------------
 
-7/15 Testing: test_y12mc_z_intent
-7/15 Test: test_y12mc_z_intent
+8/16 Testing: test_y12mc_z_intent
+8/16 Test: test_y12mc_z_intent
 Command: "/home/runner/work/y12m/y12m/build/test/test_y12mc_z_intent"
 Directory: /home/runner/work/y12m/y12m/build/test
-"test_y12mc_z_intent" start time: Apr 17 23:14 UTC
+"test_y12mc_z_intent" start time: Apr 17 23:28 UTC
 Output:
 ----------------------------------------------------------
 PASS test1: z unchanged after successful factorization
@@ -139,15 +159,15 @@ All test_y12mc_z_intent tests PASSED
 Test time =   0.00 sec
 ----------------------------------------------------------
 Test Passed.
-"test_y12mc_z_intent" end time: Apr 17 23:14 UTC
+"test_y12mc_z_intent" end time: Apr 17 23:28 UTC
 "test_y12mc_z_intent" time elapsed: 00:00:00
 ----------------------------------------------------------
 
-8/15 Testing: test_y12ma_5x5
-8/15 Test: test_y12ma_5x5
+9/16 Testing: test_y12ma_5x5
+9/16 Test: test_y12ma_5x5
 Command: "/home/runner/work/y12m/y12m/build/test/test_y12ma_5x5"
 Directory: /home/runner/work/y12m/y12m/build/test
-"test_y12ma_5x5" start time: Apr 17 23:14 UTC
+"test_y12ma_5x5" start time: Apr 17 23:28 UTC
 Output:
 ----------------------------------------------------------
  solution x (stored in b):
@@ -168,15 +188,15 @@ PASS: rel2= 0.000000 <= rtol2= 0.1000000E-4
 Test time =   0.00 sec
 ----------------------------------------------------------
 Test Passed.
-"test_y12ma_5x5" end time: Apr 17 23:14 UTC
+"test_y12ma_5x5" end time: Apr 17 23:28 UTC
 "test_y12ma_5x5" time elapsed: 00:00:00
 ----------------------------------------------------------
 
-9/15 Testing: y12m_solve_mat0
-9/15 Test: y12m_solve_mat0
+10/16 Testing: y12m_solve_mat0
+10/16 Test: y12m_solve_mat0
 Command: "/home/runner/work/y12m/y12m/build/test/y12m_solve" "--verbose" "/home/runner/work/y12m/y12m/test/data/mat0.mtx"
 Directory: /home/runner/work/y12m/y12m/build/test
-"y12m_solve_mat0" start time: Apr 17 23:14 UTC
+"y12m_solve_mat0" start time: Apr 17 23:28 UTC
 Output:
 ----------------------------------------------------------
 Matrix:  mat0  --  Simple 4x4 tridiagonal matrix.
@@ -216,15 +236,15 @@ IFAIL:     0
 Test time =   0.00 sec
 ----------------------------------------------------------
 Test Passed.
-"y12m_solve_mat0" end time: Apr 17 23:14 UTC
+"y12m_solve_mat0" end time: Apr 17 23:28 UTC
 "y12m_solve_mat0" time elapsed: 00:00:00
 ----------------------------------------------------------
 
-10/15 Testing: y12m_solve_mat1
-10/15 Test: y12m_solve_mat1
+11/16 Testing: y12m_solve_mat1
+11/16 Test: y12m_solve_mat1
 Command: "/home/runner/work/y12m/y12m/build/test/y12m_solve" "--verbose" "/home/runner/work/y12m/y12m/test/data/mat1.mtx"
 Directory: /home/runner/work/y12m/y12m/build/test
-"y12m_solve_mat1" start time: Apr 17 23:14 UTC
+"y12m_solve_mat1" start time: Apr 17 23:28 UTC
 Output:
 ----------------------------------------------------------
 Matrix:  mat1  --  Typical circuit matrix, somewhat ill-conditioned.
@@ -302,15 +322,15 @@ IFAIL:     0
 Test time =   0.00 sec
 ----------------------------------------------------------
 Test Passed.
-"y12m_solve_mat1" end time: Apr 17 23:14 UTC
+"y12m_solve_mat1" end time: Apr 17 23:28 UTC
 "y12m_solve_mat1" time elapsed: 00:00:00
 ----------------------------------------------------------
 
-11/15 Testing: y12m_solve_mat2
-11/15 Test: y12m_solve_mat2
+12/16 Testing: y12m_solve_mat2
+12/16 Test: y12m_solve_mat2
 Command: "/home/runner/work/y12m/y12m/build/test/y12m_solve" "--verbose" "/home/runner/work/y12m/y12m/test/data/mat2.mtx"
 Directory: /home/runner/work/y12m/y12m/build/test
-"y12m_solve_mat2" start time: Apr 17 23:14 UTC
+"y12m_solve_mat2" start time: Apr 17 23:28 UTC
 Output:
 ----------------------------------------------------------
 Matrix:  mat2  --  Typical circuit matrix.
@@ -358,15 +378,15 @@ IFAIL:     0
 Test time =   0.00 sec
 ----------------------------------------------------------
 Test Passed.
-"y12m_solve_mat2" end time: Apr 17 23:14 UTC
+"y12m_solve_mat2" end time: Apr 17 23:28 UTC
 "y12m_solve_mat2" time elapsed: 00:00:00
 ----------------------------------------------------------
 
-12/15 Testing: y12m_solve_mat3
-12/15 Test: y12m_solve_mat3
+13/16 Testing: y12m_solve_mat3
+13/16 Test: y12m_solve_mat3
 Command: "/home/runner/work/y12m/y12m/build/test/y12m_solve" "--verbose" "/home/runner/work/y12m/y12m/test/data/mat3.mtx"
 Directory: /home/runner/work/y12m/y12m/build/test
-"y12m_solve_mat3" start time: Apr 17 23:14 UTC
+"y12m_solve_mat3" start time: Apr 17 23:28 UTC
 Output:
 ----------------------------------------------------------
 Matrix:  mat3  --  Ill-conditioned matrix.
@@ -442,15 +462,15 @@ IFAIL:     0
 Test time =   0.00 sec
 ----------------------------------------------------------
 Test Passed.
-"y12m_solve_mat3" end time: Apr 17 23:14 UTC
+"y12m_solve_mat3" end time: Apr 17 23:28 UTC
 "y12m_solve_mat3" time elapsed: 00:00:00
 ----------------------------------------------------------
 
-13/15 Testing: y12m_solve_mat5
-13/15 Test: y12m_solve_mat5
+14/16 Testing: y12m_solve_mat5
+14/16 Test: y12m_solve_mat5
 Command: "/home/runner/work/y12m/y12m/build/test/y12m_solve" "--verbose" "/home/runner/work/y12m/y12m/test/data/mat5.mtx"
 Directory: /home/runner/work/y12m/y12m/build/test
-"y12m_solve_mat5" start time: Apr 17 23:14 UTC
+"y12m_solve_mat5" start time: Apr 17 23:28 UTC
 Output:
 ----------------------------------------------------------
 Matrix:  mat5  --  Test of complete pivoting capability.
@@ -488,15 +508,15 @@ IFAIL:     0
 Test time =   0.00 sec
 ----------------------------------------------------------
 Test Passed.
-"y12m_solve_mat5" end time: Apr 17 23:14 UTC
+"y12m_solve_mat5" end time: Apr 17 23:28 UTC
 "y12m_solve_mat5" time elapsed: 00:00:00
 ----------------------------------------------------------
 
-14/15 Testing: test_matrix_generators
-14/15 Test: test_matrix_generators
+15/16 Testing: test_matrix_generators
+15/16 Test: test_matrix_generators
 Command: "/home/runner/work/y12m/y12m/build/examples/test_matrix_generators"
 Directory: /home/runner/work/y12m/y12m/build/examples
-"test_matrix_generators" start time: Apr 17 23:14 UTC
+"test_matrix_generators" start time: Apr 17 23:28 UTC
 Output:
 ----------------------------------------------------------
 PASS matrd1 NNZ z=255
@@ -518,15 +538,15 @@ All test_matrix_generators tests PASSED
 Test time =   0.00 sec
 ----------------------------------------------------------
 Test Passed.
-"test_matrix_generators" end time: Apr 17 23:14 UTC
+"test_matrix_generators" end time: Apr 17 23:28 UTC
 "test_matrix_generators" time elapsed: 00:00:00
 ----------------------------------------------------------
 
-15/15 Testing: maind
-15/15 Test: maind
+16/16 Testing: maind
+16/16 Test: maind
 Command: "/bin/sh" "-c" "/home/runner/work/y12m/y12m/build/examples/maind < input.txt"
 Directory: /home/runner/work/y12m/y12m/build/examples
-"maind" start time: Apr 17 23:14 UTC
+"maind" start time: Apr 17 23:28 UTC
 Output:
 ----------------------------------------------------------
  indexp,nstart,nincr,nend,cstart,cincr,cend:
@@ -600,8 +620,8 @@ Output:
 Test time =   0.02 sec
 ----------------------------------------------------------
 Test Passed.
-"maind" end time: Apr 17 23:14 UTC
+"maind" end time: Apr 17 23:28 UTC
 "maind" time elapsed: 00:00:00
 ----------------------------------------------------------
 
-End testing: Apr 17 23:14 UTC
+End testing: Apr 17 23:28 UTC

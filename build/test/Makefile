@@ -197,6 +197,20 @@ test_y12mf_sp/fast:
 .PHONY : test_y12mf_sp/fast
 
 # Convenience name for target.
+test/CMakeFiles/test_y12mf_dp.dir/rule:
+	cd /home/runner/work/y12m/y12m/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test/CMakeFiles/test_y12mf_dp.dir/rule
+.PHONY : test/CMakeFiles/test_y12mf_dp.dir/rule
+
+# Convenience name for target.
+test_y12mf_dp: test/CMakeFiles/test_y12mf_dp.dir/rule
+.PHONY : test_y12mf_dp
+
+# fast build rule for target.
+test_y12mf_dp/fast:
+	cd /home/runner/work/y12m/y12m/build && $(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12mf_dp.dir/build.make test/CMakeFiles/test_y12mf_dp.dir/build
+.PHONY : test_y12mf_dp/fast
+
+# Convenience name for target.
 test/CMakeFiles/test_y12mg_mh.dir/rule:
 	cd /home/runner/work/y12m/y12m/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test/CMakeFiles/test_y12mg_mh.dir/rule
 .PHONY : test/CMakeFiles/test_y12mg_mh.dir/rule
@@ -396,6 +410,30 @@ test_y12mc_z_intent.f90.s:
 	cd /home/runner/work/y12m/y12m/build && $(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12mc_z_intent.dir/build.make test/CMakeFiles/test_y12mc_z_intent.dir/test_y12mc_z_intent.f90.s
 .PHONY : test_y12mc_z_intent.f90.s
 
+test_y12mf_dp.o: test_y12mf_dp.f90.o
+.PHONY : test_y12mf_dp.o
+
+# target to build an object file
+test_y12mf_dp.f90.o:
+	cd /home/runner/work/y12m/y12m/build && $(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12mf_dp.dir/build.make test/CMakeFiles/test_y12mf_dp.dir/test_y12mf_dp.f90.o
+.PHONY : test_y12mf_dp.f90.o
+
+test_y12mf_dp.i: test_y12mf_dp.f90.i
+.PHONY : test_y12mf_dp.i
+
+# target to preprocess a source file
+test_y12mf_dp.f90.i:
+	cd /home/runner/work/y12m/y12m/build && $(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12mf_dp.dir/build.make test/CMakeFiles/test_y12mf_dp.dir/test_y12mf_dp.f90.i
+.PHONY : test_y12mf_dp.f90.i
+
+test_y12mf_dp.s: test_y12mf_dp.f90.s
+.PHONY : test_y12mf_dp.s
+
+# target to generate assembly for a file
+test_y12mf_dp.f90.s:
+	cd /home/runner/work/y12m/y12m/build && $(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12mf_dp.dir/build.make test/CMakeFiles/test_y12mf_dp.dir/test_y12mf_dp.f90.s
+.PHONY : test_y12mf_dp.f90.s
+
 test_y12mf_sp.o: test_y12mf_sp.f90.o
 .PHONY : test_y12mf_sp.o
 
@@ -483,6 +521,7 @@ help:
 	@echo "... test_y12mb_mc_md_dp"
 	@echo "... test_y12mb_mc_md_sp"
 	@echo "... test_y12mc_z_intent"
+	@echo "... test_y12mf_dp"
 	@echo "... test_y12mf_sp"
 	@echo "... test_y12mg_mh"
 	@echo "... y12m_solve"
@@ -504,6 +543,9 @@ help:
 	@echo "... test_y12mc_z_intent.o"
 	@echo "... test_y12mc_z_intent.i"
 	@echo "... test_y12mc_z_intent.s"
+	@echo "... test_y12mf_dp.o"
+	@echo "... test_y12mf_dp.i"
+	@echo "... test_y12mf_dp.s"
 	@echo "... test_y12mf_sp.o"
 	@echo "... test_y12mf_sp.i"
 	@echo "... test_y12mf_sp.s"

@@ -18,6 +18,7 @@ set(CMAKE_DEPENDS_CHECK_Fortran
   "/home/runner/work/y12m/y12m/src/legacy/y12mde.f" "/home/runner/work/y12m/y12m/build/CMakeFiles/y12m_legacy.dir/src/legacy/y12mde.f.o"
   "/home/runner/work/y12m/y12m/src/legacy/y12mdf.f" "/home/runner/work/y12m/y12m/build/CMakeFiles/y12m_legacy.dir/src/legacy/y12mdf.f.o"
   "/home/runner/work/y12m/y12m/src/legacy/y12mfe.f" "/home/runner/work/y12m/y12m/build/CMakeFiles/y12m_legacy.dir/src/legacy/y12mfe.f.o"
+  "/home/runner/work/y12m/y12m/src/legacy/y12mff.f90" "/home/runner/work/y12m/y12m/build/CMakeFiles/y12m_legacy.dir/src/legacy/y12mff.f90.o"
   "/home/runner/work/y12m/y12m/src/legacy/y12mge.f" "/home/runner/work/y12m/y12m/build/CMakeFiles/y12m_legacy.dir/src/legacy/y12mge.f.o"
   "/home/runner/work/y12m/y12m/src/legacy/y12mhe.f" "/home/runner/work/y12m/y12m/build/CMakeFiles/y12m_legacy.dir/src/legacy/y12mhe.f.o"
   "/home/runner/work/y12m/y12m/src/legacy/y12mhf.f" "/home/runner/work/y12m/y12m/build/CMakeFiles/y12m_legacy.dir/src/legacy/y12mhf.f.o"

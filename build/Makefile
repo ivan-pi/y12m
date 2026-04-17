@@ -205,6 +205,19 @@ test_y12mf_sp/fast:
 .PHONY : test_y12mf_sp/fast
 
 #=============================================================================
+# Target rules for targets named test_y12mf_dp
+
+# Build rule for target.
+test_y12mf_dp: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test_y12mf_dp
+.PHONY : test_y12mf_dp
+
+# fast build rule for target.
+test_y12mf_dp/fast:
+	$(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12mf_dp.dir/build.make test/CMakeFiles/test_y12mf_dp.dir/build
+.PHONY : test_y12mf_dp/fast
+
+#=============================================================================
 # Target rules for targets named test_y12mg_mh
 
 # Build rule for target.
@@ -600,6 +613,30 @@ src/legacy/y12mfe.f.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/y12m_legacy.dir/build.make CMakeFiles/y12m_legacy.dir/src/legacy/y12mfe.f.s
 .PHONY : src/legacy/y12mfe.f.s
 
+src/legacy/y12mff.o: src/legacy/y12mff.f90.o
+.PHONY : src/legacy/y12mff.o
+
+# target to build an object file
+src/legacy/y12mff.f90.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/y12m_legacy.dir/build.make CMakeFiles/y12m_legacy.dir/src/legacy/y12mff.f90.o
+.PHONY : src/legacy/y12mff.f90.o
+
+src/legacy/y12mff.i: src/legacy/y12mff.f90.i
+.PHONY : src/legacy/y12mff.i
+
+# target to preprocess a source file
+src/legacy/y12mff.f90.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/y12m_legacy.dir/build.make CMakeFiles/y12m_legacy.dir/src/legacy/y12mff.f90.i
+.PHONY : src/legacy/y12mff.f90.i
+
+src/legacy/y12mff.s: src/legacy/y12mff.f90.s
+.PHONY : src/legacy/y12mff.s
+
+# target to generate assembly for a file
+src/legacy/y12mff.f90.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/y12m_legacy.dir/build.make CMakeFiles/y12m_legacy.dir/src/legacy/y12mff.f90.s
+.PHONY : src/legacy/y12mff.f90.s
+
 src/legacy/y12mge.o: src/legacy/y12mge.f.o
 .PHONY : src/legacy/y12mge.o
 
@@ -718,6 +755,7 @@ help:
 	@echo "... test_y12mb_mc_md_dp"
 	@echo "... test_y12mb_mc_md_sp"
 	@echo "... test_y12mc_z_intent"
+	@echo "... test_y12mf_dp"
 	@echo "... test_y12mf_sp"
 	@echo "... test_y12mg_mh"
 	@echo "... y12m_legacy"
@@ -753,6 +791,9 @@ help:
 	@echo "... src/legacy/y12mfe.o"
 	@echo "... src/legacy/y12mfe.i"
 	@echo "... src/legacy/y12mfe.s"
+	@echo "... src/legacy/y12mff.o"
+	@echo "... src/legacy/y12mff.i"
+	@echo "... src/legacy/y12mff.s"
 	@echo "... src/legacy/y12mge.o"
 	@echo "... src/legacy/y12mge.i"
 	@echo "... src/legacy/y12mge.s"
