@@ -34,3 +34,14 @@ add_test(NAME y12m_solve_mat0
 
 add_test(NAME y12m_solve_mat2
   COMMAND y12m_solve --verbose "${DATA_DIR}/mat2.mtx")
+
+# ---- Random 9x9 double-precision test (requires LAPACK) ----
+if(LAPACK_FOUND)
+  add_executable(test_y12ma_rand_dp test_y12ma_rand_dp.f90)
+  target_compile_options(test_y12ma_rand_dp PRIVATE ${TEST_COMPILE_FLAGS})
+  target_link_libraries(test_y12ma_rand_dp PRIVATE y12m_legacy LAPACK::LAPACK)
+  add_test(NAME test_y12ma_rand_dp COMMAND test_y12ma_rand_dp)
+else()
+  message(STATUS
+    "LAPACK not found -- skipping test_y12ma_rand_dp (sparse-dense comparison test)")
+endif()
