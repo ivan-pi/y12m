@@ -79,15 +79,19 @@ module y12m
   interface y12mc
     subroutine y12mce(n, z, a, snr, nn, rnr, nn1, &
         pivot, b, ha, iha, aflag, iflag, ifail)
+      integer, intent(in) :: n
+      integer, intent(in) :: z
       real :: a(nn), pivot(n), b(n), aflag(8)
       integer :: snr(nn), rnr(nn1), ha(iha,11), iflag(10)
-      integer :: n, z, nn, nn1, iha, ifail
+      integer :: nn, nn1, iha, ifail
     end subroutine
     subroutine y12mcf(n, z, a, snr, nn, rnr, nn1, &
         pivot, b, ha, iha, aflag, iflag, ifail)
+      integer, intent(in) :: n
+      integer, intent(in) :: z
       double precision :: a(nn), pivot(n), b(n), aflag(8)
       integer :: snr(nn), rnr(nn1), ha(iha,11), iflag(10)
-      integer :: n, z, nn, nn1, iha, ifail
+      integer :: nn, nn1, iha, ifail
     end subroutine
   end interface
 
