@@ -41,8 +41,12 @@ contains
    !   n  — dimension (must be > 22 for use with the y12m benchmark driver)
    !   c  — structure parameter (positive integer < n-2)
    !
+   ! The non-zero elements of the matrix (in any order) are stored in the
+   ! first z positions of array a.  Their column and row numbers are stored
+   ! in the corresponding positions of arrays snr and rnr respectively.
+   !
    ! On exit:
-   !   z       — number of non-zero elements stored; always z = 4*n + 55.
+   !   z       — number of non-zero elements; always z = 4*n + 55.
    !   a(1:z)  — non-zero values.
    !   snr(1:z)— column indices of the stored values.
    !   rnr(1:z)— row indices of the stored values.
@@ -194,40 +198,48 @@ contains
    !  matrf2 — class F2 sparse matrix generator                            !
    ! --------------------------------------------------------------------- !
    !
-   ! Generates a sparse (rectangular or square) matrix of class F2 in COO
-   ! format.  The sparsity pattern and condition number can be controlled
-   ! by the caller.
+   ! Generates sparse (rectangular or square) matrices of class F2 in COO
+   ! format.  The number of rows and columns, the average number of
+   ! non-zero elements per row, the sparsity pattern, and the condition
+   ! number of the matrix can all be specified by the caller.
+   !
+   ! The non-zero elements of the matrix are accumulated (in arbitrary
+   ! order) in the first nz positions of array a.  The column and row
+   ! numbers of the non-zero element stored in a(i), i = 1 to nz, are
+   ! found in snr(i) and rnr(i) respectively.
    !
    ! Input parameters
    ! ----------------
-   !   m      — number of rows (m >= n, m < HUGE(m))
-   !   n      — number of columns (n >= 22)
-   !   c      — sparsity-pattern parameter (11 <= c, n-c >= 11)
-   !   index  — average non-zeros per row (index >= 2, n-c-index >= 9)
-   !   alpha  — condition-number parameter (alpha > 0; alpha ≈ 1 → well
-   !            conditioned; large alpha → ill conditioned)
-   !   nn     — allocated length of a and snr (>= index*m + 110)
-   !   nn1    — allocated length of rnr       (>= index*m + 110)
+   !   m      — number of rows.  n <= m < HUGE(m) must hold.
+   !   n      — number of columns.  21 < n < HUGE(n) must hold.
+   !   c      — sparsity-pattern parameter.  10 < c < n-10 must hold.
+   !   index  — average non-zeros per row.  1 < index, n-c-index >= 9
+   !            must hold.
+   !   alpha  — condition-number parameter.  alpha > 0.0 must hold.
+   !            alpha ≈ 1.0 produces a well-conditioned matrix; large
+   !            values of alpha typically produce ill-conditioned matrices.
+   !            Note: setting alpha = 2**i (for any integer i whose result
+   !            is representable on the machine) avoids all round-off
+   !            errors during matrix generation.
+   !   nn     — allocated length of a and snr.
+   !            index*m + 109 < nn < HUGE(nn) must hold.
+   !   nn1    — allocated length of rnr.
+   !            index*m + 109 < nn1 < HUGE(nn1) must hold.
    !
    ! Output parameters
    ! -----------------
    !   nz       — number of non-zero entries stored.
    !   a(1:nz)  — non-zero values.
-   !   snr(1:nz)— column indices.
-   !   rnr(1:nz)— row indices.
+   !   snr(1:nz)— column numbers: the column number of a(i) is in snr(i).
+   !   rnr(1:nz)— row numbers: the row number of a(i) is in rnr(i).
    !   ifejlm   — 0 on success; positive error code otherwise:
    !                1 — n out of range
    !                2 — m out of range
    !                3 — c out of range
-   !                4 — index out of range
+   !                4 — index out of range (non-fatal: generation continues)
    !                5 — nn out of range
    !                6 — nn1 out of range
    !                7 — alpha out of range
-   !
-   ! Note: in the original fixed-form source the error check for `index`
-   ! did not execute a RETURN, so the generator could proceed with
-   ! ifejlm=4 set.  That behaviour is preserved here (TODO: make it a
-   ! proper early return in a later cleanup step).
    !
    subroutine matrf2(m, n, c, index, alpha, nn, nn1, nz, a, snr, rnr, ifejlm)
       integer, intent(in)  :: m, n, c, index, nn, nn1
@@ -257,8 +269,8 @@ contains
       else if (c < 11 .or. n - c < 11) then
          ifejlm = 3
       else if (index < 2 .or. n - c - index < 9) then
-         ! TODO: the original code did NOT return on error 4; preserved for
-         ! backward compatibility — error 4 is non-fatal and generation continues.
+         ! Error 4 is non-fatal: the original source did not return on this
+         ! condition, so generation continues with ifejlm=4 set.
          ifejlm = 4
       else if (nn < nz1 .or. nn > maxint) then
          ifejlm = 5
