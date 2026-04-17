@@ -237,17 +237,17 @@ contains
       real,    intent(out) :: a(nn)
       integer, intent(out) :: snr(nn), rnr(nn1)
 
-      integer :: maxint, m1, nz1, k, m2, n2, index1
+      integer, parameter :: maxint = huge(0)
+      integer :: m1, nz1, k, m2, n2, index1
       integer :: i, j, j1, rr1, rr2, rr3, l
-      real    :: alpha1, alpha_loc
+      real    :: alpha_initial, alpha_cur
 
-      maxint  = huge(maxint)
       m1      = m
       ifejlm  = 0
       nz1     = index*m + 110
       k       = 1
-      alpha_loc = alpha
-      alpha1    = alpha
+      alpha_cur     = alpha
+      alpha_initial = alpha
       index1  = index - 1
 
       ! ---- parameter validation ----
@@ -311,7 +311,7 @@ contains
       rr3 = 1
       do
          do i = 1, rr1
-            a(rr2 + i)   = alpha_loc * real(i)
+            a(rr2 + i)   = alpha_cur * real(i)
             snr(rr2 + i) = n - rr1 + i
             rnr(rr2 + i) = rr3
          end do
@@ -323,7 +323,7 @@ contains
       nz = nz + 55
 
       ! ---- generate the remaining m-n rows (if m > n) ----
-      alpha_loc = 1.0 / alpha_loc
+      alpha_cur = 1.0 / alpha_cur
       m1 = m1 - n
       do while (m1 > 0)
          n2 = k * n
@@ -335,7 +335,7 @@ contains
          l = 0
          if (m2 <= 10) l = 11 - m2
          do i = 1, m2
-            a(nz + i)   = alpha_loc * real(k + 1)
+            a(nz + i)   = alpha_cur * real(k + 1)
             snr(nz + i) = i + l
             rnr(nz + i) = n2 + i
          end do
@@ -344,7 +344,7 @@ contains
          do j = 1, index1
             j1 = -j1
             do i = 1, m2
-               a(nz + i) = alpha_loc * real(j) * real(j1) * real((k + 1)*i + 1)
+               a(nz + i) = alpha_cur * real(j) * real(j1) * real((k + 1)*i + 1)
                if (i + c + j - 1 <= n) then
                   snr(nz + i) = i + c + j - 1
                else
@@ -355,17 +355,17 @@ contains
             nz = nz + m2
          end do
          k  = k + 1
-         alpha_loc = 1.0 / alpha_loc
+         alpha_cur = 1.0 / alpha_cur
          m1 = m1 - n
       end do
 
       ! Dense triangular corner block in the last rows (55 entries)
-      alpha_loc = 1.0 / alpha1
+      alpha_cur = 1.0 / alpha_initial
       rr1 = 1
       rr2 = nz
       do
          do i = 1, rr1
-            a(rr2 + i)   = alpha_loc * real(rr1 + 1 - i)
+            a(rr2 + i)   = alpha_cur * real(rr1 + 1 - i)
             snr(rr2 + i) = i
             rnr(rr2 + i) = m - 10 + rr1
          end do
