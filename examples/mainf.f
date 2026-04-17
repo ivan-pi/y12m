@@ -1,3 +1,4 @@
+      use y12m_example_util, only: matrf2, time
       parameter (ibdim=2000,iadim=50*ibdim,icdim=50*ibdim,
      * iddim=10*ibdim,maxsto=1)
       implicit real(a-b,g,p,t-y),integer(c,f,h-n,r-s,z)
