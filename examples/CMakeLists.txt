@@ -28,6 +28,12 @@ foreach(tname
 
 endforeach()
 
+# 1. Create the file as you did before
+file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/input.txt" "1 600 600 600 4 44 204\n")
+
+# 2. Call the shell directly to handle the redirection
 add_test(NAME maind
-  COMMAND maind "< 1 600 600 600 4 44 204")
+    COMMAND /bin/sh -c "$<TARGET_FILE:maind> < input.txt"
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+)
 

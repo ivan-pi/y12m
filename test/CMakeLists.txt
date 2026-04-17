@@ -29,11 +29,12 @@ target_link_libraries(y12m_solve PRIVATE y12m_legacy)
 # tree; pass absolute paths so the tests work regardless of the build directory.
 set(DATA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/data")
 
-add_test(NAME y12m_solve_mat0
-  COMMAND y12m_solve --verbose "${DATA_DIR}/mat0.mtx")
-
-add_test(NAME y12m_solve_mat2
-  COMMAND y12m_solve --verbose "${DATA_DIR}/mat2.mtx")
+foreach(MAT_ID mat0 mat1 mat2 mat3 mat5)
+    add_test(
+        NAME "y12m_solve_${MAT_ID}"
+        COMMAND y12m_solve --verbose "${DATA_DIR}/${MAT_ID}.mtx"
+    )
+endforeach()
 
 # ---- Random 9x9 double-precision test (requires LAPACK) ----
 if(LAPACK_FOUND)
