@@ -1,9 +1,11 @@
 name = "y12m"
+version = "1.0.0"
 maintainer = ["@ivan-pi"]
 author = ["Zahari Zlatev", "Jerzy Wasniewski", "Kjeld Schaumburg"]
 homepage = "http://www.netlib.org/y12m/"
 keywords = ["sparse", "linear", "algebra", "direct", "method"]
 description = "Solution of Large and Sparse Systems of Linear Algebraic Equations"
+license = "GPL-2.0-only"
 
 [library]
 source-dir = "src"
