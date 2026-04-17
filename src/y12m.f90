@@ -17,8 +17,11 @@ module y12m
   public :: y12mh
 
 
-  !> Solve sparse systems of linear algebraic equations by
-  !> Gaussian elimination
+  !> Solve a sparse system of linear equations Ax=b by Gaussian elimination.
+  !>
+  !> This is the all-in-one driver routine. It sets AFLAG(1-4) and IFLAG(2-5)
+  !> to fixed internal defaults (overriding any values the caller may have
+  !> placed there), then calls y12mb, y12mc, and y12md in sequence.
   !>
   interface y12ma
     subroutine y12mae(n, z, a, snr, nn, rnr, nn1, &
@@ -51,7 +54,14 @@ module y12m
     end subroutine
   end interface
 
-  !> Prepare a system of linear algebraic equations to be factorized
+  !> Prepare the non-zero elements of a sparse matrix A in order to
+  !> solve the system Ax=b using sparse matrix techniques.
+  !>
+  !> The routine counts non-zeros per row and column, copies the input
+  !> non-zeros to the working portion of A and SNR, records row and column
+  !> start positions in HA, reorders the elements into row-ordered and
+  !> column-ordered lists, and stores auxiliary ordering information used
+  !> by y12mc during Gaussian elimination.
   !>
   interface y12mb
     subroutine y12mbe(n, z, a, snr, nn, rnr, nn1, &
@@ -70,7 +80,18 @@ module y12m
     end subroutine
   end interface
 
-  !> Factorize a matrix A into two triangular matrices L and U.
+  !> Factorize the sparse matrix A into lower and upper triangular factors
+  !> L and U using sparse matrix techniques and Gaussian elimination.
+  !>
+  !> The routine stores information needed to begin the elimination, then
+  !> performs the elimination step by step: for each step it selects a
+  !> pivot (subject to the stability criterion in AFLAG(1) and the drop
+  !> tolerance in AFLAG(2)), applies row and column interchanges, removes
+  !> the pivot element, updates the remaining active submatrix, handles
+  !> fill-in by compacting the row-ordered and column-ordered lists when
+  !> necessary, and updates the row-length ordering list used for pivot
+  !> selection. Fill-in information from a previous factorization can be
+  !> reused when IFLAG(4) = 2.
   !>
   interface y12mc
     subroutine y12mce(n, z, a, snr, nn, rnr, nn1, &
@@ -91,7 +112,14 @@ module y12m
     end subroutine
   end interface
 
-  !> Solve sparse systems of linear equations
+  !> Solve the system Ax=b using the LU-factorization computed by y12mc.
+  !>
+  !> When IFLAG(5) = 3 (solve with L and U), the routine first performs
+  !> forward substitution with the lower triangular factor L, applying
+  !> row-interchange permutations if interchanges were used during
+  !> factorization. It then performs back substitution with the upper
+  !> triangular factor U. Finally, if column interchanges were applied
+  !> during elimination, the solution vector is reordered accordingly.
   !>
   interface y12md
     subroutine y12mde(n, a, nn, b, pivot, snr, &
@@ -120,10 +148,18 @@ module y12m
     end subroutine
   end interface
 
-  !> Solve large and sparse systems of linear algebraic equations by
-  !> the use of Gaussian elimination and sparse matrix technique.
+  !> Solve a large sparse system of linear equations Ax=b by Gaussian
+  !> elimination with iterative refinement to improve accuracy.
   !>
-  !> Iterative refinement is applied in order to improve accuracy.
+  !> The routine saves the original non-zero values and their column
+  !> indices for use in the refinement phase. It calls y12mb and y12mc
+  !> to factorize A (unless the factorization is already available), then
+  !> calls y12md to compute the first solution. Iterative refinement then
+  !> proceeds by computing residuals (in extended precision), solving the
+  !> correction equation using the existing factorization, accumulating
+  !> corrections, and checking a stopping criterion based on the ratio of
+  !> the correction norm to the solution norm. Iterations continue until
+  !> convergence or until IFLAG(11) iterations have been performed.
   !>
   interface y12mf
     subroutine y12mfe(n, a, snr, nn, rnr, nn1, a1,sn, nz, &
@@ -146,7 +182,20 @@ module y12m
     end subroutine
   end interface
 
-  !> Calculate the reciprocal condition number of matrix A
+  !> Compute an estimate of the reciprocal condition number (RCOND) of the
+  !> sparse matrix A, as defined by Dongarra, Bunch, Moler and Stewart
+  !> (LINPACK User's Guide, SIAM, Philadelphia, 1979).
+  !>
+  !> Must be called immediately after y12mc while the LU-factorization of
+  !> A is still intact. The one-norm of A (ANORM) must be supplied by the
+  !> caller; it is most conveniently obtained by calling y12mh before
+  !> calling y12mc.
+  !>
+  !> The algorithm solves U^T * w = e (where the components of e are +1 or
+  !> -1 chosen to maximize the norm), then L^T * y = w, and finally
+  !> (LU) * z = y. RCOND is estimated as (||y|| / ANORM) / ||z||.
+  !> On successful exit RCOND contains an approximation to the reciprocal
+  !> condition number. If an error is detected on entry, RCOND is set to -1.
   !>
   interface y12mg
     subroutine y12mge(n,nn,a,snr,w,pivot,anorm,rcond,iha,ha,iflag,ifail)
@@ -164,7 +213,12 @@ module y12m
     end subroutine
   end interface
 
-  !> Compute the one-norm of a sparse matrix A
+  !> Compute the one-norm of a sparse matrix A stored in coordinate form.
+  !>
+  !> All parameters except ANORM have the same meaning as in the other
+  !> routines of the y12m package. On exit, ANORM contains the one-norm
+  !> (the maximum absolute column sum) of A. This routine should be called
+  !> before y12mc so that ANORM is available for a subsequent call to y12mg.
   !>
   interface y12mh
     subroutine y12mhe(n,nz,a,snr,work,anorm)
