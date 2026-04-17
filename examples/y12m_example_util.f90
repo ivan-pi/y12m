@@ -17,14 +17,13 @@
 ! Timing
 ! ------
 ! time(iusec)  — fills iusec with the current wall-clock reading in
-!                microseconds (integer).  The original time.f90 contained a
-!                factor-of-10^12 error (multiply by 1e-6 instead of 1e6);
-!                that is corrected here.
+!                microseconds (integer).
 
 module y12m_example_util
-   use, intrinsic :: iso_fortran_env, only: int64
    implicit none
    private
+
+   integer, parameter :: sp = kind(1.0e0)
 
    public :: matrd1
    public :: matre1
@@ -253,32 +252,22 @@ contains
       ! ---- parameter validation ----
       if (n < 22 .or. n > maxint) then
          ifejlm = 1
-         return
-      end if
-      if (m < n .or. m > maxint) then
+      else if (m < n .or. m > maxint) then
          ifejlm = 2
-         return
-      end if
-      if (c < 11 .or. n - c < 11) then
+      else if (c < 11 .or. n - c < 11) then
          ifejlm = 3
-         return
-      end if
-      ! TODO: the original code did NOT return on error 4 (see subroutine doc).
-      if (index < 2 .or. n - c - index < 9) then
+      else if (index < 2 .or. n - c - index < 9) then
+         ! TODO: the original code did NOT return on error 4; preserved for
+         ! backward compatibility — error 4 is non-fatal and generation continues.
          ifejlm = 4
-      end if
-      if (nn < nz1 .or. nn > maxint) then
+      else if (nn < nz1 .or. nn > maxint) then
          ifejlm = 5
-         return
-      end if
-      if (nn1 < nz1 .or. nn1 > maxint) then
+      else if (nn1 < nz1 .or. nn1 > maxint) then
          ifejlm = 6
-         return
-      end if
-      if (alpha <= 0.0) then
+      else if (alpha <= 0.0) then
          ifejlm = 7
-         return
       end if
+      if (ifejlm > 0 .and. ifejlm /= 4) return
 
       ! ---- generate the first n rows (the square part) ----
       ! Diagonal
@@ -386,15 +375,12 @@ contains
    ! obtain an elapsed time; dividing the difference by 1e6 then gives
    ! seconds (as done in mainf/mainf2).
    !
-   ! Bug fix relative to the original time.f90: the old formula used
-   !   iusec = real(count) / real(rate) * 1.0e-6
-   ! which always produced zero.  The correct scale factor is 1.0e6.
-   !
    subroutine time(iusec)
+      use, intrinsic :: iso_fortran_env, only: int64
       integer, intent(out) :: iusec
       integer(int64) :: count, rate
       call system_clock(count, rate)
-      iusec = int(real(count, kind=8) / real(rate, kind=8) * 1.0e6_8)
+      iusec = int(real(count, kind=sp) / real(rate, kind=sp) * 1.0e6_sp)
    end subroutine time
 
 end module y12m_example_util
