@@ -144,6 +144,24 @@ module y12m
       integer, intent(inout) :: iflag(12)
       integer, intent(out) :: ifail
     end subroutine
+    subroutine y12mff(n, a, snr, nn, rnr, nn1, a1, sn, nz, &
+        ha, iha, b, b1, x, y, aflag, iflag, ifail)
+      implicit none
+      integer, intent(in) :: n, nn, nn1, nz, iha
+      double precision, intent(inout) :: a(nn)
+      integer, intent(inout) :: snr(nn)
+      integer, intent(inout) :: rnr(nn1)
+      double precision, intent(inout) :: a1(nz)
+      integer, intent(inout) :: sn(nz)
+      integer, intent(inout) :: ha(iha,13)
+      double precision, intent(inout) :: b(n)
+      double precision, intent(inout) :: b1(n)
+      double precision, intent(inout) :: x(n)
+      double precision, intent(inout) :: y(n)
+      double precision, intent(inout) :: aflag(11)
+      integer, intent(inout) :: iflag(12)
+      integer, intent(out) :: ifail
+    end subroutine
   end interface
 
   !> Calculate the reciprocal condition number of matrix A
