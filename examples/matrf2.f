@@ -90,7 +90,8 @@ c     integer*2 snr,rnr
 c     maxint -- the larget integer such that          maxint                    
 c     and      -maxint     are representable on the computer                    
 c     maxint=32768                                                              
-      maxint=int(2.0**31-1.0)                                                   
+c      maxint=int(2.0**31-1.0)
+      maxint=huge(maxint)
       m1=m                                                                      
       ifejlm=0                                                                  
       nz1=index*m+110                                                           

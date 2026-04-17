@@ -20,7 +20,9 @@ set_target_properties(y12m_legacy PROPERTIES
     Fortran_MODULE_DIRECTORY "${FORTRAN_MOD_DIR}")
 target_include_directories(y12m_legacy INTERFACE "${FORTRAN_MOD_DIR}")
 
+
 find_package(LAPACK)
 
 enable_testing()
 add_subdirectory(test)
+add_subdirectory(examples)

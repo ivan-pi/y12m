@@ -1,0 +1,33 @@
+
+set(TEST_COMPILE_FLAGS -Wall -pedantic)
+
+foreach(tname
+    test1
+    test2)
+
+  add_executable(${tname} ${tname}.f)
+  target_compile_options(${tname} PRIVATE ${TEST_COMPILE_FLAGS})
+  target_link_libraries(${tname} PRIVATE y12m_legacy)
+#  add_test(NAME ${tname} COMMAND ${tname})
+
+endforeach()
+
+
+add_library(y12m_mgen OBJECT matrd1.f matre1.f matrf2.f time.f90)
+
+foreach(tname
+    maine
+    maind
+    mainf
+    mainf2)
+
+  add_executable(${tname} ${tname}.f)
+  target_compile_options(${tname} PRIVATE ${TEST_COMPILE_FLAGS})
+  target_link_libraries(${tname} PRIVATE y12m_legacy y12m_mgen)
+#  add_test(NAME ${tname} COMMAND ${tname})
+
+endforeach()
+
+add_test(NAME maind
+  COMMAND maind "< 1 600 600 600 4 44 204")
+
