@@ -19,23 +19,8 @@ subroutine y12mff(n, a, snr, nn, rnr, nn1, a1, sn, nz, &
   use, intrinsic :: ieee_arithmetic, only: ieee_fma
   implicit none
 
-  integer, intent(in) :: n, nn, nn1, nz, iha
-  real(kind(1.0d0)), intent(inout) :: a(nn)
-  integer, intent(inout) :: snr(nn)
-  integer, intent(inout) :: rnr(nn1)
-  real(kind(1.0d0)), intent(inout) :: a1(nz)
-  integer, intent(inout) :: sn(nz)
-  integer, intent(inout) :: ha(iha,13)
-  real(kind(1.0d0)), intent(inout) :: b(n)
-  real(kind(1.0d0)), intent(inout) :: b1(n)
-  real(kind(1.0d0)), intent(inout) :: x(n)
-  real(kind(1.0d0)), intent(inout) :: y(n)
-  real(kind(1.0d0)), intent(inout) :: aflag(11)
-  integer, intent(inout) :: iflag(12)
-  integer, intent(out) :: ifail
-
   ! ---------------------------------------------------------------------------
-  ! Precision selection
+  ! Precision selection (must precede argument declarations)
   ! ---------------------------------------------------------------------------
   ! Working precision (double precision).
   integer, parameter :: dp = kind(1.0d0)
@@ -48,6 +33,21 @@ subroutine y12mff(n, a, snr, nn, rnr, nn1, a1, sn, nz, &
   ! hp is the higher precision kind.  When quad is not available hp equals
   ! dp, but in that branch the double-double accumulator is used instead.
   integer, parameter :: hp = merge(qp, dp, has_qp)
+
+  integer, intent(in) :: n, nn, nn1, nz, iha
+  real(dp), intent(inout) :: a(nn)
+  integer, intent(inout) :: snr(nn)
+  integer, intent(inout) :: rnr(nn1)
+  real(dp), intent(inout) :: a1(nz)
+  integer, intent(inout) :: sn(nz)
+  integer, intent(inout) :: ha(iha,13)
+  real(dp), intent(inout) :: b(n)
+  real(dp), intent(inout) :: b1(n)
+  real(dp), intent(inout) :: x(n)
+  real(dp), intent(inout) :: y(n)
+  real(dp), intent(inout) :: aflag(11)
+  integer, intent(inout) :: iflag(12)
+  integer, intent(out) :: ifail
 
   ! ---------------------------------------------------------------------------
   ! Local scalars
