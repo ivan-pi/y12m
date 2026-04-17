@@ -10,6 +10,9 @@ c
 c
 c  information which is necessary to begin the elimination is stored.
 c
+c  use a local working copy of z so the caller's variable is never modified.
+c
+      zz=z
       ifail=0
       if(iflag(1).ne.-1)ifail=2
       if(aflag(1).lt.1.0)aflag(1)=1.0005
@@ -20,13 +23,12 @@ c
       if(iflag(5).lt.1.or.iflag(5).gt.3)ifail=21
       if(iflag(5).eq.3)ifail=22
       if(ifail.gt.0)go to 1110
-      snr(z+1)=0
-      rnr(z+1)=0
+      snr(zz+1)=0
+      rnr(zz+1)=0
       n8=n+1
       n7=n-1
       u=aflag(1)
       grmin=aflag(4)*aflag(6)
-      zz=z
 c
 c  use the information about fill-ins if it is possible.
 c
@@ -243,7 +245,7 @@ c
       a(rr3)=a(r2)
       snr(rr3)=snr(r2)
       snr(r2)=0
-      z=z-1
+      zz=zz-1
       rr3=rr3+1
       ha(i,2)=rr3
       ha(i,1)=r2+1
@@ -270,7 +272,7 @@ c
       snr(i1)=0
       i1=i1+1
       ha(r1,1)=i1
-      z=z-1
+      zz=zz-1
       go to 410
   400 a(l)=a(rr1)
       a(rr1)=t
@@ -296,7 +298,7 @@ c
 c
 c  too small element is created.remove it from the lists.
 c
-      z=z-1
+      zz=zz-1
       a(l)=a(rr1)
       snr(l)=snr(rr1)
       a(rr1)=a(i1)
@@ -420,8 +422,8 @@ c
       snr(l1)=snr(r)
       td=abs(a(l1))
       if(td.gt.aflag(7))aflag(7)=td
-      z=z+1
-      if(iflag(8).lt.z)      iflag(8)=z
+      zz=zz+1
+      if(iflag(8).lt.zz)      iflag(8)=zz
       if(c2.eq.1)go to 620
       if(rnr(c2-1).eq.0)go to 720
   620 if(cr2.eq.nn1)go to 630
@@ -617,6 +619,6 @@ c
 1060  continue
       aflag(5)=aflag(7)/aflag(6)
       iflag(1)=-2
- 1110 z=zz
+ 1110 continue
       return
       end
