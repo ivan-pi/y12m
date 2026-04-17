@@ -1,36 +1,24 @@
 ! SPDX-License-Identifier: GPL-2.0-only
 ! Assisted-by: GitHub Copilot:claude-sonnet-4.5
 !
-! test_y12mf_sp.f90 - Tests for y12mfe: single-precision solver with
-! iterative refinement.
+! test_y12mf_sp.f90 - Tests for y12mf (single-precision iterative refinement).
 !
-! Four sparse systems of sizes n=3,5,7,10 are solved using y12mfe.
-! All systems use tridiagonal matrices with known solution x=[1,...,1].
-! The solution after iterative refinement is returned in array x (not b).
+! This program tests y12mf (resolving to y12mfe) which combines Gaussian
+! elimination with iterative refinement to improve solution accuracy.  Unlike
+! y12ma/y12mb+y12mc+y12md, y12mf preserves the original matrix (in a1/sn)
+! and uses it to compute residuals and refine x until convergence.
+!
+! Four tridiagonal (diag=3, off-diag=-1) systems are solved:
+!   n=3, 5, 7, 10  — all with the known solution x=[1,...,1].
+!
+! The factored form is stored with IFLAG(5)=2 (keep L factors) as required
+! by y12mf.  The refined solution is returned in array x (not b).
+!
+! Pass criteria: IFAIL=0 and max|x_i-1|<1e-4 for all systems.
 !
 program test_y12mf_sp
+  use y12m
   implicit none
-
-  interface
-    subroutine y12mfe(n, a, snr, nn, rnr, nn1, a1, sn, nz, &
-        ha, iha, b, b1, x, y, aflag, iflag, ifail)
-      implicit none
-      integer, intent(in)    :: n, nn, nn1, nz, iha
-      real,    intent(inout) :: a(nn)
-      integer, intent(inout) :: snr(nn)
-      integer, intent(inout) :: rnr(nn1)
-      real,    intent(inout) :: a1(nz)
-      integer, intent(inout) :: sn(nz)
-      integer, intent(inout) :: ha(iha,13)
-      real,    intent(inout) :: b(n)
-      real,    intent(inout) :: b1(n)
-      real,    intent(inout) :: x(n)
-      real,    intent(inout) :: y(n)
-      real,    intent(inout) :: aflag(11)
-      integer, intent(inout) :: iflag(12)
-      integer, intent(out)   :: ifail
-    end subroutine y12mfe
-  end interface
 
   integer, parameter :: NMAX  = 12
   integer, parameter :: NNP   = 400
@@ -69,21 +57,20 @@ contains
     z = z_loc
     nn = NNP ; nn1 = NN1P ; iha = NMAX
 
-    ! y12mfe settings from the reference example (test2.f).
-    ! aflag(1..4) and iflag(2..5,11) must be set by caller.
+    ! Settings per the reference example (test2.f).
+    ! IFLAG(5)=2 keeps L factors as required by y12mf.
     aflag(1)  = 16.0    ! stability factor
-    aflag(2)  = 1.0e-12 ! drop tolerance (0 = disabled)
+    aflag(2)  = 1.0e-12 ! drop tolerance
     aflag(3)  = 1.0e+16 ! max growth factor before abort
     aflag(4)  = 1.0e-12 ! min pivot threshold
 
-    iflag(1)  = 0       ! must be >= 0 before first call of package
-    iflag(2)  = 3       ! pivotal search in 3 rows with fewest nonzeros
-    iflag(3)  = 1       ! general matrix pivotal strategy
-    iflag(4)  = 1       ! preserve L for iterative refinement
-    iflag(5)  = 2       ! keep L elements (required by y12mfe)
+    iflag(1)  = 0
+    iflag(2)  = 3
+    iflag(3)  = 1
+    iflag(4)  = 1       ! preserve structure info for iterative refinement
+    iflag(5)  = 2       ! keep L factors (required by y12mf)
     iflag(11) = 10      ! maximum number of refinement iterations
 
-    ! Initialize output arrays
     x(1:n)  = 0.0
     y(1:n)  = 0.0
     b1(1:n) = 0.0
@@ -92,7 +79,7 @@ contains
       sn(i) = 0
     end do
 
-    call y12mfe(n, a, snr, nn, rnr, nn1, a1, sn, z, ha, iha, &
+    call y12mf(n, a, snr, nn, rnr, nn1, a1, sn, z, ha, iha, &
         b, b1, x, y, aflag, iflag, ifail)
 
     call check_sp(trim(label), n, x, ifail, 1.0e-4, nfail)
@@ -121,7 +108,7 @@ contains
     end do
   end subroutine build_tridiag_sp
 
-  ! Check ifail=0 and max|x(1:n)-1| < tol; increment nfail on failure.
+  ! Check IFAIL=0 and max|x(1:n)-1|<tol; increment nfail on failure.
   subroutine check_sp(label, n, x, ifail, tol, nfail)
     character(len=*), intent(in)    :: label
     integer,          intent(in)    :: n, ifail

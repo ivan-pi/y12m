@@ -1,34 +1,22 @@
 ! SPDX-License-Identifier: GPL-2.0-only
 ! Assisted-by: GitHub Copilot:claude-sonnet-4.5
 !
-! test_y12ma_dp.f90 - Tests for y12maf: double-precision black-box solver.
+! test_y12ma_dp.f90 - Tests for y12ma (double-precision black-box solver).
 !
-! Five sparse systems of sizes n=6..10 with known solution x=[1,...,1] are
-! constructed using tridiagonal (n=6,7,9,10) and arrow (n=8) matrices and
-! solved via y12maf.  The test passes when IFAIL=0 and max|x_i-1| < tol.
+! This program tests the y12ma generic interface (resolving to y12maf)
+! by solving five sparse linear systems Ax=b of sizes n=6..10.
+! All systems have the known solution x=[1,...,1], constructed by setting
+! b = A*[1,...,1] so that verification is straightforward.
+!
+!   n=6,7:  6x6 and 7x7 tridiagonal (diag=3, off-diag=-1), solutions verified.
+!   n=8:    8x8 arrow matrix (full first row/column plus diagonal rest).
+!   n=9,10: 9x9 and 10x10 tridiagonal, solutions verified.
+!
+! Pass criteria: IFAIL=0 and max|x_i-1|<1e-10 for all systems.
 !
 program test_y12ma_dp
+  use y12m
   implicit none
-
-  ! Explicit interface for y12maf.  The actual legacy implementation uses
-  ! implicit integer typing for IFAIL (variable name starts with 'i'),
-  ! so IFAIL is declared integer here to match the implementation.
-  interface
-    subroutine y12maf(n, z, a, snr, nn, rnr, nn1, &
-        pivot, ha, iha, aflag, iflag, b, ifail)
-      implicit none
-      integer,          intent(in)    :: n, z, nn, nn1, iha
-      double precision, intent(inout) :: a(nn)
-      integer,          intent(inout) :: snr(nn)
-      integer,          intent(inout) :: rnr(nn1)
-      double precision, intent(inout) :: pivot(n)
-      integer,          intent(inout) :: ha(iha,11)
-      double precision, intent(inout) :: aflag(8)
-      integer,          intent(inout) :: iflag(10)
-      double precision, intent(inout) :: b(n)
-      integer,          intent(out)   :: ifail
-    end subroutine y12maf
-  end interface
 
   integer, parameter :: NMAX  = 12
   integer, parameter :: NNP   = 400
@@ -44,7 +32,7 @@ program test_y12ma_dp
   do n = 6, 7
     call build_tridiag_dp(n, NNP, NN1P, z, a, snr, rnr, b)
     nn = NNP ; nn1 = NN1P ; iha = NMAX
-    call y12maf(n, z, a, snr, nn, rnr, nn1, pivot, ha, iha, &
+    call y12ma(n, z, a, snr, nn, rnr, nn1, pivot, ha, iha, &
         aflag, iflag, b, ifail)
     select case (n)
     case (6)
@@ -58,7 +46,7 @@ program test_y12ma_dp
   n = 8
   call build_arrow_dp(n, NNP, NN1P, z, a, snr, rnr, b)
   nn = NNP ; nn1 = NN1P ; iha = NMAX
-  call y12maf(n, z, a, snr, nn, rnr, nn1, pivot, ha, iha, &
+  call y12ma(n, z, a, snr, nn, rnr, nn1, pivot, ha, iha, &
       aflag, iflag, b, ifail)
   call check_dp('y12ma_dp n=8 arrow', n, b, ifail, 1.0d-10, nfail)
 
@@ -66,7 +54,7 @@ program test_y12ma_dp
   do n = 9, 10
     call build_tridiag_dp(n, NNP, NN1P, z, a, snr, rnr, b)
     nn = NNP ; nn1 = NN1P ; iha = NMAX
-    call y12maf(n, z, a, snr, nn, rnr, nn1, pivot, ha, iha, &
+    call y12ma(n, z, a, snr, nn, rnr, nn1, pivot, ha, iha, &
         aflag, iflag, b, ifail)
     select case (n)
     case (9)
@@ -84,8 +72,8 @@ program test_y12ma_dp
 
 contains
 
-  ! Build an n-by-n tridiagonal system (diag=3, off-diag=-1), double precision,
-  ! with solution x=[1,...,1].
+  ! Build an n-by-n tridiagonal (diag=3, off-diag=-1), double precision,
+  ! solution x=[1,...,1].
   subroutine build_tridiag_dp(n, nnmax, nn1max, z, a, snr, rnr, b)
     integer,          intent(in)  :: n, nnmax, nn1max
     integer,          intent(out) :: z
@@ -108,7 +96,7 @@ contains
     end do
   end subroutine build_tridiag_dp
 
-  ! Build an n-by-n arrow matrix, double precision, with solution x=[1,...,1].
+  ! Build an n-by-n arrow matrix, double precision, solution x=[1,...,1].
   subroutine build_arrow_dp(n, nnmax, nn1max, z, a, snr, rnr, b)
     integer,          intent(in)  :: n, nnmax, nn1max
     integer,          intent(out) :: z
@@ -129,7 +117,7 @@ contains
     end do
   end subroutine build_arrow_dp
 
-  ! Check that ifail=0 and max|b(1:n)-1| < tol; update nfail accordingly.
+  ! Check IFAIL=0 and max|b(1:n)-1|<tol; increment nfail on failure.
   subroutine check_dp(label, n, b, ifail, tol, nfail)
     character(len=*), intent(in)    :: label
     integer,          intent(in)    :: n, ifail

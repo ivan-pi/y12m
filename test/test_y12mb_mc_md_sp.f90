@@ -2,57 +2,24 @@
 ! Assisted-by: GitHub Copilot:claude-sonnet-4.5
 !
 ! test_y12mb_mc_md_sp.f90 - Tests for the three-step single-precision API:
-!   y12mbe (prepare) -> y12mce (factorize) -> y12mde (solve).
+!   y12mb (prepare) -> y12mc (factorize) -> y12md (solve).
 !
-! Five sparse systems of sizes n=1..5 are solved, covering diagonal (n=1),
-! tridiagonal (n=2,3,4), and arrow (n=5) matrix structures.
-! Known solution x=[1,...,1] for all cases.
+! This program tests the generic interfaces y12mb, y12mc, and y12md, each
+! resolving to their single-precision variants (y12mbe, y12mce, y12mde).
+! Five sparse systems of sizes n=1..5 exercise different code paths:
+!
+!   n=1: expected IFAIL=12 — y12mb requires n>=2; tests error diagnostics.
+!   n=2: 2x2 full matrix [[4,1],[2,5]], b=[5,7], solution x=[1,1].
+!   n=3: 3x3 tridiagonal (diag=3, off-diag=-1), solution verified.
+!   n=4: 4x4 tridiagonal, solution verified.
+!   n=5: 5x5 arrow matrix (full first row/column plus diagonal rest),
+!        solution verified.
+!
+! Pass criteria: IFAIL=12 for n=1, IFAIL=0 and max|x_i-1|<1e-4 for n=2..5.
 !
 program test_y12mb_mc_md_sp
+  use y12m
   implicit none
-
-  interface
-    subroutine y12mbe(n, z, a, snr, nn, rnr, nn1, &
-        ha, iha, aflag, iflag, ifail)
-      implicit none
-      integer, intent(in)    :: n, z, nn, nn1, iha
-      real,    intent(inout) :: a(nn)
-      integer, intent(inout) :: snr(nn)
-      integer, intent(inout) :: rnr(nn1)
-      integer, intent(inout) :: ha(iha,11)
-      real,    intent(inout) :: aflag(8)
-      integer, intent(inout) :: iflag(10)
-      integer, intent(out)   :: ifail
-    end subroutine y12mbe
-
-    subroutine y12mce(n, z, a, snr, nn, rnr, nn1, &
-        pivot, b, ha, iha, aflag, iflag, ifail)
-      implicit none
-      integer, intent(in)    :: n, z, nn, nn1, iha
-      real,    intent(inout) :: a(nn)
-      integer, intent(inout) :: snr(nn)
-      integer, intent(inout) :: rnr(nn1)
-      real,    intent(inout) :: pivot(n)
-      real,    intent(inout) :: b(n)
-      integer, intent(inout) :: ha(iha,11)
-      real,    intent(inout) :: aflag(8)
-      integer, intent(inout) :: iflag(10)
-      integer, intent(out)   :: ifail
-    end subroutine y12mce
-
-    subroutine y12mde(n, a, nn, b, pivot, snr, &
-        ha, iha, iflag, ifail)
-      implicit none
-      integer, intent(in)  :: n, nn, iha
-      real,    intent(in)  :: a(nn)
-      real,    intent(in)  :: pivot(n)
-      integer, intent(in)  :: snr(nn)
-      integer, intent(in)  :: ha(iha,11)
-      integer, intent(in)  :: iflag(10)
-      real,    intent(inout) :: b(n)
-      integer, intent(out)   :: ifail
-    end subroutine y12mde
-  end interface
 
   integer, parameter :: NMAX  = 10
   integer, parameter :: NNP   = 200
@@ -65,7 +32,6 @@ program test_y12mb_mc_md_sp
   nfail = 0
 
   ! --- n=1: verify expected error IFAIL=12 (N<2 is not supported) ---
-  ! This tests the error-diagnostic path of the three-step API.
   n = 1
   call build_diag_sp(n, NNP, NN1P, z, a, snr, rnr, b)
   call solve3_sp(n, z, a, snr, NNP, rnr, NN1P, pivot, b, ha, &
@@ -114,7 +80,7 @@ program test_y12mb_mc_md_sp
 
 contains
 
-  ! Prepare-factorize-solve a single-precision sparse system.
+  ! Execute the three-step prepare->factorize->solve sequence (single precision).
   subroutine solve3_sp(n, z, a, snr, nn, rnr, nn1, pivot, b, ha, &
       iha, aflag, iflag, ifail)
     integer, intent(in)    :: n, z, nn, nn1, iha
@@ -122,11 +88,11 @@ contains
     integer, intent(inout) :: snr(nn), rnr(nn1), ha(iha,11), iflag(10)
     integer, intent(out)   :: ifail
 
-    ! IFLAG(1) must be >= 0 before first call of the package.
+    ! IFLAG(1) must be >= 0 before the first call of the package.
     iflag(1) = 0
     iflag(2) = 3
     iflag(3) = 1
-    iflag(4) = 0  ! single system, no LU reuse
+    iflag(4) = 0  ! single system; no LU reuse
     iflag(5) = 1  ! discard L after factorization (saves memory)
 
     aflag(1) = 16.0     ! stability factor
@@ -134,17 +100,17 @@ contains
     aflag(3) = 1.0e+16  ! max growth factor
     aflag(4) = 1.0e-12  ! min pivot threshold
 
-    call y12mbe(n, z, a, snr, nn, rnr, nn1, ha, iha, aflag, iflag, ifail)
+    call y12mb(n, z, a, snr, nn, rnr, nn1, ha, iha, aflag, iflag, ifail)
     if (ifail /= 0) return
 
-    call y12mce(n, z, a, snr, nn, rnr, nn1, pivot, b, ha, iha, &
+    call y12mc(n, z, a, snr, nn, rnr, nn1, pivot, b, ha, iha, &
         aflag, iflag, ifail)
     if (ifail /= 0) return
 
-    call y12mde(n, a, nn, b, pivot, snr, ha, iha, iflag, ifail)
+    call y12md(n, a, nn, b, pivot, snr, ha, iha, iflag, ifail)
   end subroutine solve3_sp
 
-  ! 1x1 diagonal system: A=[diag], b=[diag], solution x=[1].
+  ! 1x1 diagonal system: A=diag(i+2), b=row sums, solution x=[1].
   subroutine build_diag_sp(n, nnmax, nn1max, z, a, snr, rnr, b)
     integer, intent(in)  :: n, nnmax, nn1max
     integer, intent(out) :: z
@@ -161,7 +127,7 @@ contains
     end do
   end subroutine build_diag_sp
 
-  ! 2x2 full matrix: A = [[4,1],[2,5]], b = A*[1,1] = [5,7], x = [1,1].
+  ! 2x2 full matrix: A=[[4,1],[2,5]], b=A*[1,1]=[5,7], solution x=[1,1].
   subroutine build_full2_sp(n, nnmax, nn1max, z, a, snr, rnr, b)
     integer, intent(in)  :: n, nnmax, nn1max
     integer, intent(out) :: z
@@ -169,10 +135,8 @@ contains
     integer, intent(out) :: snr(nnmax), rnr(nn1max)
     integer :: i
     z = 0
-    ! Row 1: A(1,1)=4, A(1,2)=1
     z = z + 1 ; rnr(z) = 1 ; snr(z) = 1 ; a(z) = 4.0
     z = z + 1 ; rnr(z) = 1 ; snr(z) = 2 ; a(z) = 1.0
-    ! Row 2: A(2,1)=2, A(2,2)=5
     z = z + 1 ; rnr(z) = 2 ; snr(z) = 1 ; a(z) = 2.0
     z = z + 1 ; rnr(z) = 2 ; snr(z) = 2 ; a(z) = 5.0
     b(1:n) = 0.0
@@ -204,7 +168,7 @@ contains
     end do
   end subroutine build_tridiag_sp
 
-  ! n-by-n arrow matrix, solution x=[1,...,1].
+  ! n-by-n arrow matrix (full first row/col, diagonal rest), x=[1,...,1].
   subroutine build_arrow_sp(n, nnmax, nn1max, z, a, snr, rnr, b)
     integer, intent(in)  :: n, nnmax, nn1max
     integer, intent(out) :: z
@@ -225,7 +189,7 @@ contains
     end do
   end subroutine build_arrow_sp
 
-  ! Check ifail=0 and max|b(1:n)-1| < tol; increment nfail on failure.
+  ! Check IFAIL=0 and max|b(1:n)-1|<tol; increment nfail on failure.
   subroutine check_sp(label, n, b, ifail, tol, nfail)
     character(len=*), intent(in)    :: label
     integer,          intent(in)    :: n, ifail

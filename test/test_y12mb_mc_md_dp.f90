@@ -2,57 +2,24 @@
 ! Assisted-by: GitHub Copilot:claude-sonnet-4.5
 !
 ! test_y12mb_mc_md_dp.f90 - Tests for the three-step double-precision API:
-!   y12mbf (prepare) -> y12mcf (factorize) -> y12mdf (solve).
+!   y12mb (prepare) -> y12mc (factorize) -> y12md (solve).
 !
-! Five sparse systems of sizes n=6..10 with known solution x=[1,...,1].
-! Matrix types: full (n=6), tridiagonal (n=7,9), arrow (n=8), pentadiagonal
-! (n=10).
+! This program tests the generic interfaces y12mb, y12mc, and y12md, each
+! resolving to their double-precision variants (y12mbf, y12mcf, y12mdf).
+! Five sparse systems of sizes n=6..10 cover different sparsity patterns:
+!
+!   n=6:  6x6 tridiagonal (diag=3, off-diag=-1), solution verified.
+!   n=7:  7x7 arrow matrix (full first row/column plus diagonal rest).
+!   n=8:  8x8 tridiagonal, solution verified.
+!   n=9:  9x9 tridiagonal, solution verified.
+!   n=10: 10x10 pentadiagonal (bandwidth 2, diag=5, dist-1 off-diag=-1,
+!         dist-2 off-diag=-0.5), solution verified.
+!
+! Pass criteria: IFAIL=0 and max|x_i-1|<1e-10 for all systems.
 !
 program test_y12mb_mc_md_dp
+  use y12m
   implicit none
-
-  interface
-    subroutine y12mbf(n, z, a, snr, nn, rnr, nn1, &
-        ha, iha, aflag, iflag, ifail)
-      implicit none
-      integer,          intent(in)    :: n, z, nn, nn1, iha
-      double precision, intent(inout) :: a(nn)
-      integer,          intent(inout) :: snr(nn)
-      integer,          intent(inout) :: rnr(nn1)
-      integer,          intent(inout) :: ha(iha,11)
-      double precision, intent(inout) :: aflag(8)
-      integer,          intent(inout) :: iflag(10)
-      integer,          intent(out)   :: ifail
-    end subroutine y12mbf
-
-    subroutine y12mcf(n, z, a, snr, nn, rnr, nn1, &
-        pivot, b, ha, iha, aflag, iflag, ifail)
-      implicit none
-      integer,          intent(in)    :: n, z, nn, nn1, iha
-      double precision, intent(inout) :: a(nn)
-      integer,          intent(inout) :: snr(nn)
-      integer,          intent(inout) :: rnr(nn1)
-      double precision, intent(inout) :: pivot(n)
-      double precision, intent(inout) :: b(n)
-      integer,          intent(inout) :: ha(iha,11)
-      double precision, intent(inout) :: aflag(8)
-      integer,          intent(inout) :: iflag(10)
-      integer,          intent(out)   :: ifail
-    end subroutine y12mcf
-
-    subroutine y12mdf(n, a, nn, b, pivot, snr, &
-        ha, iha, iflag, ifail)
-      implicit none
-      integer,          intent(in)    :: n, nn, iha
-      double precision, intent(in)    :: a(nn)
-      double precision, intent(in)    :: pivot(n)
-      integer,          intent(in)    :: snr(nn)
-      integer,          intent(in)    :: ha(iha,11)
-      integer,          intent(in)    :: iflag(10)
-      double precision, intent(inout) :: b(n)
-      integer,          intent(out)   :: ifail
-    end subroutine y12mdf
-  end interface
 
   integer, parameter :: NMAX  = 12
   integer, parameter :: NNP   = 500
@@ -107,7 +74,7 @@ program test_y12mb_mc_md_dp
 
 contains
 
-  ! Prepare-factorize-solve a double-precision sparse system.
+  ! Execute the three-step prepare->factorize->solve sequence (double precision).
   subroutine solve3_dp(n, z, a, snr, nn, rnr, nn1, pivot, b, ha, &
       iha, aflag, iflag, ifail)
     integer,          intent(in)    :: n, z, nn, nn1, iha
@@ -126,14 +93,14 @@ contains
     aflag(3) = 1.0d+16
     aflag(4) = 1.0d-12
 
-    call y12mbf(n, z, a, snr, nn, rnr, nn1, ha, iha, aflag, iflag, ifail)
+    call y12mb(n, z, a, snr, nn, rnr, nn1, ha, iha, aflag, iflag, ifail)
     if (ifail /= 0) return
 
-    call y12mcf(n, z, a, snr, nn, rnr, nn1, pivot, b, ha, iha, &
+    call y12mc(n, z, a, snr, nn, rnr, nn1, pivot, b, ha, iha, &
         aflag, iflag, ifail)
     if (ifail /= 0) return
 
-    call y12mdf(n, a, nn, b, pivot, snr, ha, iha, iflag, ifail)
+    call y12md(n, a, nn, b, pivot, snr, ha, iha, iflag, ifail)
   end subroutine solve3_dp
 
   ! n-by-n tridiagonal (diag=3, off-diag=-1), double precision, x=[1,...,1].
@@ -159,7 +126,7 @@ contains
     end do
   end subroutine build_tridiag_dp
 
-  ! n-by-n arrow matrix, double precision, x=[1,...,1].
+  ! n-by-n arrow matrix, double precision, solution x=[1,...,1].
   subroutine build_arrow_dp(n, nnmax, nn1max, z, a, snr, rnr, b)
     integer,          intent(in)  :: n, nnmax, nn1max
     integer,          intent(out) :: z
@@ -180,8 +147,8 @@ contains
     end do
   end subroutine build_arrow_dp
 
-  ! n-by-n pentadiagonal matrix (diag=5, dist-1 off-diag=-1, dist-2 off-diag=-0.5),
-  ! double precision, x=[1,...,1].
+  ! n-by-n pentadiagonal (diag=5, dist-1 off-diag=-1, dist-2 off-diag=-0.5),
+  ! double precision, solution x=[1,...,1].
   subroutine build_pentadiag_dp(n, nnmax, nn1max, z, a, snr, rnr, b)
     integer,          intent(in)  :: n, nnmax, nn1max
     integer,          intent(out) :: z
@@ -189,18 +156,15 @@ contains
     integer,          intent(out) :: snr(nnmax), rnr(nn1max)
     integer :: i
     z = 0
-    ! Diagonal
     do i = 1, n
       z = z + 1 ; rnr(z) = i ; snr(z) = i ; a(z) = 5.0d0
     end do
-    ! Immediate off-diagonals
     do i = 2, n
       z = z + 1 ; rnr(z) = i ; snr(z) = i-1 ; a(z) = -1.0d0
     end do
     do i = 1, n-1
       z = z + 1 ; rnr(z) = i ; snr(z) = i+1 ; a(z) = -1.0d0
     end do
-    ! Second off-diagonals
     do i = 3, n
       z = z + 1 ; rnr(z) = i ; snr(z) = i-2 ; a(z) = -0.5d0
     end do
@@ -213,7 +177,7 @@ contains
     end do
   end subroutine build_pentadiag_dp
 
-  ! Check ifail=0 and max|b(1:n)-1| < tol; increment nfail on failure.
+  ! Check IFAIL=0 and max|b(1:n)-1|<tol; increment nfail on failure.
   subroutine check_dp(label, n, b, ifail, tol, nfail)
     character(len=*), intent(in)    :: label
     integer,          intent(in)    :: n, ifail

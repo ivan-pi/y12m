@@ -36,7 +36,7 @@ module y12m
       real, intent(inout) :: aflag(8)
       integer, intent(inout) :: iflag(10)
       real, intent(inout) :: b(n)
-      real, intent(out) :: ifail
+      integer, intent(out) :: ifail
     end subroutine
     subroutine y12maf(n, z, a, snr, nn, rnr, nn1, &
         pivot, ha, iha, aflag, iflag, b, ifail)
@@ -53,7 +53,7 @@ module y12m
       double precision, intent(inout) :: aflag(8)
       integer, intent(inout) :: iflag(10)
       double precision, intent(inout) :: b(n)
-      double precision, intent(out) :: ifail
+      integer, intent(out) :: ifail
     end subroutine
   end interface
 
@@ -63,13 +63,13 @@ module y12m
     subroutine y12mbe(n, z, a, snr, nn, rnr, nn1, &
         ha, iha, aflag, iflag, ifail)
       real a(nn), aflag(8)
-      integer snr(nn), rnr(nn1), ha(n,11), iflag(10)
+      integer snr(nn), rnr(nn1), ha(iha,11), iflag(10)
       integer n, z, iha, ifail
     end subroutine
     subroutine y12mbf(n, z, a, snr, nn, rnr, nn1, &
         ha, iha, aflag, iflag, ifail)
       double precision a(nn), aflag(8)
-      integer snr(nn), rnr(nn1), ha(n,11), iflag(10)
+      integer snr(nn), rnr(nn1), ha(iha,11), iflag(10)
       integer n, z, iha, ifail
     end subroutine
   end interface
