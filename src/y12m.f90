@@ -23,16 +23,13 @@ module y12m
   interface y12ma
     subroutine y12mae(n, z, a, snr, nn, rnr, nn1, &
         pivot, ha, iha, aflag, iflag, b, ifail)
-      integer, intent(in) :: n
-      integer, intent(in) :: z
+      implicit none
+      integer, intent(in) :: n, z, nn, nn1, iha
       real, intent(inout) :: a(nn)
       integer, intent(inout) :: snr(nn)
-      integer, intent(in) :: nn
       integer, intent(inout) :: rnr(nn1)
-      integer, intent(in) :: nn1
       real, intent(inout) :: pivot(n)
       integer, intent(inout) :: ha(iha,11)
-      integer, intent(in) :: iha
       real, intent(inout) :: aflag(8)
       integer, intent(inout) :: iflag(10)
       real, intent(inout) :: b(n)
@@ -40,16 +37,13 @@ module y12m
     end subroutine
     subroutine y12maf(n, z, a, snr, nn, rnr, nn1, &
         pivot, ha, iha, aflag, iflag, b, ifail)
-      integer, intent(in) :: n
-      integer, intent(in) :: z
+      implicit none
+      integer, intent(in) :: n, z, nn, nn1, iha
       double precision, intent(inout) :: a(nn)
       integer, intent(inout) :: snr(nn)
-      integer, intent(in) :: nn
       integer, intent(inout) :: rnr(nn1)
-      integer, intent(in) :: nn1
       double precision, intent(inout) :: pivot(n)
       integer, intent(inout) :: ha(iha,11)
-      integer, intent(in) :: iha
       double precision, intent(inout) :: aflag(8)
       integer, intent(inout) :: iflag(10)
       double precision, intent(inout) :: b(n)
@@ -62,15 +56,17 @@ module y12m
   interface y12mb
     subroutine y12mbe(n, z, a, snr, nn, rnr, nn1, &
         ha, iha, aflag, iflag, ifail)
+      implicit none
+      integer n, z, nn, nn1, iha, ifail
       real a(nn), aflag(8)
       integer snr(nn), rnr(nn1), ha(iha,11), iflag(10)
-      integer n, z, iha, ifail
     end subroutine
     subroutine y12mbf(n, z, a, snr, nn, rnr, nn1, &
         ha, iha, aflag, iflag, ifail)
+      implicit none
+      integer n, z, nn, nn1, iha, ifail
       double precision a(nn), aflag(8)
       integer snr(nn), rnr(nn1), ha(iha,11), iflag(10)
-      integer n, z, iha, ifail
     end subroutine
   end interface
 
@@ -79,16 +75,16 @@ module y12m
   interface y12mc
     subroutine y12mce(n, z, a, snr, nn, rnr, nn1, &
         pivot, b, ha, iha, aflag, iflag, ifail)
-      integer, intent(in) :: n
-      integer, intent(in) :: z
+      implicit none
+      integer, intent(in) :: n, z
+      integer :: nn, nn1, iha, ifail
       real :: a(nn), pivot(n), b(n), aflag(8)
       integer :: snr(nn), rnr(nn1), ha(iha,11), iflag(10)
-      integer :: nn, nn1, iha, ifail
     end subroutine
     subroutine y12mcf(n, z, a, snr, nn, rnr, nn1, &
         pivot, b, ha, iha, aflag, iflag, ifail)
-      integer, intent(in) :: n
-      integer, intent(in) :: z
+      implicit none
+      integer, intent(in) :: n, z
       double precision :: a(nn), pivot(n), b(n), aflag(8)
       integer :: snr(nn), rnr(nn1), ha(iha,11), iflag(10)
       integer :: nn, nn1, iha, ifail
@@ -100,27 +96,25 @@ module y12m
   interface y12md
     subroutine y12mde(n, a, nn, b, pivot, snr, &
         ha, iha, iflag, ifail)
-      integer, intent(in) :: n
+      implicit none
+      integer, intent(in) :: n, nn, iha
       real, intent(in) :: a(nn)
-      integer, intent(in) :: nn
       real, intent(inout) :: b(n)
       real, intent(in) :: pivot(n)
       integer, intent(in) :: snr(nn)
       integer, intent(in) :: ha(iha,11)
-      integer, intent(in) :: iha
       integer, intent(in) :: iflag(10)
       integer, intent(out) :: ifail
     end subroutine
     subroutine y12mdf(n, a, nn, b, pivot, snr, &
         ha, iha, iflag, ifail)
-      integer, intent(in) :: n
+      implicit none
+      integer, intent(in) :: n, nn, iha
       double precision, intent(in) :: a(nn)
-      integer, intent(in) :: nn
       double precision, intent(inout) :: b(n)
       double precision, intent(in) :: pivot(n)
       integer, intent(in) :: snr(nn)
       integer, intent(in) :: ha(iha,11)
-      integer, intent(in) :: iha
       integer, intent(in) :: iflag(10)
       integer, intent(out) :: ifail
     end subroutine
@@ -134,17 +128,14 @@ module y12m
   interface y12mf
     subroutine y12mfe(n, a, snr, nn, rnr, nn1, a1,sn, nz, &
         ha, iha, b, b1, x, y, aflag,iflag, ifail)
-      integer, intent(in) :: n
-      integer, intent(in) :: nn
+      implicit none
+      integer, intent(in) :: n, nn, nn1, nz, iha
       real, intent(inout) :: a(nn)
       integer, intent(inout) :: snr(nn)
       integer, intent(inout) :: rnr(nn1)
-      integer, intent(in) :: nn1
       real, intent(inout) :: a1(nz)
       integer, intent(inout) :: sn(nz)
-      integer, intent(in) :: nz
       integer, intent(inout) :: ha(iha,13)
-      integer, intent(in) :: iha
       real, intent(inout) :: b(n)
       real, intent(inout) :: b1(n)
       real, intent(inout) :: x(n)
@@ -159,15 +150,14 @@ module y12m
   !>
   interface y12mg
     subroutine y12mge(n,nn,a,snr,w,pivot,anorm,rcond,iha,ha,iflag,ifail)
-      integer, intent(in) :: n
-      integer, intent(in) :: nn
+      implicit none
+      integer, intent(in) :: n, nn, iha
       real, intent(in) :: a(nn)
       integer, intent(in) :: snr(nn)
       real, intent(inout) :: w(n)
       real, intent(in) :: pivot(n)
       real, intent(in) :: anorm
       real, intent(out) :: rcond
-      integer, intent(in) :: iha
       integer, intent(in) :: ha(iha,3)
       integer, intent(in) :: iflag(5)
       integer, intent(inout) :: ifail
@@ -178,16 +168,16 @@ module y12m
   !>
   interface y12mh
     subroutine y12mhe(n,nz,a,snr,work,anorm)
-      integer, intent(in) :: n
-      integer, intent(in) :: nz
+      implicit none
+      integer, intent(in) :: n, nz
       real, intent(in) :: a(nz)
       integer, intent(in) :: snr(nz)
       real, intent(inout) :: work(n)
       real, intent(out) :: anorm
     end subroutine
     subroutine y12mhf(n,nz,a,snr,work,anorm)
-      integer, intent(in) :: n
-      integer, intent(in) :: nz
+      implicit none
+      integer, intent(in) :: n, nz
       double precision, intent(in) :: a(nz)
       integer, intent(in) :: snr(nz)
       double precision, intent(inout) :: work(n)
