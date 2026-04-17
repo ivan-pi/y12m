@@ -34,3 +34,9 @@ add_test(NAME y12m_solve_mat0
 
 add_test(NAME y12m_solve_mat2
   COMMAND y12m_solve --verbose "${DATA_DIR}/mat2.mtx")
+
+# ---- C interface test ----
+add_executable(test_y12m_c test_y12m_c.c)
+target_compile_options(test_y12m_c PRIVATE -Wall -pedantic)
+target_link_libraries(test_y12m_c PRIVATE y12m_legacy m)
+add_test(NAME test_y12m_c COMMAND test_y12m_c)
