@@ -85,9 +85,9 @@ module y12m
         pivot, b, ha, iha, aflag, iflag, ifail)
       implicit none
       integer, intent(in) :: n, z
+      integer :: nn, nn1, iha, ifail
       double precision :: a(nn), pivot(n), b(n), aflag(8)
       integer :: snr(nn), rnr(nn1), ha(iha,11), iflag(10)
-      integer :: nn, nn1, iha, ifail
     end subroutine
   end interface
 
