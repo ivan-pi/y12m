@@ -1,3 +1,4 @@
+      use y12m_example_util, only: matrd1, matre1
       parameter (ibdim=2000, iadim=25*ibdim, icdim=20*ibdim,
      1 iddim=5*ibdim)
 c     parameter (ibdim=600, iadim=25*ibdim, icdim=20*ibdim,

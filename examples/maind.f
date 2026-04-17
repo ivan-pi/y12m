@@ -1,3 +1,4 @@
+      use y12m_example_util, only: matrd1, matre1
       parameter (ibdim=1000, iadim=25*ibdim, icdim=20*ibdim)
 c     parameter (ibdim=600, iadim=25*ibdim, icdim=20*ibdim)
 c     implicit real(a-b,g,p,t-v),integer(c,f,h-n,r-s,z)
