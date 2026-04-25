@@ -1,0 +1,692 @@
+Start testing: Apr 25 17:46 UTC
+----------------------------------------------------------
+1/19 Testing: test_y12ma_sp
+1/19 Test: test_y12ma_sp
+Command: "/home/runner/work/y12m/y12m/build/test/test_y12ma_sp"
+Directory: /home/runner/work/y12m/y12m/build/test
+"test_y12ma_sp" start time: Apr 25 17:46 UTC
+Output:
+----------------------------------------------------------
+PASS y12ma_sp n=1 error-diag: ifail=12 (N<2) as expected
+PASS y12ma_sp n=2 tridiag max_err= 0.000E+00
+PASS y12ma_sp n=3 tridiag max_err= 0.000E+00
+PASS y12ma_sp n=4 tridiag max_err= 0.000E+00
+PASS y12ma_sp n=5 arrow max_err= 2.980E-06
+All test_y12ma_sp tests PASSED
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_y12ma_sp" end time: Apr 25 17:46 UTC
+"test_y12ma_sp" time elapsed: 00:00:00
+----------------------------------------------------------
+
+2/19 Testing: test_y12ma_dp
+2/19 Test: test_y12ma_dp
+Command: "/home/runner/work/y12m/y12m/build/test/test_y12ma_dp"
+Directory: /home/runner/work/y12m/y12m/build/test
+"test_y12ma_dp" start time: Apr 25 17:46 UTC
+Output:
+----------------------------------------------------------
+PASS y12ma_dp n=6 tridiag max_err= 0.00000E+00
+PASS y12ma_dp n=7 tridiag max_err= 0.00000E+00
+PASS y12ma_dp n=8 arrow max_err= 1.55431E-15
+PASS y12ma_dp n=9 tridiag max_err= 0.00000E+00
+PASS y12ma_dp n=10 tridiag max_err= 0.00000E+00
+All test_y12ma_dp tests PASSED
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_y12ma_dp" end time: Apr 25 17:46 UTC
+"test_y12ma_dp" time elapsed: 00:00:00
+----------------------------------------------------------
+
+3/19 Testing: test_y12mb_mc_md_sp
+3/19 Test: test_y12mb_mc_md_sp
+Command: "/home/runner/work/y12m/y12m/build/test/test_y12mb_mc_md_sp"
+Directory: /home/runner/work/y12m/y12m/build/test
+"test_y12mb_mc_md_sp" start time: Apr 25 17:46 UTC
+Output:
+----------------------------------------------------------
+PASS y12mb_mc_md_sp n=1 error-diag: ifail=12 as expected
+PASS y12mb_mc_md_sp n=2 full max_err= 0.000E+00
+PASS y12mb_mc_md_sp n=3 tridiag max_err= 0.000E+00
+PASS y12mb_mc_md_sp n=4 tridiag max_err= 0.000E+00
+PASS y12mb_mc_md_sp n=5 arrow max_err= 2.980E-06
+All test_y12mb_mc_md_sp tests PASSED
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_y12mb_mc_md_sp" end time: Apr 25 17:46 UTC
+"test_y12mb_mc_md_sp" time elapsed: 00:00:00
+----------------------------------------------------------
+
+4/19 Testing: test_y12mb_mc_md_dp
+4/19 Test: test_y12mb_mc_md_dp
+Command: "/home/runner/work/y12m/y12m/build/test/test_y12mb_mc_md_dp"
+Directory: /home/runner/work/y12m/y12m/build/test
+"test_y12mb_mc_md_dp" start time: Apr 25 17:46 UTC
+Output:
+----------------------------------------------------------
+PASS y12mb_mc_md_dp n=6 tridiag max_err= 0.00000E+00
+PASS y12mb_mc_md_dp n=7 arrow max_err= 1.99840E-15
+PASS y12mb_mc_md_dp n=8 tridiag max_err= 0.00000E+00
+PASS y12mb_mc_md_dp n=9 tridiag max_err= 0.00000E+00
+PASS y12mb_mc_md_dp n=10 pentadiag max_err= 2.22045E-16
+All test_y12mb_mc_md_dp tests PASSED
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_y12mb_mc_md_dp" end time: Apr 25 17:46 UTC
+"test_y12mb_mc_md_dp" time elapsed: 00:00:00
+----------------------------------------------------------
+
+5/19 Testing: test_y12mf_sp
+5/19 Test: test_y12mf_sp
+Command: "/home/runner/work/y12m/y12m/build/test/test_y12mf_sp"
+Directory: /home/runner/work/y12m/y12m/build/test
+"test_y12mf_sp" start time: Apr 25 17:46 UTC
+Output:
+----------------------------------------------------------
+PASS y12mf_sp n=3 tridiag max_err= 0.000E+00
+PASS y12mf_sp n=5 tridiag max_err= 0.000E+00
+PASS y12mf_sp n=7 tridiag max_err= 0.000E+00
+PASS y12mf_sp n=10 tridiag max_err= 0.000E+00
+All test_y12mf_sp tests PASSED
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_y12mf_sp" end time: Apr 25 17:46 UTC
+"test_y12mf_sp" time elapsed: 00:00:00
+----------------------------------------------------------
+
+6/19 Testing: test_y12mg_mh
+6/19 Test: test_y12mg_mh
+Command: "/home/runner/work/y12m/y12m/build/test/test_y12mg_mh"
+Directory: /home/runner/work/y12m/y12m/build/test
+"test_y12mg_mh" start time: Apr 25 17:46 UTC
+Output:
+----------------------------------------------------------
+PASS y12mhe n=5 anorm=   5.00000
+PASS y12mhf n=10 anorm=   5.0000000
+PASS y12mg_mh y12md n=5 max_err= 0.000E+00
+PASS y12mg n=5 rcond= 2.631E-01 cond= 3.800E+00
+All test_y12mg_mh tests PASSED
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_y12mg_mh" end time: Apr 25 17:46 UTC
+"test_y12mg_mh" time elapsed: 00:00:00
+----------------------------------------------------------
+
+7/19 Testing: test_y12mc_z_intent
+7/19 Test: test_y12mc_z_intent
+Command: "/home/runner/work/y12m/y12m/build/test/test_y12mc_z_intent"
+Directory: /home/runner/work/y12m/y12m/build/test
+"test_y12mc_z_intent" start time: Apr 25 17:46 UTC
+Output:
+----------------------------------------------------------
+PASS test1: z unchanged after successful factorization
+PASS test2: z unchanged after early-error exit
+PASS test3: z as literal, max_err= 0.000E+00
+All test_y12mc_z_intent tests PASSED
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_y12mc_z_intent" end time: Apr 25 17:46 UTC
+"test_y12mc_z_intent" time elapsed: 00:00:00
+----------------------------------------------------------
+
+8/19 Testing: test_y12ma_5x5
+8/19 Test: test_y12ma_5x5
+Command: "/home/runner/work/y12m/y12m/build/test/test_y12ma_5x5"
+Directory: /home/runner/work/y12m/y12m/build/test
+"test_y12ma_5x5" start time: Apr 25 17:46 UTC
+Output:
+----------------------------------------------------------
+ solution x (stored in b):
+ 1.000000
+ 2.000000
+ 3.000000
+ 4.000000
+ 5.000000
+ residual r = b - A*x:
+ 0.000000
+ 0.000000
+ 0.000000
+ 0.000000
+ 0.000000
+PASS: rel2= 0.000000 <= rtol2= 0.1000000E-4
+      relinf= 0.000000 <= rtoli= 0.1000000E-4
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_y12ma_5x5" end time: Apr 25 17:46 UTC
+"test_y12ma_5x5" time elapsed: 00:00:00
+----------------------------------------------------------
+
+9/19 Testing: test_y12ma_output_params
+9/19 Test: test_y12ma_output_params
+Command: "/home/runner/work/y12m/y12m/build/test/test_y12ma_output_params"
+Directory: /home/runner/work/y12m/y12m/build/test
+"test_y12ma_output_params" start time: Apr 25 17:46 UTC
+Output:
+----------------------------------------------------------
+PASS y12ma_output SP n=4 tridiag: all SP output invariants hold
+PASS y12ma_output DP n=4 tridiag: all DP output invariants hold
+All test_y12ma_output_params tests PASSED
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_y12ma_output_params" end time: Apr 25 17:46 UTC
+"test_y12ma_output_params" time elapsed: 00:00:00
+----------------------------------------------------------
+
+10/19 Testing: test_y12m_errors
+10/19 Test: test_y12m_errors
+Command: "/home/runner/work/y12m/y12m/build/test/test_y12m_errors"
+Directory: /home/runner/work/y12m/y12m/build/test
+"test_y12m_errors" start time: Apr 25 17:46 UTC
+Output:
+----------------------------------------------------------
+PASS IFAIL=12 n<2: got expected IFAIL
+PASS IFAIL=13 z<=0: got expected IFAIL
+PASS IFAIL=5 nn<2z: got expected IFAIL
+PASS IFAIL=6 nn1<z: got expected IFAIL
+PASS IFAIL=14 z<n: got expected IFAIL
+PASS IFAIL=15 iha<n: got expected IFAIL
+PASS IFAIL=16 mode=3: got expected IFAIL
+PASS IFAIL=17 empty row: got expected IFAIL
+PASS IFAIL=18 empty column: got expected IFAIL
+PASS IFAIL=24 col>n: got expected IFAIL
+PASS IFAIL=25 row>n: got expected IFAIL
+PASS IFAIL=2 mc without mb: got expected IFAIL
+PASS IFAIL=22 mc with iflag5=3: got expected IFAIL
+All test_y12m_errors tests PASSED
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_y12m_errors" end time: Apr 25 17:46 UTC
+"test_y12m_errors" time elapsed: 00:00:00
+----------------------------------------------------------
+
+11/19 Testing: test_y12md_multi_rhs
+11/19 Test: test_y12md_multi_rhs
+Command: "/home/runner/work/y12m/y12m/build/test/test_y12md_multi_rhs"
+Directory: /home/runner/work/y12m/y12m/build/test
+"test_y12md_multi_rhs" start time: Apr 25 17:46 UTC
+Output:
+----------------------------------------------------------
+PASS multi_rhs SP n=4 tridiag: first solve max_err= 0.000E+00
+PASS multi_rhs SP n=4 tridiag: second solve max_err= 0.000E+00
+PASS multi_rhs DP n=4 tridiag: first solve max_err= 0.00000E+00
+PASS multi_rhs DP n=4 tridiag: second solve max_err= 0.00000E+00
+All test_y12md_multi_rhs tests PASSED
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_y12md_multi_rhs" end time: Apr 25 17:46 UTC
+"test_y12md_multi_rhs" time elapsed: 00:00:00
+----------------------------------------------------------
+
+12/19 Testing: test_y12mf_output_params
+12/19 Test: test_y12mf_output_params
+Command: "/home/runner/work/y12m/y12m/build/test/test_y12mf_output_params"
+Directory: /home/runner/work/y12m/y12m/build/test
+"test_y12mf_output_params" start time: Apr 25 17:46 UTC
+Output:
+----------------------------------------------------------
+PASS y12mf SP n=4 tridiag: iter=1 sol_err=  0.00     res_norm=  0.00    
+PASS y12mf SP n=5 arrow: iter=2 sol_err=  0.00     res_norm=  0.00    
+All test_y12mf_output_params tests PASSED
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_y12mf_output_params" end time: Apr 25 17:46 UTC
+"test_y12mf_output_params" time elapsed: 00:00:00
+----------------------------------------------------------
+
+13/19 Testing: y12m_solve_mat0
+13/19 Test: y12m_solve_mat0
+Command: "/home/runner/work/y12m/y12m/build/test/y12m_solve" "--verbose" "/home/runner/work/y12m/y12m/test/data/mat0.mtx"
+Directory: /home/runner/work/y12m/y12m/build/test
+"y12m_solve_mat0" start time: Apr 25 17:46 UTC
+Output:
+----------------------------------------------------------
+Matrix:  mat0  --  Simple 4x4 tridiagonal matrix.
+Size:    4 x 4,  nnz: 10,  kind: real (solved in double precision)
+
+Solution x:
+  x[1] =   2.10000000000000E+01
+  x[2] =   8.00000000000000E+00
+  x[3] =   3.00000000000000E+00
+  x[4] =   1.00000000000000E+00
+
+Residual r = b - A*x:
+  r[1] =   0.00000000000000E+00
+  r[2] =   0.00000000000000E+00
+  r[3] =   0.00000000000000E+00
+  r[4] =   0.00000000000000E+00
+
+||r||_1 =   0.000000E+00
+||r||_2 =   0.000000E+00
+
+Wall time:       0.000000 s
+
+Solver diagnostics (set by y12ma):
+  Stability factor   AFLAG(1) =   1.600000E+01
+  Drop tolerance     AFLAG(2) =   1.000000E-12
+  Growth limit       AFLAG(3) =   1.000000E+16
+  Pivot tolerance    AFLAG(4) =   1.000000E-12
+  Growth factor      AFLAG(5) =   1.000000E+00
+  Max element in A   AFLAG(6) =   3.000000E+00
+  Max element in LU  AFLAG(7) =   3.000000E+00
+  Min pivot          AFLAG(8) =   1.619048E+00
+  Row garbage coll.  IFLAG(6) = 0
+  Col garbage coll.  IFLAG(7) = 0
+  Max nnz in A       IFLAG(8) = 10
+IFAIL:     0
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"y12m_solve_mat0" end time: Apr 25 17:46 UTC
+"y12m_solve_mat0" time elapsed: 00:00:00
+----------------------------------------------------------
+
+14/19 Testing: y12m_solve_mat1
+14/19 Test: y12m_solve_mat1
+Command: "/home/runner/work/y12m/y12m/build/test/y12m_solve" "--verbose" "/home/runner/work/y12m/y12m/test/data/mat1.mtx"
+Directory: /home/runner/work/y12m/y12m/build/test
+"y12m_solve_mat1" start time: Apr 25 17:46 UTC
+Output:
+----------------------------------------------------------
+Matrix:  mat1  --  Typical circuit matrix, somewhat ill-conditioned.
+Size:    23 x 23,  nnz: 57,  kind: real (solved in double precision)
+
+Solution x:
+  x[1] =  -3.40425002948203E-04
+  x[2] =  -1.55085687702662E-04
+  x[3] =  -1.33634163692776E-03
+  x[4] =  -5.61601584230534E-04
+  x[5] =  -7.25857608317570E-03
+  x[6] =   3.17193435268995E-06
+  x[7] =   3.16423233260432E-04
+  x[8] =  -1.94982613860729E-03
+  x[9] =   0.00000000000000E+00
+  x[10] =   1.01619651917848E-04
+  x[11] =   0.00000000000000E+00
+  x[12] =   0.00000000000000E+00
+  x[13] =  -2.15975368148750E-04
+  x[14] =   6.31747191340473E-03
+  x[15] =   0.00000000000000E+00
+  x[16] =   9.60067461283455E-04
+  x[17] =   0.00000000000000E+00
+  x[18] =   0.00000000000000E+00
+  x[19] =   1.90172175193594E-03
+  x[20] =   3.16029239978681E-04
+  x[21] =   3.15453771150821E-04
+  x[22] =   7.56410712053707E-05
+  x[23] =   7.60061314713331E-05
+
+Residual r = b - A*x:
+  r[1] =   3.38813178901720E-21
+  r[2] =  -2.64697796016969E-23
+  r[3] =   6.35274710440725E-22
+  r[4] =   6.82424005356248E-23
+  r[5] =   1.05879118406788E-22
+  r[6] =  -3.97046694025453E-23
+  r[7] =   0.00000000000000E+00
+  r[8] =   0.00000000000000E+00
+  r[9] =   0.00000000000000E+00
+  r[10] =   0.00000000000000E+00
+  r[11] =   0.00000000000000E+00
+  r[12] =   0.00000000000000E+00
+  r[13] =   0.00000000000000E+00
+  r[14] =   4.23516473627150E-22
+  r[15] =   0.00000000000000E+00
+  r[16] =   7.94093388050907E-23
+  r[17] =   0.00000000000000E+00
+  r[18] =   0.00000000000000E+00
+  r[19] =   0.00000000000000E+00
+  r[20] =  -4.33680868994202E-19
+  r[21] =   8.67361737988404E-19
+  r[22] =  -1.08420217248550E-19
+  r[23] =   0.00000000000000E+00
+
+||r||_1 =   1.414229E-18
+||r||_2 =   9.757881E-19
+
+Wall time:       0.000000 s
+
+Solver diagnostics (set by y12ma):
+  Stability factor   AFLAG(1) =   1.600000E+01
+  Drop tolerance     AFLAG(2) =   1.000000E-12
+  Growth limit       AFLAG(3) =   1.000000E+16
+  Pivot tolerance    AFLAG(4) =   1.000000E-12
+  Growth factor      AFLAG(5) =   1.000000E+00
+  Max element in A   AFLAG(6) =   1.000370E+01
+  Max element in LU  AFLAG(7) =   1.000370E+01
+  Min pivot          AFLAG(8) =   9.591500E-05
+  Row garbage coll.  IFLAG(6) = 0
+  Col garbage coll.  IFLAG(7) = 0
+  Max nnz in A       IFLAG(8) = 57
+IFAIL:     0
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"y12m_solve_mat1" end time: Apr 25 17:46 UTC
+"y12m_solve_mat1" time elapsed: 00:00:00
+----------------------------------------------------------
+
+15/19 Testing: y12m_solve_mat2
+15/19 Test: y12m_solve_mat2
+Command: "/home/runner/work/y12m/y12m/build/test/y12m_solve" "--verbose" "/home/runner/work/y12m/y12m/test/data/mat2.mtx"
+Directory: /home/runner/work/y12m/y12m/build/test
+"y12m_solve_mat2" start time: Apr 25 17:46 UTC
+Output:
+----------------------------------------------------------
+Matrix:  mat2  --  Typical circuit matrix.
+Size:    8 x 8,  nnz: 28,  kind: real (solved in double precision)
+
+Solution x:
+  x[1] =   7.74346066579958E-03
+  x[2] =  -2.08833822383850E-03
+  x[3] =   3.01334252086337E-04
+  x[4] =   5.82680059932908E-04
+  x[5] =   7.80886706505727E-03
+  x[6] =   2.29827183171152E-03
+  x[7] =  -1.89261984585499E-03
+  x[8] =   2.78723056974549E-04
+
+Residual r = b - A*x:
+  r[1] =  -1.32348898008484E-23
+  r[2] =   0.00000000000000E+00
+  r[3] =  -2.19037426204042E-21
+  r[4] =   0.00000000000000E+00
+  r[5] =  -2.38228016415272E-22
+  r[6] =   0.00000000000000E+00
+  r[7] =  -1.05879118406788E-22
+  r[8] =   0.00000000000000E+00
+
+||r||_1 =   2.547716E-21
+||r||_2 =   2.205873E-21
+
+Wall time:       0.000000 s
+
+Solver diagnostics (set by y12ma):
+  Stability factor   AFLAG(1) =   1.600000E+01
+  Drop tolerance     AFLAG(2) =   1.000000E-12
+  Growth limit       AFLAG(3) =   1.000000E+16
+  Pivot tolerance    AFLAG(4) =   1.000000E-12
+  Growth factor      AFLAG(5) =   1.003603E+00
+  Max element in A   AFLAG(6) =   3.088580E-03
+  Max element in LU  AFLAG(7) =   3.099709E-03
+  Min pivot          AFLAG(8) =   2.169215E-04
+  Row garbage coll.  IFLAG(6) = 0
+  Col garbage coll.  IFLAG(7) = 0
+  Max nnz in A       IFLAG(8) = 28
+IFAIL:     0
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"y12m_solve_mat2" end time: Apr 25 17:46 UTC
+"y12m_solve_mat2" time elapsed: 00:00:00
+----------------------------------------------------------
+
+16/19 Testing: y12m_solve_mat3
+16/19 Test: y12m_solve_mat3
+Command: "/home/runner/work/y12m/y12m/build/test/y12m_solve" "--verbose" "/home/runner/work/y12m/y12m/test/data/mat3.mtx"
+Directory: /home/runner/work/y12m/y12m/build/test
+"y12m_solve_mat3" start time: Apr 25 17:46 UTC
+Output:
+----------------------------------------------------------
+Matrix:  mat3  --  Ill-conditioned matrix.
+Size:    22 x 22,  nnz: 52,  kind: real (solved in double precision)
+
+Solution x:
+  x[1] =   9.65149134812871E-01
+  x[2] =   5.71633544036402E-02
+  x[3] =   7.81413970414063E+02
+  x[4] =   6.23892796359168E-02
+  x[5] =   6.31548557650480E-02
+  x[6] =   1.60304307029302E+00
+  x[7] =   9.09991609623248E+04
+  x[8] =   1.24731060934939E-02
+  x[9] =  -1.30181545636242E-03
+  x[10] =  -4.68547912144213E-07
+  x[11] =   5.35632742985969E-04
+  x[12] =   0.00000000000000E+00
+  x[13] =   4.73146514198555E+04
+  x[14] =   1.19125425256295E+02
+  x[15] =   1.65773650899400E-02
+  x[16] =   4.13250070710052E-03
+  x[17] =   2.03977480060470E-02
+  x[18] =   0.00000000000000E+00
+  x[19] =   2.10591599006107E-01
+  x[20] =   4.85312552740059E+04
+  x[21] =   4.85310120025184E+04
+  x[22] =  -4.69103141420103E-07
+
+Residual r = b - A*x:
+  r[1] =   1.73472347597681E-18
+  r[2] =  -1.37642853928824E-20
+  r[3] =  -4.51028103753970E-17
+  r[4] =  -1.35525271560688E-20
+  r[5] =   3.43048343637992E-20
+  r[6] =   0.00000000000000E+00
+  r[7] =   6.68361934942846E-22
+  r[8] =   0.00000000000000E+00
+  r[9] =   0.00000000000000E+00
+  r[10] =   0.00000000000000E+00
+  r[11] =   0.00000000000000E+00
+  r[12] =   1.42108547152020E-14
+  r[13] =  -1.99402143695503E-18
+  r[14] =   0.00000000000000E+00
+  r[15] =   1.69406589450860E-21
+  r[16] =   0.00000000000000E+00
+  r[17] =   0.00000000000000E+00
+  r[18] =   0.00000000000000E+00
+  r[19] =  -5.82076609134674E-11
+  r[20] =   0.00000000000000E+00
+  r[21] =   8.47032947254300E-22
+  r[22] =   8.47032947254300E-22
+
+||r||_1 =   5.822192E-11
+||r||_2 =   5.820766E-11
+
+Wall time:       0.000000 s
+
+Solver diagnostics (set by y12ma):
+  Stability factor   AFLAG(1) =   1.600000E+01
+  Drop tolerance     AFLAG(2) =   1.000000E-12
+  Growth limit       AFLAG(3) =   1.000000E+16
+  Pivot tolerance    AFLAG(4) =   1.000000E-12
+  Growth factor      AFLAG(5) =   1.000000E+00
+  Max element in A   AFLAG(6) =   1.000370E+01
+  Max element in LU  AFLAG(7) =   1.000370E+01
+  Min pivot          AFLAG(8) =   3.817010E-05
+  Row garbage coll.  IFLAG(6) = 0
+  Col garbage coll.  IFLAG(7) = 0
+  Max nnz in A       IFLAG(8) = 52
+IFAIL:     0
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"y12m_solve_mat3" end time: Apr 25 17:46 UTC
+"y12m_solve_mat3" time elapsed: 00:00:00
+----------------------------------------------------------
+
+17/19 Testing: y12m_solve_mat5
+17/19 Test: y12m_solve_mat5
+Command: "/home/runner/work/y12m/y12m/build/test/y12m_solve" "--verbose" "/home/runner/work/y12m/y12m/test/data/mat5.mtx"
+Directory: /home/runner/work/y12m/y12m/build/test
+"y12m_solve_mat5" start time: Apr 25 17:46 UTC
+Output:
+----------------------------------------------------------
+Matrix:  mat5  --  Test of complete pivoting capability.
+Size:    3 x 3,  nnz: 3,  kind: real (solved in double precision)
+
+Solution x:
+  x[1] =   1.00000000000000E+00
+  x[2] =   2.00000000000000E+00
+  x[3] =   3.00000000000000E+00
+
+Residual r = b - A*x:
+  r[1] =   0.00000000000000E+00
+  r[2] =   0.00000000000000E+00
+  r[3] =   0.00000000000000E+00
+
+||r||_1 =   0.000000E+00
+||r||_2 =   0.000000E+00
+
+Wall time:       0.000000 s
+
+Solver diagnostics (set by y12ma):
+  Stability factor   AFLAG(1) =   1.600000E+01
+  Drop tolerance     AFLAG(2) =   1.000000E-12
+  Growth limit       AFLAG(3) =   1.000000E+16
+  Pivot tolerance    AFLAG(4) =   1.000000E-12
+  Growth factor      AFLAG(5) =   1.000000E+00
+  Max element in A   AFLAG(6) =   1.000000E+00
+  Max element in LU  AFLAG(7) =   1.000000E+00
+  Min pivot          AFLAG(8) =   1.000000E+00
+  Row garbage coll.  IFLAG(6) = 0
+  Col garbage coll.  IFLAG(7) = 0
+  Max nnz in A       IFLAG(8) = 3
+IFAIL:     0
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"y12m_solve_mat5" end time: Apr 25 17:46 UTC
+"y12m_solve_mat5" time elapsed: 00:00:00
+----------------------------------------------------------
+
+18/19 Testing: test_matrix_generators
+18/19 Test: test_matrix_generators
+Command: "/home/runner/work/y12m/y12m/build/examples/test_matrix_generators"
+Directory: /home/runner/work/y12m/y12m/build/examples
+"test_matrix_generators" start time: Apr 25 17:46 UTC
+Output:
+----------------------------------------------------------
+PASS matrd1 NNZ z=255
+PASS matrd1 index bounds
+PASS matrd1 solve max_err= 5.497E-04
+PASS matre1 NNZ z=238
+PASS matre1 index bounds
+PASS matre1 solve max_err= 3.576E-07
+PASS matrf2 n<22 ifejlm=1
+PASS matrf2 m<n ifejlm=2
+PASS matrf2 c<11 ifejlm=3
+PASS matrf2 index<2 ifejlm=4
+PASS matrf2 alpha<=0 ifejlm=7
+PASS matrf2 valid NNZ nz=260
+PASS matrf2 valid index bounds
+PASS matrf2 valid solve max_err= 5.126E-06
+All test_matrix_generators tests PASSED
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_matrix_generators" end time: Apr 25 17:46 UTC
+"test_matrix_generators" time elapsed: 00:00:00
+----------------------------------------------------------
+
+19/19 Testing: maind
+19/19 Test: maind
+Command: "/bin/sh" "-c" "/home/runner/work/y12m/y12m/build/examples/maind < input.txt"
+Directory: /home/runner/work/y12m/y12m/build/examples
+"maind" start time: Apr 25 17:46 UTC
+Output:
+----------------------------------------------------------
+ indexp,nstart,nincr,nend,cstart,cincr,cend:
+           1         600         600         600           4          44         204
+1matrix of class d,with parameters n= 600  c=   4
+0the number of non-zero elements in the original matrix is equal to:              2455
+ subs after y12mae:         0.00
+0the largest error is:   1.12E-03
+0the largest number of elements in a:    3334
+0the number of collections in row list   0
+0the number of collections in column list   0
+0the largest element in original matrix  1.00E+03
+0the largest element in lu-matrix  5.02E+03
+0the growth factor is:  5.02E+00
+0the minimal pivotal element  1.00E+00
+0the drop tolerance:   1.00E-12,     the stability factor:   1.60E+01
+0the error diagnostic parameter =    0
+1matrix of class d,with parameters n= 600  c=  48
+0the number of non-zero elements in the original matrix is equal to:              2455
+ subs after y12mae:         0.00
+0the largest error is:   2.34E-03
+0the largest number of elements in a:    6483
+0the number of collections in row list   0
+0the number of collections in column list   0
+0the largest element in original matrix  1.00E+03
+0the largest element in lu-matrix  1.01E+05
+0the growth factor is:  1.01E+02
+0the minimal pivotal element  9.69E-02
+0the drop tolerance:   1.00E-12,     the stability factor:   1.60E+01
+0the error diagnostic parameter =    0
+1matrix of class d,with parameters n= 600  c=  92
+0the number of non-zero elements in the original matrix is equal to:              2455
+ subs after y12mae:         0.00
+0the largest error is:   3.29E-04
+0the largest number of elements in a:    6064
+0the number of collections in row list   0
+0the number of collections in column list   0
+0the largest element in original matrix  1.00E+03
+0the largest element in lu-matrix  9.36E+03
+0the growth factor is:  9.36E+00
+0the minimal pivotal element  7.40E-01
+0the drop tolerance:   1.00E-12,     the stability factor:   1.60E+01
+0the error diagnostic parameter =    0
+1matrix of class d,with parameters n= 600  c= 136
+0the number of non-zero elements in the original matrix is equal to:              2455
+ subs after y12mae:         0.00
+0the largest error is:   6.92E-04
+0the largest number of elements in a:    5976
+0the number of collections in row list   0
+0the number of collections in column list   0
+0the largest element in original matrix  1.00E+03
+0the largest element in lu-matrix  2.98E+04
+0the growth factor is:  2.98E+01
+0the minimal pivotal element  6.29E-01
+0the drop tolerance:   1.00E-12,     the stability factor:   1.60E+01
+0the error diagnostic parameter =    0
+1matrix of class d,with parameters n= 600  c= 180
+0the number of non-zero elements in the original matrix is equal to:              2455
+ subs after y12mae:         0.00
+0the largest error is:   8.92E-04
+0the largest number of elements in a:    5843
+0the number of collections in row list   0
+0the number of collections in column list   0
+0the largest element in original matrix  1.00E+03
+0the largest element in lu-matrix  1.06E+05
+0the growth factor is:  1.06E+02
+0the minimal pivotal element  2.30E+00
+0the drop tolerance:   1.00E-12,     the stability factor:   1.60E+01
+0the error diagnostic parameter =    0
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"maind" end time: Apr 25 17:46 UTC
+"maind" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Apr 25 17:46 UTC

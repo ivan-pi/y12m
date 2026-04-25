@@ -1,0 +1,20 @@
+test_y12ma_sp 2 0.000690015
+test_y12ma_dp 2 0.00057997
+test_y12mb_mc_md_sp 2 0.000555812
+test_y12mb_mc_md_dp 2 0.000570619
+test_y12mf_sp 2 0.000570524
+test_y12mg_mh 2 0.000573475
+test_y12mc_z_intent 2 0.000541795
+test_y12ma_5x5 2 0.000569071
+test_y12ma_output_params 2 0.000554935
+test_y12m_errors 2 0.000536174
+test_y12md_multi_rhs 2 0.000543519
+test_y12mf_output_params 2 0.000539476
+y12m_solve_mat0 2 0.000617112
+y12m_solve_mat1 2 0.000676599
+y12m_solve_mat2 2 0.00068805
+y12m_solve_mat3 2 0.000741035
+y12m_solve_mat5 2 0.000652408
+test_matrix_generators 2 0.00090332
+maind 2 0.0110945
+---
