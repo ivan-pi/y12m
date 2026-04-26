@@ -16,12 +16,13 @@
 ! Exact solution (Fourier sine series, odd modes only):
 !
 !   u(x,y) = sum_{n=1,3,5,...} [32 / (n pi)^3]
-!               x sin(n pi x) sinh(n pi y) / sinh(n pi)
+!               * sin(n pi x) sinh(n pi y) / sinh(n pi)
 !
 ! Discretisation
 ! --------------
-! N x N interior grid, spacing h = 1/(N+1).
-! DOF index k = (j-1)*N + i  for  i,j = 1..N (i: x, j: y).
+! Total grid N x N (including boundary nodes), spacing h = 1/(N-1).
+! Interior nodes: i,j = 2..N-1 (1-indexed); ndof = (N-2)^2.
+! DOF index: k(i,j) = (j-2)*(N-2) + (i-2) + 1.
 !
 ! 9-point isotropic Laplacian (Mehrstellen) stencil:
 !
@@ -35,25 +36,30 @@
 !
 ! Usage
 ! -----
-!   poisson_9pt [N]           (integer N >= 2, default 20)
-!   gnuplot plot_poisson.gp   (produces poisson_9pt.png)
+!   poisson_9pt [--help] [N] [output_file]
+!
+!     N           total grid size (>= 3, default 22 -> 20x20 interior DOFs)
+!     output_file output data file name (default: poisson_9pt.dat)
 !
 
 ! ==============================================================
 ! Module poisson_solver
-!
-! Provides 'run(N)': assembles, solves and reports the discrete
-! Laplace problem.  The main program is intentionally trivial.
 ! ==============================================================
 module poisson_solver
-  use, intrinsic :: iso_fortran_env, only: dp => real64, &
-      output_unit, error_unit
-  use y12m, only: y12ma
+  use, intrinsic :: iso_fortran_env, only: output_unit, error_unit
   implicit none
   private
   public :: run
 
+  ! Double precision kind: equivalent to iso_fortran_env real64
+  integer, parameter :: dp = kind(1.0d0)
+
   real(dp), parameter :: pi = acos(-1.0_dp)
+
+  ! 9-point Mehrstellen stencil weights: stencil_w(is+2, js+2) for is,js = -1..1
+  ! Column-major layout: stencil_w(:,1) is the southern row, (:,3) is northern.
+  integer, parameter :: stencil_w(3, 3) = reshape( &
+      [1, 4, 1,   4, -20, 4,   1, 4, 1], [3, 3])
 
 contains
 
@@ -64,9 +70,32 @@ contains
     u = 4.0_dp * x * (1.0_dp - x)
   end function bc_top
 
-  !> Exact solution via Fourier sine series (50 odd modes)
+  !> Exact solution via Fourier sine series (50 odd modes).
   !>
-  !>   u = sum_{n odd} [32/(n pi)^3] sin(n pi x) sinh(n pi y) / sinh(n pi)
+  !> Derivation (separation of variables):
+  !>
+  !>   Write u(x,y) = X(x) Y(y).  The Laplace equation gives
+  !>
+  !>     X'' + lambda X = 0,   X(0) = X(1) = 0
+  !>       =>  X_n(x) = sin(n pi x),   lambda_n = (n pi)^2
+  !>
+  !>     Y'' - lambda_n Y = 0,   Y_n(0) = 0
+  !>       =>  Y_n(y) = sinh(n pi y)
+  !>
+  !>   Hence  u(x,y) = sum_n  a_n  sin(n pi x)  sinh(n pi y).
+  !>
+  !>   Matching the top BC u(x,1) = g(x) = 4x(1-x) requires
+  !>
+  !>     sum_n  a_n sinh(n pi)  sin(n pi x)  =  g(x)
+  !>
+  !>   The Fourier sine coefficients of g are
+  !>
+  !>     g_n = 2 integral_0^1  4x(1-x) sin(n pi x) dx
+  !>
+  !>   For odd n:  g_n = 32 / (n pi)^3;  for even n:  g_n = 0.
+  !>   Therefore  a_n = g_n / sinh(n pi), giving
+  !>
+  !>     u(x,y) = sum_{n odd} [32/(n pi)^3] sin(n pi x) sinh(n pi y)/sinh(n pi)
   elemental function u_exact(x, y) result(u)
     real(dp), intent(in) :: x, y
     real(dp) :: u
@@ -80,62 +109,156 @@ contains
     end do
   end function u_exact
 
-  !> Write solution to poisson_9pt.dat in gnuplot pm3d block format.
-  !>
-  !> u_num: numerical solution at interior points, shape (n_grid, n_grid).
-  !> u_ex:  exact solution at interior points, precomputed by the caller.
-  !>
-  !> One blank-line-separated scanline per y-value (boundaries included).
-  !> Columns: x  y  u_numerical  u_exact
-  subroutine write_output(n_grid, u_num, u_ex, dx)
-    integer, intent(in) :: n_grid
-    real(dp), intent(in) :: u_num(n_grid, n_grid)
-    real(dp), intent(in) :: u_ex(n_grid, n_grid)
-    real(dp), intent(in) :: dx
+  ! ---------------------------------------------------------------
+  ! Sparse matrix-vector product: y <- y + alpha * A * x  (COO)
+  ! ---------------------------------------------------------------
+  subroutine dp_coo_gemv(m, nz, alpha, a, ia, ja, x, y)
+    integer, intent(in) :: m, nz
+    real(dp), intent(in) :: alpha
+    real(dp), intent(in) :: a(nz)
+    integer, intent(in) :: ia(nz), ja(nz)
+    real(dp), intent(in) :: x(m)
+    real(dp), intent(inout) :: y(m)
+    integer :: p
+    do p = 1, nz
+      y(ia(p)) = y(ia(p)) + alpha * a(p) * x(ja(p))
+    end do
+  end subroutine dp_coo_gemv
+
+  ! ---------------------------------------------------------------
+  ! Root-mean-square of element-wise difference of two 2-D arrays
+  ! ---------------------------------------------------------------
+  function rms_diff(a, b) result(rms)
+    real(dp), intent(in) :: a(:,:), b(:,:)
+    real(dp) :: rms
+    rms = norm2(a - b) / sqrt(real(size(a), dp))
+  end function rms_diff
+
+  ! ---------------------------------------------------------------
+  ! Assemble the stiffness matrix A in COO format.
+  !
+  ! Interior nodes i,j = 2..N-1 with DOF index k(i,j) = (j-2)*(N-2)+(i-2)+1.
+  ! For each interior node and each stencil offset (is,js), the entry
+  ! is added to A only when the neighbour is also interior.
+  ! ---------------------------------------------------------------
+  subroutine assemble_matrix(N, a, rnr, snr, nz)
+    integer, intent(in) :: N
+    real(dp), intent(out) :: a(:)
+    integer, intent(out) :: rnr(:), snr(:)
+    integer, intent(out) :: nz
+    integer :: i, j, is, js, ni, nj, k_row, k_col, ndof_1d
+    ndof_1d = N - 2
+    nz = 0
+    do j = 2, N - 1
+      do i = 2, N - 1
+        k_row = (j - 2) * ndof_1d + (i - 2) + 1
+        do js = -1, 1
+          do is = -1, 1
+            ni = i + is
+            nj = j + js
+            if (ni >= 2 .and. ni <= N - 1 .and. nj >= 2 .and. nj <= N - 1) then
+              k_col   = (nj - 2) * ndof_1d + (ni - 2) + 1
+              nz      = nz + 1
+              rnr(nz) = k_row
+              snr(nz) = k_col
+              a(nz)   = real(stencil_w(is + 2, js + 2), dp)
+            end if
+          end do
+        end do
+      end do
+    end do
+  end subroutine assemble_matrix
+
+  ! ---------------------------------------------------------------
+  ! Compute the right-hand side from Dirichlet boundary conditions.
+  !
+  ! For each interior node, stencil neighbours that lie on the
+  ! boundary contribute  b(k) -= W(is,js) * u_bc.
+  ! Only the top edge (j == N) is non-zero; other edges have u = 0.
+  ! ---------------------------------------------------------------
+  subroutine compute_rhs(N, b)
+    integer, intent(in) :: N
+    real(dp), intent(inout) :: b(:)
+    integer :: i, j, is, js, ni, nj, k_row, ndof_1d
+    real(dp) :: h, u_bc
+    h       = 1.0_dp / real(N - 1, dp)
+    ndof_1d = N - 2
+    do j = 2, N - 1
+      do i = 2, N - 1
+        k_row = (j - 2) * ndof_1d + (i - 2) + 1
+        do js = -1, 1
+          do is = -1, 1
+            ni = i + is
+            nj = j + js
+            if (.not. (ni >= 2 .and. ni <= N - 1 .and. nj >= 2 .and. nj <= N - 1)) then
+              ! Boundary value at node (ni, nj)
+              if (nj == N) then
+                u_bc = bc_top(real(ni - 1, dp) * h)
+              else
+                u_bc = 0.0_dp
+              end if
+              b(k_row) = b(k_row) - real(stencil_w(is + 2, js + 2), dp) * u_bc
+            end if
+          end do
+        end do
+      end do
+    end do
+  end subroutine compute_rhs
+
+  ! ---------------------------------------------------------------
+  ! Write the solution to a gnuplot pm3d data file.
+  !
+  ! u_num(N,N): numerical solution on the full N x N grid.
+  ! u_ex(N,N):  exact solution on the full N x N grid.
+  ! filename:   output file path.
+  ! header:     optional extra comment line written after the fixed header.
+  !
+  ! Node (i,j) is at physical coordinates (x,y) = ((i-1)*h, (j-1)*h).
+  ! Columns: x  y  u_numerical  u_exact
+  ! ---------------------------------------------------------------
+  subroutine write_output(N, u_num, u_ex, filename, header)
+    integer, intent(in) :: N
+    real(dp), intent(in) :: u_num(N, N)
+    real(dp), intent(in) :: u_ex(N, N)
+    character(len=*), intent(in) :: filename
+    character(len=*), intent(in), optional :: header
     character(len=*), parameter :: datafmt = '(4(1x,es14.6))'
-    integer :: funit, ii, jj
-    real(dp) :: xi2, yj2, u_n, u_e
-    open(newunit=funit, file='poisson_9pt.dat', status='replace', action='write')
-    write(funit, '(a)') &
-        '# 9-point isotropic stencil, Laplace equation on unit square'
-    write(funit, '(a)') &
-        '# BC: u = 4*x*(1-x) on top edge (y=1); u = 0 elsewhere'
-    write(funit, '(a)') &
-        '# Columns: x   y   u_numerical   u_exact'
+    real(dp) :: h
+    integer :: funit, i, j
+    h = 1.0_dp / real(N - 1, dp)
+    open(newunit=funit, file=filename, status='unknown', action='write')
+    write(funit, '(a)') '# 9-point isotropic stencil, Laplace equation on unit square'
+    write(funit, '(a)') '# BC: u = 4*x*(1-x) on top edge (y=1); u = 0 elsewhere'
+    if (present(header)) write(funit, '(a)') '# ' // trim(header)
+    write(funit, '(a)') '# Columns: x   y   u_numerical   u_exact'
     write(funit, '(a)') '#'
-    do jj = 0, n_grid + 1
-      yj2 = real(jj, dp) * dx
-      do ii = 0, n_grid + 1
-        xi2 = real(ii, dp) * dx
-        if (jj == 0 .or. ii == 0 .or. ii == n_grid + 1) then
-          u_n = 0.0_dp
-          u_e = u_exact(xi2, yj2)
-        else if (jj == n_grid + 1) then
-          u_n = bc_top(xi2)
-          u_e = u_exact(xi2, yj2)
-        else
-          u_n = u_num(ii, jj)
-          u_e = u_ex(ii, jj)
-        end if
-        write(funit, datafmt) xi2, yj2, u_n, u_e
+    do j = 1, N
+      do i = 1, N
+        write(funit, datafmt) real(i - 1, dp) * h, real(j - 1, dp) * h, &
+            u_num(i, j), u_ex(i, j)
       end do
       write(funit, *)
     end do
     close(funit)
   end subroutine write_output
 
-  !> Assemble and solve the discrete Laplace problem, compute error
-  !> diagnostics, and write the solution to poisson_9pt.dat.
-  subroutine run(N)
+  ! ---------------------------------------------------------------
+  ! Assemble, solve and report the discrete Laplace problem.
+  !
+  ! N       total grid size (including boundaries); interior = (N-2)^2 DOFs
+  ! outfile output data file name
+  ! ---------------------------------------------------------------
+  subroutine run(N, outfile)
+    use y12m, only: y12ma
     integer, intent(in) :: N
+    character(len=*), intent(in) :: outfile
 
     ! -----------------------------------------------------------
-    ! Workspace (allocatable; freed automatically on return)
+    ! Workspace (all allocatable; freed automatically on return)
     ! -----------------------------------------------------------
-    integer :: ndof, nz_max, nz, nn, nn1, iha
+    integer :: ndof_1d, ndof, nz_max, nz, nn, nn1, iha
     real(dp) :: h
-    real(dp), allocatable, target :: b(:)
-    real(dp), allocatable :: a(:), pivot(:)
+    real(dp), allocatable :: b(:), a(:), pivot(:)
     integer, allocatable :: snr(:), rnr(:), ha(:,:)
     real(dp) :: aflag(8)
     integer :: iflag(10), ifail
@@ -144,322 +267,104 @@ contains
     real(dp), allocatable :: a0(:), b0(:), residual(:)
     integer, allocatable :: snr0(:), rnr0(:)
 
-    ! Exact solution at interior points (saved once, reused in output)
-    real(dp), allocatable :: u_ex(:,:)
+    ! Full N x N solution and exact arrays (includes boundary nodes)
+    real(dp), allocatable :: u_full(:,:), u_ex_full(:,:)
 
-    integer :: i, j, k, p
-    real(dp) :: xi, err_max, err_rms, res_inf, res_2
+    integer :: i, j, k
+    real(dp) :: err_max, err_rms, res_inf, res_2
 
-    ndof = N * N
-    h    = 1.0_dp / real(N + 1, dp)
+    ! Timing
+    integer :: t0, t1, clock_rate
+    integer :: t_assemble, t_solve, t_error, t_output
+
+    ndof_1d = N - 2
+    ndof    = ndof_1d * ndof_1d
+    h       = 1.0_dp / real(N - 1, dp)
+
+    write(output_unit, '(a,i0,a,i0,a,i0,a)') &
+        'Grid: ', N, ' x ', N, '  (', ndof, ' interior DOFs)'
 
     ! -----------------------------------------------------------
     ! Allocate workspace
     ! -----------------------------------------------------------
     nz_max = 9 * ndof
-    nn     = max(3 * nz_max, 2 * (N + 2) * ndof)
+    nn     = max(3 * nz_max, 2 * (ndof_1d + 2) * ndof)
     nn1    = nn
     iha    = ndof
     allocate(a(nn), pivot(ndof), b(ndof), snr(nn), rnr(nn1), ha(ndof, 11))
     allocate(a0(nz_max), b0(ndof), snr0(nz_max), rnr0(nz_max), residual(ndof))
-    allocate(u_ex(N, N))
+    allocate(u_full(N, N), u_ex_full(N, N))
+
+    call system_clock(count_rate=clock_rate)
 
     ! ==============================================================
-    ! 1. Assemble sparse system  A u = b
-    !
-    ! Outer loop over x-index i, inner over y-index j.
-    ! An if-else-if block handles the four boundary column/row cases;
-    ! the else branch covers fully interior points.
-    ! b is zero-initialised; only non-zero BC contributions are added.
+    ! 1. Assemble A u = b
     ! ==============================================================
+    call system_clock(t0)
     b  = 0.0_dp
-    nz = 0
-    do i = 1, N
-      do j = 1, N
-        k  = (j - 1) * N + i
-        xi = real(i, dp) * h
-
-        ! Centre: always -20
-        nz      = nz + 1
-        rnr(nz) = k
-        snr(nz) = k
-        a(nz)   = -20.0_dp
-
-        if (i == 1) then
-          ! ---- Left column ----------------------------------------
-          ! No West / SW / NW entries (left boundary, u = 0)
-
-          ! East
-          nz      = nz + 1
-          rnr(nz) = k
-          snr(nz) = k + 1
-          a(nz)   = 4.0_dp
-
-          ! South (or bottom boundary, u = 0)
-          if (j > 1) then
-            nz      = nz + 1
-            rnr(nz) = k
-            snr(nz) = k - N
-            a(nz)   = 4.0_dp
-          end if
-
-          ! North (or top boundary)
-          if (j < N) then
-            nz      = nz + 1
-            rnr(nz) = k
-            snr(nz) = k + N
-            a(nz)   = 4.0_dp
-          else
-            b(k) = b(k) - 4.0_dp * bc_top(xi)
-          end if
-
-          ! SE (or bottom boundary, u = 0)
-          if (j > 1) then
-            nz      = nz + 1
-            rnr(nz) = k
-            snr(nz) = k - N + 1
-            a(nz)   = 1.0_dp
-          end if
-
-          ! NE (or top boundary)
-          if (j < N) then
-            nz      = nz + 1
-            rnr(nz) = k
-            snr(nz) = k + N + 1
-            a(nz)   = 1.0_dp
-          else
-            b(k) = b(k) - bc_top(xi + h)
-          end if
-
-        else if (i == N) then
-          ! ---- Right column ---------------------------------------
-          ! No East / NE / SE entries (right boundary, u = 0)
-
-          ! West
-          nz      = nz + 1
-          rnr(nz) = k
-          snr(nz) = k - 1
-          a(nz)   = 4.0_dp
-
-          ! South (or bottom boundary, u = 0)
-          if (j > 1) then
-            nz      = nz + 1
-            rnr(nz) = k
-            snr(nz) = k - N
-            a(nz)   = 4.0_dp
-          end if
-
-          ! North (or top boundary)
-          if (j < N) then
-            nz      = nz + 1
-            rnr(nz) = k
-            snr(nz) = k + N
-            a(nz)   = 4.0_dp
-          else
-            b(k) = b(k) - 4.0_dp * bc_top(xi)
-          end if
-
-          ! SW (or bottom boundary, u = 0)
-          if (j > 1) then
-            nz      = nz + 1
-            rnr(nz) = k
-            snr(nz) = k - N - 1
-            a(nz)   = 1.0_dp
-          end if
-
-          ! NW (or top boundary)
-          if (j < N) then
-            nz      = nz + 1
-            rnr(nz) = k
-            snr(nz) = k + N - 1
-            a(nz)   = 1.0_dp
-          else
-            b(k) = b(k) - bc_top(xi - h)
-          end if
-
-        else if (j == 1) then
-          ! ---- Bottom row (interior columns only) -----------------
-          ! No South / SW / SE entries (bottom boundary, u = 0)
-
-          ! West
-          nz      = nz + 1
-          rnr(nz) = k
-          snr(nz) = k - 1
-          a(nz)   = 4.0_dp
-
-          ! East
-          nz      = nz + 1
-          rnr(nz) = k
-          snr(nz) = k + 1
-          a(nz)   = 4.0_dp
-
-          ! North (j+1 = 2; this branch is only reachable when i > 1 and i < N, so N >= 3)
-          nz      = nz + 1
-          rnr(nz) = k
-          snr(nz) = k + N
-          a(nz)   = 4.0_dp
-
-          ! NW
-          nz      = nz + 1
-          rnr(nz) = k
-          snr(nz) = k + N - 1
-          a(nz)   = 1.0_dp
-
-          ! NE
-          nz      = nz + 1
-          rnr(nz) = k
-          snr(nz) = k + N + 1
-          a(nz)   = 1.0_dp
-
-        else if (j == N) then
-          ! ---- Top row (interior columns only) --------------------
-          ! North / NW / NE lie on top boundary (u = bc_top)
-
-          ! West
-          nz      = nz + 1
-          rnr(nz) = k
-          snr(nz) = k - 1
-          a(nz)   = 4.0_dp
-
-          ! East
-          nz      = nz + 1
-          rnr(nz) = k
-          snr(nz) = k + 1
-          a(nz)   = 4.0_dp
-
-          ! South (j-1 = N-1 >= 1)
-          nz      = nz + 1
-          rnr(nz) = k
-          snr(nz) = k - N
-          a(nz)   = 4.0_dp
-
-          ! North: top boundary
-          b(k) = b(k) - 4.0_dp * bc_top(xi)
-
-          ! SW
-          nz      = nz + 1
-          rnr(nz) = k
-          snr(nz) = k - N - 1
-          a(nz)   = 1.0_dp
-
-          ! SE
-          nz      = nz + 1
-          rnr(nz) = k
-          snr(nz) = k - N + 1
-          a(nz)   = 1.0_dp
-
-          ! NW: top boundary
-          b(k) = b(k) - bc_top(xi - h)
-
-          ! NE: top boundary
-          b(k) = b(k) - bc_top(xi + h)
-
-        else
-          ! ---- Interior point: all 8 neighbours are interior DOFs --
-
-          ! West
-          nz      = nz + 1
-          rnr(nz) = k
-          snr(nz) = k - 1
-          a(nz)   = 4.0_dp
-
-          ! East
-          nz      = nz + 1
-          rnr(nz) = k
-          snr(nz) = k + 1
-          a(nz)   = 4.0_dp
-
-          ! South
-          nz      = nz + 1
-          rnr(nz) = k
-          snr(nz) = k - N
-          a(nz)   = 4.0_dp
-
-          ! North
-          nz      = nz + 1
-          rnr(nz) = k
-          snr(nz) = k + N
-          a(nz)   = 4.0_dp
-
-          ! SW
-          nz      = nz + 1
-          rnr(nz) = k
-          snr(nz) = k - N - 1
-          a(nz)   = 1.0_dp
-
-          ! SE
-          nz      = nz + 1
-          rnr(nz) = k
-          snr(nz) = k - N + 1
-          a(nz)   = 1.0_dp
-
-          ! NW
-          nz      = nz + 1
-          rnr(nz) = k
-          snr(nz) = k + N - 1
-          a(nz)   = 1.0_dp
-
-          ! NE
-          nz      = nz + 1
-          rnr(nz) = k
-          snr(nz) = k + N + 1
-          a(nz)   = 1.0_dp
-
-        end if
-
-      end do
-    end do
+    call assemble_matrix(N, a, rnr, snr, nz)
+    call compute_rhs(N, b)
 
     ! Save originals before y12ma overwrites a, snr, rnr, b
-    a0(1:nz)   = a(1:nz)
-    b0         = b
-    snr0(1:nz) = snr(1:nz)
-    rnr0(1:nz) = rnr(1:nz)
+    a0(1:nz) = a(1:nz);  b0 = b
+    snr0(1:nz) = snr(1:nz);  rnr0(1:nz) = rnr(1:nz)
+    call system_clock(t1)
+    t_assemble = t1 - t0
 
     ! ==============================================================
     ! 2. Solve with y12ma (double precision, no iterative refinement)
     ! ==============================================================
+    call system_clock(t0)
     ifail = 0
     call y12ma(ndof, nz, a, snr, nn, rnr, nn1, pivot, ha, iha, &
         aflag, iflag, b, ifail)
-
     if (ifail /= 0) then
       write(error_unit, '(a,i0)') 'ERROR: y12ma returned IFAIL = ', ifail
       stop 1, quiet = .true.
     end if
+    call system_clock(t1)
+    t_solve = t1 - t0
     ! Solution u_h is now in b(1:ndof).
 
     ! ==============================================================
-    ! 3. Error vs exact solution; save u_ex(i,j) for output later
+    ! 3. Error vs exact solution and discrete residual
     !
-    ! A 2-D pointer u2d remaps b(1:ndof) to u2d(1:N,1:N) so that
-    ! the solution is accessed as u2d(i,j), matching the stencil.
+    ! Map b back into u_full(2:N-1,2:N-1) and fill boundary values.
     ! ==============================================================
-    err_max = 0.0_dp
-    block
-      real(dp), pointer :: u2d(:,:)
-      u2d(1:N, 1:N) => b
-      do j = 1, N
-        do i = 1, N
-          u_ex(i, j) = u_exact(real(i, dp) * h, real(j, dp) * h)
-          err_max = max(err_max, abs(u2d(i, j) - u_ex(i, j)))
-        end do
-      end do
-      err_rms = norm2(u2d(1:N, 1:N) - u_ex) / sqrt(real(ndof, dp))
-    end block
+    call system_clock(t0)
 
-    ! ==============================================================
-    ! 4. Discrete residual  r = b0 - A0 * u_h
-    ! ==============================================================
-    residual = b0
-    do p = 1, nz
-      residual(rnr0(p)) = residual(rnr0(p)) - a0(p) * b(snr0(p))
+    ! Fill full solution array (boundary + interior)
+    u_full = 0.0_dp
+    do j = 2, N - 1
+      do i = 2, N - 1
+        k = (j - 2) * ndof_1d + (i - 2) + 1
+        u_full(i, j) = b(k)
+      end do
     end do
+    do i = 1, N
+      u_full(i, N) = bc_top(real(i - 1, dp) * h)  ! top edge
+    end do
+
+    ! Exact solution on the full grid
+    do j = 1, N
+      do i = 1, N
+        u_ex_full(i, j) = u_exact(real(i - 1, dp) * h, real(j - 1, dp) * h)
+      end do
+    end do
+
+    ! Pointwise errors at interior nodes only
+    err_max = maxval(abs(u_full(2:N-1, 2:N-1) - u_ex_full(2:N-1, 2:N-1)))
+    err_rms = rms_diff(u_full(2:N-1, 2:N-1), u_ex_full(2:N-1, 2:N-1))
+
+    ! Discrete residual  r = b0 - A0 * u_h
+    residual = b0
+    call dp_coo_gemv(ndof, nz, alpha=-1.0_dp, a=a0, ia=rnr0, ja=snr0, x=b, y=residual)
     res_inf = maxval(abs(residual))
     res_2   = norm2(residual)
 
-    write(output_unit, '(a,i0,a,i0,a,i0,a)') &
-        'Grid: ', N, ' x ', N, '  (', ndof, ' interior DOFs)'
+    call system_clock(t1)
+    t_error = t1 - t0
+
     write(output_unit, '(a,es12.4)') 'Max pointwise error  : ', err_max
     write(output_unit, '(a,es12.4)') 'RMS pointwise error  : ', err_rms
     write(output_unit, '(a,es12.4)') 'Residual ||r||_inf   : ', res_inf
@@ -468,55 +373,78 @@ contains
         'Exact: u = sum_{n odd} [32/(n pi)^3] sin(n pi x) sinh(n pi y)/sinh(n pi)'
 
     ! ==============================================================
-    ! 5. Write gnuplot data file using 2-D view of b
+    ! 4. Write gnuplot data file
     ! ==============================================================
-    block
-      real(dp), pointer :: u2d(:,:)
-      u2d(1:N, 1:N) => b
-      call write_output(N, u2d, u_ex, h)
-    end block
+    call system_clock(t0)
+    call write_output(N, u_full, u_ex_full, outfile)
+    call system_clock(t1)
+    t_output = t1 - t0
 
-    ! Report completion (logging here, not inside write_output)
-    write(output_unit, '(a)') 'Solution written to poisson_9pt.dat'
+    write(output_unit, '(a)') 'Solution written to ' // trim(outfile)
     write(output_unit, '(a)') 'Run "gnuplot plot_poisson.gp" to produce poisson_9pt.png'
+
+    ! ==============================================================
+    ! Timing summary
+    ! ==============================================================
+    write(output_unit, '(/,a)') 'Timing summary:'
+    write(output_unit, '(a,f10.6,a)') &
+        '  Assembly     : ', real(t_assemble, dp) / real(clock_rate, dp), ' s'
+    write(output_unit, '(a,f10.6,a)') &
+        '  Solve        : ', real(t_solve, dp) / real(clock_rate, dp), ' s'
+    write(output_unit, '(a,f10.6,a)') &
+        '  Error+resid  : ', real(t_error, dp) / real(clock_rate, dp), ' s'
+    write(output_unit, '(a,f10.6,a)') &
+        '  Output       : ', real(t_output, dp) / real(clock_rate, dp), ' s'
 
   end subroutine run
 
 end module poisson_solver
 
 ! ==============================================================
-! Main program: parse N from command line, call run(N).
+! Main program: parse CLI, call run(N, outfile).
 ! ==============================================================
 program poisson_9pt
   use poisson_solver, only: run
   use, intrinsic :: iso_fortran_env, only: error_unit
   implicit none
 
-  integer :: N
+  integer :: N, ios, iarg, nargs
+  character(len=256) :: arg, outfile
+  integer, parameter :: default_n = 22
+  character(len=*), parameter :: default_outfile = 'poisson_9pt.dat'
 
-  ! Parse grid size from command line, then delegate to run(N)
-  call parse_n(N)
-  call run(N)
+  N      = default_n
+  outfile = default_outfile
+  nargs   = command_argument_count()
 
-contains
-
-  !> Read grid size N from the first command-line argument (default 20).
-  subroutine parse_n(n_out)
-    integer, intent(out) :: n_out
-    integer, parameter :: default_n = 20
-    character(len=32) :: arg
-    integer :: ios
-    if (command_argument_count() >= 1) then
-      call get_command_argument(1, arg)
-      read(arg, *, iostat=ios) n_out
-      if (ios /= 0 .or. n_out < 2) then
-        write(error_unit, '(a)') &
-            'Usage: poisson_9pt [N]   (integer N >= 2, default 20)'
-        stop 1
-      end if
-    else
-      n_out = default_n
+  ! Check for --help flag anywhere in the argument list
+  do iarg = 1, nargs
+    call get_command_argument(iarg, arg)
+    if (trim(arg) == '--help' .or. trim(arg) == '-h') then
+      write(error_unit, '(a)') 'Usage: poisson_9pt [--help] [N] [output_file]'
+      write(error_unit, '(a)') '  N           total grid size (>= 3, default 22)'
+      write(error_unit, '(a)') '              22 -> 20x20 interior DOFs'
+      write(error_unit, '(a)') '  output_file output data file (default: poisson_9pt.dat)'
+      stop 0
     end if
-  end subroutine parse_n
+  end do
+
+  ! Parse positional argument 1: N
+  if (nargs >= 1) then
+    call get_command_argument(1, arg)
+    read(arg, *, iostat=ios) N
+    if (ios /= 0 .or. N < 3) then
+      write(error_unit, '(a)') 'ERROR: N must be an integer >= 3'
+      write(error_unit, '(a)') 'Usage: poisson_9pt [--help] [N] [output_file]'
+      stop 1
+    end if
+  end if
+
+  ! Parse positional argument 2: output file name
+  if (nargs >= 2) then
+    call get_command_argument(2, outfile)
+  end if
+
+  call run(N, trim(outfile))
 
 end program poisson_9pt
