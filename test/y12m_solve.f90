@@ -35,6 +35,7 @@
 ! interface instead.
 !
 program y12m_solve
+  use, intrinsic :: iso_fortran_env, only: input_unit
   use y12m
   implicit none
 
@@ -110,10 +111,9 @@ program y12m_solve
   ! ---- Open input ----
   if (trim(infile) == '-') then
     use_stdin = .true.
-    inp_unit  = 5
+    inp_unit  = input_unit
   else
-    inp_unit = 10
-    open(unit=inp_unit, file=trim(infile), status='old', &
+    open(newunit=inp_unit, file=trim(infile), status='old', &
          action='read', iostat=ios)
     if (ios /= 0) then
       write(*,'(3a)') 'Error: cannot open "', trim(infile), '"'

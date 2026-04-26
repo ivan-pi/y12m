@@ -45,6 +45,7 @@ contains
    !  Helper: check NNZ formula, index bounds, and A x = b (x = 1)     !
    ! ------------------------------------------------------------------ !
    subroutine check_solve(label, n, z, a, snr, rnr, nn, nn1, nfail, tol)
+      use y12m, only: y12ma
       character(len=*), intent(in)    :: label
       integer,          intent(in)    :: n, z, nn, nn1
       real,             intent(inout) :: a(nn)
@@ -63,8 +64,8 @@ contains
          b(rnr(i)) = b(rnr(i)) + a(i)
       end do
 
-      call y12mae(n, z, a, snr, nn, rnr, nn1, pivot, ha, n, &
-                  aflag, iflag, b, ifail)
+      call y12ma(n, z, a, snr, nn, rnr, nn1, pivot, ha, n, &
+                 aflag, iflag, b, ifail)
 
       if (ifail /= 0) then
          write(*, '(3a, i0)') 'FAIL ', label, ' y12mae ifail=', ifail

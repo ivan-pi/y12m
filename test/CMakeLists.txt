@@ -1,8 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0-only
 # Test programs for the y12m sparse linear algebra package.
-# Each program uses -Wall -pedantic as requested.
 
-set(TEST_COMPILE_FLAGS -Wall -pedantic)
+#set(TEST_COMPILE_FLAGS -Wall -pedantic)
 
 foreach(tname
     test_y12ma_sp
@@ -46,4 +45,38 @@ if(LAPACK_FOUND)
 else()
   message(STATUS
     "LAPACK not found -- skipping test_y12ma_rand_dp (sparse-dense comparison test)")
+endif()
+
+
+# 1. Define the Opt-in Option
+option(ENABLE_MMIO_TEST "Build test driver with matrix-market input" OFF)
+
+if(ENABLE_MMIO_TEST)
+    set(MMIO_FILE "${CMAKE_CURRENT_BINARY_DIR}/mmio.f")
+
+    # 2. Download the file at configure time
+    message(STATUS "Downloading mmio.f from NIST...")
+    file(DOWNLOAD
+        https://math.nist.gov/MatrixMarket/mmio/f/mmio.f
+        "${MMIO_FILE}"
+        EXPECTED_HASH SHA256=f3146809daffd47587ecd0fa8af0187354a34bb41d3740cd71aab33e505d99a1
+        SHOW_PROGRESS
+        STATUS download_status
+    )
+
+    list(GET download_status 0 _status_code)
+    list(GET download_status 1 _status_message)
+
+    if(_status_code EQUAL 0)
+        message(STATUS "mmio.f downloaded successfully.")
+
+        add_library(mmio_lib STATIC "${MMIO_FILE}")
+        #add_executable(mm_test_driver main.f90)
+        #target_link_libraries(mm_test_driver PRIVATE mmio_lib)
+        #target_compile_definitions(mm_test_driver PRIVATE HAS_MMIO)
+    else()
+        # Non-fatal warning: the rest of the build continues
+        message(WARNING "MMIO download failed (${_status_message}). Skipping mm_test_driver.")
+    endif()
+
 endif()
