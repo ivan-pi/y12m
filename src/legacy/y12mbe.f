@@ -20,7 +20,7 @@ c
       if(mode.lt.0)ifail=16
       if(mode.gt.2)ifail=16
       if(ifail.ne.0) go to 22
-      gt1=0.0
+      gt1=0.0e0
       do 10 i=1,n
       ha(i,2)=0
       ha(i,3)=0
@@ -119,6 +119,6 @@ c
       iflag(6)=0
       iflag(7)=0
       iflag(8)=z
-      iflag(1) = -1
+      iflag(1)=-1
 22    return
       end
