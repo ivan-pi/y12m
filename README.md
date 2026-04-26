@@ -36,7 +36,8 @@ For finer control—solving the same system for multiple right-hand sides, reusi
 ### Calling order
 
 <p align="center">
-	<img src="callseq.png" width="30%" alt="Y12M calling sequence diagram">
+	<img src="callseq.png" width="30%" alt="Y12M calling sequence diagram"
+		 style="background-color: white; border-radius: 4px; padding: 10px;">
 </p>
 
 The two optional subroutines have positional constraints:
