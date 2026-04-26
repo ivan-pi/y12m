@@ -1,12 +1,13 @@
       subroutine y12maf(n, z, a, snr, nn, rnr, nn1, pivot, ha,
      1iha,aflag,iflag,b,ifail)
       implicit double precision (a-b,g,p,t-y), integer (c,f,h-n,r-s,z)
-      double precision a(nn), pivot(n), aflag(8),b(n)
+      double precision a(nn), pivot(n), aflag(8), b(n)
       integer snr(nn), rnr(nn1), ha(iha,11), iflag(10)
+      external y12mbf, y12mcf, y12mdf
       aflag(1)=16.0d0
-      aflag(2)=1.d-12
-      aflag(3)=1.d+16
-      aflag(4)=1.d-12
+      aflag(2)=1.0d-12
+      aflag(3)=1.0d+16
+      aflag(4)=1.0d-12
       iflag(2)=2
       iflag(3)=1
       iflag(4)=0

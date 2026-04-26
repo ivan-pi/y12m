@@ -1,12 +1,13 @@
       subroutine y12mae(n, z, a, snr, nn, rnr, nn1, pivot, ha,
      1iha,aflag,iflag,b,ifail)
       implicit real (a-b,g,p,t-y), integer (c,f,h-n,r-s,z)
-      real a(nn), pivot(n), aflag(8),b(n)
+      real a(nn), pivot(n), aflag(8), b(n)
       integer snr(nn), rnr(nn1), ha(iha,11), iflag(10)
-      aflag(1)=16.
-      aflag(2)=1.e-12
-      aflag(3)=1.e+16
-      aflag(4)=1.e-12
+      external y12mbe, y12mce, y12mde
+      aflag(1)=16.0e0
+      aflag(2)=1.0e-12
+      aflag(3)=1.0e+16
+      aflag(4)=1.0e-12
       iflag(2)=2
       iflag(3)=1
       iflag(4)=0
