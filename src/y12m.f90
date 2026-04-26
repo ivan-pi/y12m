@@ -16,6 +16,33 @@ module y12m
   public :: y12mg
   public :: y12mh
 
+  ! -------------------------------------------------------------------------
+  ! Precision constants for y12mff (double-precision iterative refinement).
+  !
+  ! y12mff accumulates residuals in higher-than-working precision.  The exact
+  ! strategy is selected at compile time using the same logic as in y12mff.f90:
+  !
+  !   * If the processor supports a real kind with at least 33 significant
+  !     decimal digits (i.e. selected_real_kind(33) > 0, quad precision),
+  !     that kind is used directly.
+  !   * Otherwise a double-double emulation based on ieee_fma is used; in
+  !     that case y12mff_accum_kind equals kind(1.0d0).
+  !
+  ! 80-bit extended-precision (x86) is deliberately ignored: it has only 18
+  ! decimal digits, not 33, so selected_real_kind(33) returns -1 on platforms
+  ! where only the 80-bit extended type is available.
+  ! -------------------------------------------------------------------------
+
+  !> True when y12mff uses native quad precision for residual accumulation;
+  !> false when it uses the double-double emulation via ieee_fma.
+  logical, parameter, public :: y12mff_has_quad = (selected_real_kind(33) > 0)
+
+  !> Kind parameter of the accumulator used by y12mff.
+  !> When y12mff_has_quad is true this equals selected_real_kind(33);
+  !> when it is false it equals kind(1.0d0) (double-double emulation).
+  integer, parameter, public :: y12mff_accum_kind = &
+      merge(selected_real_kind(33), kind(1.0d0), y12mff_has_quad)
+
 
   !> Solve sparse systems of linear algebraic equations by
   !> Gaussian elimination
@@ -141,6 +168,24 @@ module y12m
       real, intent(inout) :: x(n)
       real, intent(inout) :: y(n)
       real, intent(inout) :: aflag(11)
+      integer, intent(inout) :: iflag(12)
+      integer, intent(out) :: ifail
+    end subroutine
+    subroutine y12mff(n, a, snr, nn, rnr, nn1, a1, sn, nz, &
+        ha, iha, b, b1, x, y, aflag, iflag, ifail)
+      implicit none
+      integer, intent(in) :: n, nn, nn1, nz, iha
+      double precision, intent(inout) :: a(nn)
+      integer, intent(inout) :: snr(nn)
+      integer, intent(inout) :: rnr(nn1)
+      double precision, intent(inout) :: a1(nz)
+      integer, intent(inout) :: sn(nz)
+      integer, intent(inout) :: ha(iha,13)
+      double precision, intent(inout) :: b(n)
+      double precision, intent(inout) :: b1(n)
+      double precision, intent(inout) :: x(n)
+      double precision, intent(inout) :: y(n)
+      double precision, intent(inout) :: aflag(11)
       integer, intent(inout) :: iflag(12)
       integer, intent(out) :: ifail
     end subroutine

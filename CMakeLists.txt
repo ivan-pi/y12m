@@ -10,9 +10,12 @@ option(BUILD_EXAMPLES "Build the example programs" ON)
 # Collect all legacy fixed-form Fortran sources.
 file(GLOB LEGACY_SOURCES "${CMAKE_SOURCE_DIR}/src/legacy/*.f")
 
+# Collect free-form sources in the legacy directory (e.g. y12mff.f90).
+file(GLOB LEGACY_F90_SOURCES "${CMAKE_SOURCE_DIR}/src/legacy/*.f90")
+
 # Build a static library from the legacy routines plus the Fortran module.
 # These sources are pre-existing; no extra diagnostic flags are applied.
-add_library(y12m_legacy STATIC ${LEGACY_SOURCES}
+add_library(y12m_legacy STATIC ${LEGACY_SOURCES} ${LEGACY_F90_SOURCES}
     "${CMAKE_SOURCE_DIR}/src/y12m.f90")
 
 # Place generated .mod files in a dedicated directory and expose it to
