@@ -1,81 +1,129 @@
-# Solving Systems with Multiple Right-Hand Sides
+# Usage Scenarios
 
-Y12M supports several reuse patterns that avoid redundant work when solving
-more than one system.
+Y12M is designed for five distinct solving scenarios, each requiring a
+different combination of `IFLAG(4)` and `IFLAG(5)` settings.
 
-## Case 1 – Multiple right-hand sides, same matrix
+## Case (i) — One system with a single right-hand side
+
+Use `Y12MA` (the black-box driver) or call `Y12MB` + `Y12MC` + `Y12MD` with
+`IFLAG(4) = 0` and `IFLAG(5) = 1`.  After the solve, the matrix factors are
+discarded and no state is kept.
+
+```
+IFLAG(4) = 0   ! no structural reuse
+IFLAG(5) = 1   ! discard L after factorization
+call Y12MB(...)
+call Y12MC(...)
+call Y12MD(...)
+```
+
+## Case (ii) — Several systems with the same coefficient matrix
 
 When the coefficient matrix **A** does not change between solves, the LU
-factorization only needs to be computed once.  Subsequent right-hand sides are
-solved by calling `Y12MD` alone.
+factorization only needs to be computed once.  Set `IFLAG(5) = 2` to retain
+the **L** factor, then reuse it by calling only `Y12MD` with `IFLAG(5) = 3`
+for every subsequent right-hand side.
 
-**Required setup:** call `Y12MB` and `Y12MC` with `IFLAG(5) = 2` so that the
-non-zero elements of the lower triangular factor **L** are retained after
-factorization.
-
-**Subsequent solves:** set `IFLAG(5) = 3`, load the new right-hand side into
-array `B`, and call `Y12MD`.  `IFLAG(1)` must not be changed between calls;
-it remains `-2` after a successful factorization.
+`IFLAG(1)` must not be changed between calls; it remains `-2` after a
+successful factorization.
 
 ```
 ! First solve
-IFLAG(5) = 2                         ! keep L after factorization
+IFLAG(4) = 0   ! or 1 if the structure may be reused later
+IFLAG(5) = 2   ! keep L after factorization
 call Y12MB(...)
-call Y12MC(...)                      ! computes LU, modifies B -> L^{-1}Pb
-call Y12MD(...)                      ! back-solves, x in B
+call Y12MC(...)
+call Y12MD(...)
 
-! Subsequent solves (new B only)
-IFLAG(5) = 3                         ! signal: LU already available
+! Subsequent solves — new right-hand side only
+IFLAG(5) = 3   ! signal: LU already available
 B = <new right-hand side>
-call Y12MD(...)                      ! back-solves, x in B
+call Y12MD(...)
 ```
 
 > **Note:** Do *not* call `Y12MB` or `Y12MC` between right-hand sides; doing
 > so would destroy the factorization.
 
-## Case 2 – Multiple matrices with the same sparsity structure
+## Case (iii) — Several systems with the same sparsity structure
 
 When successive matrices share the same set of non-zero positions (same
-`SNR`/`RNR` sparsity pattern) but different numerical values, the reordering
-step (`Y12MB`) was already optimised for that structure.  Each new matrix still
-requires a full factorization, but pivoting can reuse the column ordering found
-for the first matrix.
+`SNR`/`RNR` pattern) but carry different numerical values, the ordering
+information computed on the first call to `Y12MB` can be reused.
 
-**First system:** call with `IFLAG(4) = 1`.
+Set `IFLAG(4) = 1` for the **first** system in the sequence, and `IFLAG(4) = 2`
+for every **subsequent** system with the same structure.
 
-**Subsequent systems (same structure):** reload the new values into array `A`,
-set `IFLAG(4) = 2`, and call `Y12MB` + `Y12MC` + `Y12MD` as usual.
+```
+! First matrix
+IFLAG(4) = 1   ! compute and store structural ordering
+IFLAG(5) = 1   ! or 2 if multiple RHS are expected
+call Y12MB(...)
+call Y12MC(...)
+call Y12MD(...)
+
+! Second matrix — same non-zero positions, new numerical values
+A   = <new non-zero values>   ! positions unchanged
+IFLAG(4) = 2                  ! reuse structural ordering
+call Y12MB(...)
+call Y12MC(...)
+call Y12MD(...)
+```
+
+## Case (iv) — Combined: same structure, same coefficient matrix appears successively
+
+This is the most general reuse scenario: a sequence of matrices sharing the
+same sparsity structure, some of which are numerically identical.  Use
+`IFLAG(4) = 1` for the first matrix, `IFLAG(4) = 2` for subsequent ones, and
+`IFLAG(5) = 2` / `IFLAG(5) = 3` to avoid re-factorizing when the numerical
+values have not changed.
 
 ```
 ! First matrix
 IFLAG(4) = 1
-IFLAG(5) = 1                         ! or 2 if multiple RHS are expected
+IFLAG(5) = 2   ! keep L for potential RHS reuse
 call Y12MB(...)
 call Y12MC(...)
 call Y12MD(...)
 
-! Second matrix – same sparsity structure, new values
-A = <new non-zero values>            ! same positions as before
-IFLAG(4) = 2                         ! reuse structural information
+! Same matrix, new right-hand side
+IFLAG(5) = 3
+B = <new right-hand side>
+call Y12MD(...)
+
+! New matrix, same sparsity structure
+A = <new non-zero values>
+IFLAG(4) = 2
+IFLAG(5) = 2   ! keep L again
 call Y12MB(...)
 call Y12MC(...)
 call Y12MD(...)
 ```
 
-## Combining both cases
+## Case (v) — Several systems with different coefficient matrices of different structure
 
-Cases 1 and 2 can be combined: use `IFLAG(4) = 2` together with `IFLAG(5) = 2`
-to retain **L** for multiple right-hand sides while still processing successive
-same-structure matrices efficiently.
+Each system must be solved independently; no reuse is possible.  Call `Y12MA`
+(or `Y12MB` + `Y12MC` + `Y12MD` with `IFLAG(4) = 0`) for every system in the
+sequence.
 
-## Condition number estimation
+```
+do i = 1, num_systems
+    ! load A, SNR, RNR, B for system i
+    IFLAG(4) = 0
+    IFLAG(5) = 1
+    call Y12MB(...)
+    call Y12MC(...)
+    call Y12MD(...)
+end do
+```
 
-To estimate the condition number at any factorization:
+## Condition number estimation (any case)
 
-1. Call `Y12MH` **before `Y12MC`** to store the one-norm of the original matrix
-   in `ANORM` (Y12MC overwrites array `A`).
+To estimate the condition number during any factorization:
+
+1. Call `Y12MH` **before `Y12MC`** to compute the one-norm of the original
+   matrix into `ANORM` (Y12MC overwrites array `A`).
 2. Call `Y12MG` **after `Y12MC`**, passing `ANORM`, to obtain the reciprocal
    condition number `RCOND`.  The actual condition number is `1.0 / RCOND`.
 
-Both subroutines are optional and independent of the right-hand-side reuse
-patterns described above.
+Both subroutines are optional and independent of the reuse patterns described
+above.

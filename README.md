@@ -12,7 +12,7 @@ Solution of Large and Sparse Systems of Linear Algebraic Equations
 
 ## Calling Sequence
 
-The Y12M package provides subroutines at two levels. The `y12m` module exposes generic interfaces (`y12ma`, `y12mb`, …) that cover both precisions; the precision-specific variants (`y12mbe`/`y12mbf`, etc.) can also be called directly by linking the library.
+The Y12M package provides subroutines at two levels. The `y12m` Fortran module provides **generic interfaces** (e.g., `y12ma`, `y12mb`) that automatically dispatch to the single-precision (`E`) or double-precision (`F`) variant depending on the type of the actual arguments. The individual precision-specific external procedures (e.g., `y12mbe` / `y12mbf`) can also be called directly by linking the library, without using the module.
 
 ### High-level drivers
 
@@ -35,38 +35,7 @@ For finer control—solving the same system for multiple right-hand sides, reusi
 
 ### Calling order
 
-```mermaid
-flowchart TD
-    start(["Create/Fill Coordinate array"])
-
-    ymh["Y12MH
-    Compute one-norm of A
-    (optional)"]
-
-    ymb["Y12MB
-    Prepare and reorder matrix"]
-
-    ymc["Y12MC
-    LU factorization"]
-
-    ymg["Y12MG
-    Reciprocal condition number
-    (optional)"]
-
-    ymd["Y12MD
-    Solve system Ax = b"]
-
-    done(["Free data structures and memory"])
-
-    start --> ymh --> ymb --> ymc --> ymg --> ymd --> done
-    ymd --> ymd
-    ymd -->|"new matrix"| ymc
-    ymc -->|"new matrix,
-    same sparsity structure"| ymc
-
-    style ymh fill:#ffffcc,stroke:#999
-    style ymg fill:#ffffcc,stroke:#999
-```
+<img src="callseq.png" width="380" alt="Y12M calling sequence diagram">
 
 The two optional subroutines have positional constraints:
 
