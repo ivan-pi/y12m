@@ -11,22 +11,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
-        gcc: [15]
+        include:
+          - os: ubuntu-latest
+            gcc: 14
+          - os: macos-latest
+            gcc: 14
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install gfortran (Linux)
-        if: runner.os == 'Linux'
-        run: |
-          sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
-          sudo apt-get update -y
-          sudo apt-get install -y gfortran-${{ matrix.gcc }}
-
-      - name: Install gfortran (macOS)
-        if: runner.os == 'macOS'
-        run: brew install gcc@${{ matrix.gcc }}
 
       - name: Configure
         run: cmake -B build -DCMAKE_Fortran_COMPILER=gfortran-${{ matrix.gcc }}
