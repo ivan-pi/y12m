@@ -1,6 +1,5 @@
-      subroutine y12mge(n,nn,a,snr,w,pivot,anorm,rcond,iha,ha
-     *                 ,iflag,ifail)
-c
+      subroutine y12mge(n,nn,a,snr,w,pivot,anorm,rcond,iha,ha,
+     *                  iflag,ifail)
 c
 c   purpose.
 c   --------
@@ -23,45 +22,34 @@ c   in   j.dongarra, j.r.bunch, c.b.moler and g.w.stewart (1979):
 c        "linpack - user's guide", siam, philadelphia.
 c
 c
-c
-c
 c  declaration of the global variables and arrays.
-c
 c
       integer n, nn, iha, iflag, ifail
       integer   snr, ha
       real      a, w,    pivot, rcond, anorm
       dimension a(nn),snr(nn),ha(iha,3),pivot(n),w(n),iflag(5)
 c
-c
 c  declaration of the internal variables.
-c
 c
       real  ynorm, znorm, t
       integer  l1, l2, l3, l, n7, n8
 c
-c
 c   check whether the entry is correct or not.
-c
 c
       if(ifail.ne.0) go to 180
       if(iflag(5).ne.1) go to 10
       ifail=26
       go to 180
 c
-c
 c   no error detected.  the computations will be continued.
-c
 c
    10 n8=n+1
       n7=n-1
-c
 c
 c   solve a system of the form    u1*w=e   where   u1   is the
 c   transpose of matrix   u   in the   lu-factorization of matrix
 c   a   and    e    is a vector whose components are equal to   +1
 c   or   -1.
-c
 c
       w(1)=1.0/pivot(1)
       do   20   i=2,n
@@ -81,13 +69,11 @@ c
       w(i)=-w(i)/pivot(i)
    50 continue
 c
-c
 c   solve a system of the form   l1*y=w   where   l1   is the
 c   transpose of matrix   l   in the   lu-factorization of
 c   matrix   a .   the components of vector   y   are stored
 c   array   w  (thus, the contents of array   w   are overwritten
 c   by the components of vector   y ).
-c
 c
       do   80   i=1,n7
       l=n-i
@@ -102,21 +88,17 @@ c
    70 continue
    80 continue
 c
-c
 c   calculate the one-norm of vector   y .
-c
 c
       ynorm=0.0
       do   90   i=1,n
       ynorm=ynorm+abs(w(i))
    90 continue
 c
-c
 c   compute the solution of    (lu)z=y .  this means that
 c   two systems with triangular matrices are solved using the
 c   same ideas as above. the components of the calculated solution
 c   are stored in array   w .
-c
 c
       do 130 i=1,n
       l1=ha(i,1)
@@ -141,26 +123,20 @@ c
       w(l3)=w(l3)/pivot(l3)
   160 continue
 c
-c
 c   compute the one-norm of vector   z   (vector   z   is
 c   the vector calculated above and stored in array   w .
-c
 c
       znorm=0.0
       do   170   i=1,n
       znorm=znorm+abs(w(i))
   170 continue
 c
-c
 c   find the value of the required estimate for the reciprocal
 c   of the condition number of matrix   a .
 c
-c
       rcond=(ynorm/anorm)/znorm
 c
-c
 c   end of the computations.
-c
 c
   180 if(ifail.ne.0) rcond=-1.0
       return
