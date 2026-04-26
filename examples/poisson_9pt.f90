@@ -56,8 +56,9 @@ module poisson_solver
 
   real(dp), parameter :: pi = acos(-1.0_dp)
 
-  ! 9-point Mehrstellen stencil weights: stencil_w(is+2, js+2) for is,js = -1..1
-  ! Column-major layout: stencil_w(:,1) is the southern row, (:,3) is northern.
+  ! 9-point Mehrstellen stencil weights.  Indexed as stencil_w(is+2, js+2)
+  ! for stencil offsets is,js = -1..1.  Second index varies by j-offset (S->N),
+  ! first index by i-offset (W->E):  stencil_w(:,1) = southern triplet [1,4,1].
   integer, parameter :: stencil_w(3, 3) = reshape( &
       [1, 4, 1,   4, -20, 4,   1, 4, 1], [3, 3])
 
@@ -306,8 +307,10 @@ contains
     call compute_rhs(N, b)
 
     ! Save originals before y12ma overwrites a, snr, rnr, b
-    a0(1:nz) = a(1:nz);  b0 = b
-    snr0(1:nz) = snr(1:nz);  rnr0(1:nz) = rnr(1:nz)
+    a0(1:nz) = a(1:nz)
+    b0 = b
+    snr0(1:nz) = snr(1:nz)
+    rnr0(1:nz) = rnr(1:nz)
     call system_clock(t1)
     t_assemble = t1 - t0
 
