@@ -33,6 +33,7 @@ c  declaration of the internal variables.
 c
       real ynorm, znorm, t
       integer  l1, l2, l3, l, n7, n8
+      intrinsic abs
 c
 c   check whether the entry is correct or not.
 c
@@ -177,6 +178,7 @@ c  declaration of the internal variables.
 c
       double precision ynorm, znorm, t
       integer  l1, l2, l3, l, n7, n8
+      intrinsic dabs
 c
 c   check whether the entry is correct or not.
 c
@@ -236,7 +238,7 @@ c   calculate the one-norm of vector   y .
 c
       ynorm=0.0d0
       do   90   i=1,n
-      ynorm=ynorm+abs(w(i))
+      ynorm=ynorm+dabs(w(i))
    90 continue
 c
 c   compute the solution of    (lu)z=y .  this means that
@@ -272,7 +274,7 @@ c   the vector calculated above and stored in array   w .
 c
       znorm=0.0d0
       do   170   i=1,n
-      znorm=znorm+abs(w(i))
+      znorm=znorm+dabs(w(i))
   170 continue
 c
 c   find the value of the required estimate for the reciprocal

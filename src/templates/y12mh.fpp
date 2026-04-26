@@ -1,7 +1,8 @@
 #:set postfix = ['e','f']
 #:set type = ['real', 'double precision']
 #:set literal_zero = ['0.0e0', '0.0d0']
-#:for pf, real_t, zero in zip(postfix,type,literal_zero)
+#:set abs_func = ['abs','dabs']
+#:for pf, real_t, zero, abs in zip(postfix,type,literal_zero,abs_func)
       subroutine y12mh${pf}$(n,nz,a,snr,work,anorm)
 c
 c   purpose.
@@ -24,6 +25,7 @@ c
 c  declaration of the internal variables.
 c
       integer l
+      intrinsic ${abs}$
 c
 c  set all locations of array     work     equal to zero.
 c
@@ -37,7 +39,7 @@ c  in array     work .
 c
       do 20 i=1,nz
       l=snr(i)
-      work(l)=work(l)+abs(a(i))
+      work(l)=work(l)+${abs}$(a(i))
    20 continue
 c
 c  calculate the one-norm of matrix     a .

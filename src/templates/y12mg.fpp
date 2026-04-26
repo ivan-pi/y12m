@@ -1,8 +1,9 @@
 #:set postfix = ['e','f']
 #:set type = ['real', 'double precision']
-#:set literal_one = ['1.0e0', '1.0d0']
 #:set literal_zero = ['0.0e0', '0.0d0']
-#:for pf, real_t, one, zero in zip(postfix,type,literal_one,literal_zero)
+#:set literal_one = ['1.0e0', '1.0d0']
+#:set abs_func = ['abs','dabs']
+#:for pf, real_t, one, zero, abs in zip(postfix,type,literal_one,literal_zero,abs_func)
       subroutine y12mg${pf}$(n,nn,a,snr,w,pivot,anorm,rcond,iha,ha,
      *                  iflag,ifail)
 c
@@ -38,6 +39,7 @@ c  declaration of the internal variables.
 c
       ${real_t}$ ynorm, znorm, t
       integer  l1, l2, l3, l, n7, n8
+      intrinsic ${abs}$
 c
 c   check whether the entry is correct or not.
 c
@@ -97,7 +99,7 @@ c   calculate the one-norm of vector   y .
 c
       ynorm=${zero}$
       do   90   i=1,n
-      ynorm=ynorm+abs(w(i))
+      ynorm=ynorm+${abs}$(w(i))
    90 continue
 c
 c   compute the solution of    (lu)z=y .  this means that
@@ -133,7 +135,7 @@ c   the vector calculated above and stored in array   w .
 c
       znorm=${zero}$
       do   170   i=1,n
-      znorm=znorm+abs(w(i))
+      znorm=znorm+${abs}$(w(i))
   170 continue
 c
 c   find the value of the required estimate for the reciprocal

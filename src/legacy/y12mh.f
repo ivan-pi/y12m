@@ -20,6 +20,7 @@ c
 c  declaration of the internal variables.
 c
       integer l
+      intrinsic abs
 c
 c  set all locations of array     work     equal to zero.
 c
@@ -70,6 +71,7 @@ c
 c  declaration of the internal variables.
 c
       integer l
+      intrinsic dabs
 c
 c  set all locations of array     work     equal to zero.
 c
@@ -83,7 +85,7 @@ c  in array     work .
 c
       do 20 i=1,nz
       l=snr(i)
-      work(l)=work(l)+abs(a(i))
+      work(l)=work(l)+dabs(a(i))
    20 continue
 c
 c  calculate the one-norm of matrix     a .
