@@ -1,0 +1,16 @@
+test_y12ma_sp 1 0.00293003
+test_y12ma_dp 1 0.00117576
+test_y12mb_mc_md_sp 1 0.0012657
+test_y12mb_mc_md_dp 1 0.0011955
+test_y12mf_sp 1 0.00127877
+test_y12mg_mh 1 0.00117327
+test_y12mc_z_intent 1 0.00109578
+test_y12ma_5x5 1 0.00117656
+y12m_solve_mat0 1 0.00130611
+y12m_solve_mat1 1 0.00147487
+y12m_solve_mat2 1 0.00122946
+y12m_solve_mat3 1 0.00129244
+y12m_solve_mat5 1 0.00116999
+test_matrix_generators 1 0.0016258
+maind 1 0.0220118
+---

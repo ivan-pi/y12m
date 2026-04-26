@@ -1,0 +1,1 @@
+/usr/bin/f95 -Wl,--dependency-file=CMakeFiles/test2.dir/link.d CMakeFiles/test2.dir/test2.f.o -o test2  ../liby12m_legacy.a
