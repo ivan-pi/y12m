@@ -52,3 +52,13 @@ add_test(NAME maind
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
 )
 
+# 9-point isotropic Poisson/Laplace example
+add_executable(poisson_9pt poisson_9pt.f90)
+target_compile_options(poisson_9pt PRIVATE ${TEST_COMPILE_FLAGS})
+target_link_libraries(poisson_9pt PRIVATE y12m_legacy)
+
+add_test(NAME poisson_9pt
+    COMMAND poisson_9pt
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+)
+

@@ -1,1 +1,0 @@
-/usr/bin/f95 -Wl,--dependency-file=CMakeFiles/mainf.dir/link.d CMakeFiles/mainf.dir/mainf.f.o CMakeFiles/y12m_mgen.dir/y12m_example_util.f90.o -o mainf  ../liby12m_legacy.a ../liby12m_legacy.a
