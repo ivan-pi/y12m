@@ -1,19 +1,23 @@
 module y12m
 
   implicit none
-
   private
 
   ! Factorize and solve
   public :: y12ma
+
   ! Low level routines: prepare, factorize, and solve
   public :: y12mb
   public :: y12mc
   public :: y12md
+
   ! Solve with Gaussian elimination and iterative refinement
   public :: y12mf
 
+  ! Estimate reciprocal condition number
   public :: y12mg
+
+  ! Compute the matrix one-norm
   public :: y12mh
 
 
