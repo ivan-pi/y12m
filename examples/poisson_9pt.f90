@@ -293,7 +293,7 @@ contains
           snr(nz) = k + 1
           a(nz)   = 4.0_dp
 
-          ! North (j+1 = 2 <= N since N >= 3 in this branch)
+          ! North (j+1 = 2; this branch is only reachable when i > 1 and i < N, so N >= 3)
           nz      = nz + 1
           rnr(nz) = k
           snr(nz) = k + N
