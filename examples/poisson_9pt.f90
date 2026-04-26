@@ -51,16 +51,16 @@ module poisson_solver
   private
   public :: run
 
-  ! Double precision kind: equivalent to iso_fortran_env real64
   integer, parameter :: dp = kind(1.0d0)
 
   real(dp), parameter :: pi = acos(-1.0_dp)
 
-  ! 9-point Mehrstellen stencil weights.  Indexed as stencil_w(is+2, js+2)
-  ! for stencil offsets is,js = -1..1.  Second index varies by j-offset (S->N),
-  ! first index by i-offset (W->E):  stencil_w(:,1) = southern triplet [1,4,1].
-  integer, parameter :: stencil_w(3, 3) = reshape( &
-      [1, 4, 1,   4, -20, 4,   1, 4, 1], [3, 3])
+  ! 9-point Mehrstellen stencil weights, indexed as stencil_w(is,js)
+  ! for offsets is (x/E-W) and js (y/N-S), each ranging from -1 to +1.
+  real(dp), parameter :: stencil_w(-1:1, -1:1) = reshape( &
+      [1.0_dp, 4.0_dp, 1.0_dp, &
+       4.0_dp, -20.0_dp, 4.0_dp, &
+       1.0_dp, 4.0_dp, 1.0_dp], [3, 3])
 
 contains
 
@@ -162,7 +162,7 @@ contains
               nz      = nz + 1
               rnr(nz) = k_row
               snr(nz) = k_col
-              a(nz)   = real(stencil_w(is + 2, js + 2), dp)
+              a(nz)   = stencil_w(is, js)
             end if
           end do
         end do
@@ -173,35 +173,22 @@ contains
   ! ---------------------------------------------------------------
   ! Compute the right-hand side from Dirichlet boundary conditions.
   !
-  ! For each interior node, stencil neighbours that lie on the
-  ! boundary contribute  b(k) -= W(is,js) * u_bc.
-  ! Only the top edge (j == N) is non-zero; other edges have u = 0.
+  ! Only the top edge (j == N, u = bc_top) is non-zero.  The nodes
+  ! adjacent to it are the row j = N-1; their js=+1 stencil neighbours
+  ! lie on the top boundary.  bc_top is zero at the two corners
+  ! (x = 0 and x = 1), so no special branch is needed for them.
   ! ---------------------------------------------------------------
   subroutine compute_rhs(N, b)
     integer, intent(in) :: N
     real(dp), intent(inout) :: b(:)
-    integer :: i, j, is, js, ni, nj, k_row, ndof_1d
-    real(dp) :: h, u_bc
+    integer :: i, is, k_row, ndof_1d
+    real(dp) :: h
     h       = 1.0_dp / real(N - 1, dp)
     ndof_1d = N - 2
-    do j = 2, N - 1
-      do i = 2, N - 1
-        k_row = (j - 2) * ndof_1d + (i - 2) + 1
-        do js = -1, 1
-          do is = -1, 1
-            ni = i + is
-            nj = j + js
-            if (.not. (ni >= 2 .and. ni <= N - 1 .and. nj >= 2 .and. nj <= N - 1)) then
-              ! Boundary value at node (ni, nj)
-              if (nj == N) then
-                u_bc = bc_top(real(ni - 1, dp) * h)
-              else
-                u_bc = 0.0_dp
-              end if
-              b(k_row) = b(k_row) - real(stencil_w(is + 2, js + 2), dp) * u_bc
-            end if
-          end do
-        end do
+    do i = 2, N - 1
+      k_row = (N - 3) * ndof_1d + (i - 2) + 1
+      do is = -1, 1
+        b(k_row) = b(k_row) - stencil_w(is, 1) * bc_top(real(i + is - 1, dp) * h)
       end do
     end do
   end subroutine compute_rhs
@@ -212,25 +199,26 @@ contains
   ! u_num(N,N): numerical solution on the full N x N grid.
   ! u_ex(N,N):  exact solution on the full N x N grid.
   ! filename:   output file path.
-  ! header:     optional extra comment line written after the fixed header.
+  ! header:     nhr comment lines (each up to 70 chars) written at the top.
   !
   ! Node (i,j) is at physical coordinates (x,y) = ((i-1)*h, (j-1)*h).
   ! Columns: x  y  u_numerical  u_exact
   ! ---------------------------------------------------------------
-  subroutine write_output(N, u_num, u_ex, filename, header)
+  subroutine write_output(N, u_num, u_ex, filename, header, nhr)
     integer, intent(in) :: N
     real(dp), intent(in) :: u_num(N, N)
     real(dp), intent(in) :: u_ex(N, N)
     character(len=*), intent(in) :: filename
-    character(len=*), intent(in), optional :: header
+    integer, intent(in) :: nhr
+    character(len=70), intent(in) :: header(nhr)
     character(len=*), parameter :: datafmt = '(4(1x,es14.6))'
     real(dp) :: h
-    integer :: funit, i, j
+    integer :: funit, i, j, ih
     h = 1.0_dp / real(N - 1, dp)
     open(newunit=funit, file=filename, status='unknown', action='write')
-    write(funit, '(a)') '# 9-point isotropic stencil, Laplace equation on unit square'
-    write(funit, '(a)') '# BC: u = 4*x*(1-x) on top edge (y=1); u = 0 elsewhere'
-    if (present(header)) write(funit, '(a)') '# ' // trim(header)
+    do ih = 1, nhr
+      write(funit, '("# ",a)') trim(header(ih))
+    end do
     write(funit, '(a)') '# Columns: x   y   u_numerical   u_exact'
     write(funit, '(a)') '#'
     do j = 1, N
@@ -379,7 +367,12 @@ contains
     ! 4. Write gnuplot data file
     ! ==============================================================
     call system_clock(t0)
-    call write_output(N, u_full, u_ex_full, outfile)
+    block
+      character(len=70) :: hdr(2)
+      hdr(1) = '9-point isotropic stencil, Laplace equation on unit square'
+      hdr(2) = 'BC: u = 4*x*(1-x) on top edge (y=1); u = 0 elsewhere'
+      call write_output(N, u_full, u_ex_full, outfile, hdr, size(hdr))
+    end block
     call system_clock(t1)
     t_output = t1 - t0
 
@@ -424,10 +417,10 @@ program poisson_9pt
   do iarg = 1, nargs
     call get_command_argument(iarg, arg)
     if (trim(arg) == '--help' .or. trim(arg) == '-h') then
-      write(error_unit, '(a)') 'Usage: poisson_9pt [--help] [N] [output_file]'
-      write(error_unit, '(a)') '  N           total grid size (>= 3, default 22)'
-      write(error_unit, '(a)') '              22 -> 20x20 interior DOFs'
-      write(error_unit, '(a)') '  output_file output data file (default: poisson_9pt.dat)'
+      write(*, '(a)') 'Usage: poisson_9pt [--help] [N] [output_file]'
+      write(*, '(a)') '  N           total grid size (>= 3, default 22)'
+      write(*, '(a)') '              22 -> 20x20 interior DOFs'
+      write(*, '(a)') '  output_file output data file (default: poisson_9pt.dat)'
       stop 0
     end if
   end do
