@@ -12,7 +12,7 @@ Solution of Large and Sparse Systems of Linear Algebraic Equations
 
 ## Calling Sequence
 
-The Y12M package provides subroutines at two levels. Every subroutine is available in a single-precision variant (suffix `E`) and a double-precision variant (suffix `F`), for example `Y12MBE` / `Y12MBF`.
+The Y12M package provides subroutines at two levels. The `y12m` module exposes generic interfaces (`y12ma`, `y12mb`, …) that cover both precisions; the precision-specific variants (`y12mbe`/`y12mbf`, etc.) can also be called directly by linking the library.
 
 ### High-level drivers
 
@@ -23,21 +23,21 @@ The Y12M package provides subroutines at two levels. Every subroutine is availab
 
 ### Lower-level subroutines
 
-For finer control—solving the same system for multiple right-hand sides, reusing an existing LU factorization, or processing a sequence of matrices that share the same sparsity structure—the lower-level subroutines should be called directly:
+For finer control—solving the same system for multiple right-hand sides, reusing an existing LU factorization, or processing a sequence of matrices that share the same sparsity structure—the lower-level subroutines should be called directly (see also [docs/multiple_rhs.md](docs/multiple_rhs.md)):
 
 | Subroutine | Purpose |
 |------------|---------|
-| `Y12MH` | Computes the one-norm of matrix A. *(optional)* |
 | `Y12MB` | Prepares and reorders the matrix for factorization. |
 | `Y12MC` | Computes the LU factorization of the matrix. |
-| `Y12MG` | Computes the reciprocal of the condition number. *(optional)* |
 | `Y12MD` | Solves the system using the LU factorization. |
+| `Y12MG` | Computes the reciprocal of the condition number. *(optional)* |
+| `Y12MH` | Computes the one-norm of matrix A. *(optional)* |
 
 ### Calling order
 
 ```mermaid
 flowchart TD
-    start(["Start"])
+    start(["Create/Fill Coordinate array"])
 
     ymh["Y12MH
     Compute one-norm of A
@@ -56,13 +56,13 @@ flowchart TD
     ymd["Y12MD
     Solve system Ax = b"]
 
-    done(["Done"])
+    done(["Free data structures and memory"])
 
     start --> ymh --> ymb --> ymc --> ymg --> ymd --> done
-    ymd -->|"new right-hand side,
-    same matrix (IFLAG(5)=3)"| ymd
+    ymd --> ymd
+    ymd -->|"new matrix"| ymc
     ymc -->|"new matrix,
-    same sparsity structure"| ymh
+    same sparsity structure"| ymc
 
     style ymh fill:#ffffcc,stroke:#999
     style ymg fill:#ffffcc,stroke:#999
@@ -70,6 +70,6 @@ flowchart TD
 
 The two optional subroutines have positional constraints:
 
-- **`Y12MH`** must be called **before `Y12MC`**, because the LU factorization overwrites the matrix values stored in array `A`. It is recommended to call `Y12MH` before `Y12MB`.
+- **`Y12MH`** must be called **before `Y12MC`**, because the LU factorization overwrites the matrix values stored in array `A`.
 - **`Y12MG`** must be called **after `Y12MC`**, while the LU factorization is still intact. It takes the one-norm computed by `Y12MH` as an input argument.
 
