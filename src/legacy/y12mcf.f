@@ -1,17 +1,17 @@
-      subroutine y12mcf(n,z,a,snr,nn,rnr,nn1,pivot,b,ha,iha, aflag,iflag
-     *,ifail)
+      subroutine y12mcf(n,z,a,snr,nn,rnr,nn1,pivot,b,ha,iha,aflag,iflag
+     1,ifail)
 c
-c  systens of linear equations are solved by use of sparse matrix tech-
+c  systems of linear equations are solved by use of sparse matrix tech-
 c  nique and by gaussian elimination.
 c
       implicit double precision(a-b,g,p,t-y),integer(c,f,h-n,r-s,z)
       double precision a(nn),b(n),pivot(n),aflag(8)
+      integer snr(nn),rnr(nn1),ha(iha,11), iflag(10)
 c
 c  information which is necessary to begin the elimination is stored.
 c
 c  use a local working copy of z so the caller's variable is never modified.
 c
-      integer snr(nn),rnr(nn1),ha(iha,11), iflag(10)
       zz=z
       ifail=0
       if(iflag(1).ne.-1)ifail=2

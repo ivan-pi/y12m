@@ -1,7 +1,7 @@
-      subroutine y12mce(n,z,a,snr,nn,rnr,nn1,pivot,b,ha,iha,
-     1 aflag,iflag,ifail)
+      subroutine y12mce(n,z,a,snr,nn,rnr,nn1,pivot,b,ha,iha,aflag,iflag
+     1,ifail)
 c
-c  systens of linear equations are solved by use of sparse matrix tech-
+c  systems of linear equations are solved by use of sparse matrix tech-
 c  nique and by gaussian elimination.
 c
       implicit real(a-b,g,p,t-y),integer(c,f,h-n,r-s,z)
