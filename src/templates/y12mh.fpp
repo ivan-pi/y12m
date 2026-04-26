@@ -29,7 +29,7 @@ c  set all locations of array     work     equal to zero.
 c
       do 10 i=1,n
       work(i)=${zero}$
-      10 continue
+   10 continue
 c
 c  calculate the sums of the absolute values of the non-zero
 c  elements in each row of matrix     a .     store these sums
