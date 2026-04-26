@@ -57,6 +57,8 @@ module poisson_solver
 
   ! 9-point Mehrstellen stencil weights, indexed as stencil_w(is,js)
   ! for offsets is (x/E-W) and js (y/N-S), each ranging from -1 to +1.
+  ! Fortran column-major fill: stencil_w(:,-1)=[1,4,1] (S row),
+  ! stencil_w(:,0)=[4,-20,4] (middle row), stencil_w(:,1)=[1,4,1] (N row).
   real(dp), parameter :: stencil_w(-1:1, -1:1) = reshape( &
       [1.0_dp, 4.0_dp, 1.0_dp, &
        4.0_dp, -20.0_dp, 4.0_dp, &
@@ -188,7 +190,7 @@ contains
     do i = 2, N - 1
       k_row = (N - 3) * ndof_1d + (i - 2) + 1
       do is = -1, 1
-        b(k_row) = b(k_row) - stencil_w(is, 1) * bc_top(real(i + is - 1, dp) * h)
+        b(k_row) = b(k_row) - stencil_w(is, 1) * bc_top(real(i + is - 1, dp) * h)  ! js=+1 (north)
       end do
     end do
   end subroutine compute_rhs
