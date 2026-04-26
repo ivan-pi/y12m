@@ -1,0 +1,42 @@
+! MatrixMarket I/O Functions for Fortran (F77/F90)
+!
+! A full description can be found at
+! https://math.nist.gov/MatrixMarket/mmio/f/mmiof77.html
+!
+interface
+    !> Queries the contents of the Matrix Market file connected to the unit iunit to extract size and storage information.
+    subroutine mminfo(iunit,rep,field,symm,rows,cols,entries)
+       integer, intent(in) :: iunit
+       character(len=10), intent(out) :: rep
+       character(len=7), intent(out) :: field
+       character(len=19), intent(out) :: symm
+       integer, intent(out) :: rows, cols, entries
+    end subroutine
+
+    !> Reads the contents of the Matrix Market file connected to the unit iunit into the storage arrays provided.
+    subroutine mmread(iunit,rep,field,symm,rows,cols,entries,nnzmax,indx, jndx, rval, cval)
+        integer, intent(in) :: iunit
+        character(len=10), intent(out) :: rep
+        character(len=7), intent(out) :: field
+        character(len=19), intent(out) :: symm
+        integer, intent(out) :: rows, cols, entries
+        integer, intent(in) :: nnzmax
+        ! The next arguments use inout, as they may also be unchanged
+        integer, intent(inout) :: indx(*), jndx(*)
+        real(kind(1.0d0)), intent(inout) :: rval(*)
+        complex(kind(1.0d0)), intent(inout) :: cval(*)
+    end subroutine
+
+    !> Writes matrix data to a Matrix Market formatted file connected to the unit ounit.
+    subroutine mmwrite(ounit,rep,field,symm,rows,cols,entries,
+    indx, jndx, rval, cval)
+        integer, intent(in) :: ounit
+        character(len=10), intent(in) :: rep
+        character(len=7), intent(in) :: field
+        character(len=19), intent(in) :: symm
+        integer, intent(in) :: rows, cols, entries
+        integer, intent(in) :: indx(*), jndx(*)
+        real(kind(1.0d0)), intent(in) :: rval(*)
+        complex(kind(1.0d0)), intent(in) :: cval(*)
+    end subroutine
+end interface
