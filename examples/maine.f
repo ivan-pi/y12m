@@ -1,4 +1,4 @@
-      use y12m_example_util, only: matrd1, matre1
+      use y12m_example_util, only: matrd1, matre1, time
       parameter (ibdim=2000, iadim=25*ibdim, icdim=20*ibdim,
      1 iddim=5*ibdim)
 c     parameter (ibdim=600, iadim=25*ibdim, icdim=20*ibdim,
@@ -55,8 +55,7 @@ c     parameter (ibdim=600, iadim=25*ibdim, icdim=20*ibdim,
 c    1 iddim=5*ibdim)
       implicit real(a-b,g,p,t-v),integer(c,f,h-n,r-s,z)
       real a(iadim),pivot(ibdim),b(ibdim),aflag(11),
-     1 b1(ibdim),x(ibdim),a1(iddim)
-      real time, y12cck
+     1 b1(ibdim),x(ibdim),a1(iddim),tm
 c     integer*2 snr(iadim),rnr(icdim),ha(ibdim,13),iflag(12),
       integer snr(iadim),rnr(icdim),ha(ibdim,13),iflag(12),
      1 sn(iddim)
@@ -135,16 +134,15 @@ c52    format(10(1x,i5))
       do 2 i=1,z
       lrow=rnr(i)
       lcol=snr(i)
-2     b(lrow)=b(lrow)+a(i)
-      ifail1=0
-      time=y12cck(1,ifail1)
+ 2     b(lrow)=b(lrow)+a(i)
+      call time(itime1)
       call y12mfe(n,a,snr,nn,rnr,nn1,a1,sn,z,ha,iha,b,b1,x,
      1 pivot,aflag,iflag,ifail)
-      ifail1=0
-      time=-time+y12cck(1,ifail1)
+      call time(itime2)
+      tm=real(itime2-itime1)/1.e+6
       if(ifail.ne.0)go to 3
-      write(nout,110)time
-110   format(' subs after y12mfe: ',f12.2)
+      write(nout,110)tm
+ 110  format(' subs after y12mfe: ',f12.2)
       t=0.0
       do 4 i=1,n
       tt=abs(x(i)-1.0)

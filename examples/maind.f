@@ -1,4 +1,4 @@
-      use y12m_example_util, only: matrd1, matre1
+      use y12m_example_util, only: matrd1, matre1, time
       parameter (ibdim=1000, iadim=25*ibdim, icdim=20*ibdim)
 c     parameter (ibdim=600, iadim=25*ibdim, icdim=20*ibdim)
 c     implicit real(a-b,g,p,t-v),integer(c,f,h-n,r-s,z)
@@ -44,8 +44,7 @@ c     skould be set equal to or larger than the value for
 c     nend.
 c     parameter ibdim=600, iadim=25*ibdim, icdim=20*ibdim
       implicit real(a-b,g,p,t-v),integer(c,f,h-n,r-s,z)
-      real a(iadim),pivot(ibdim),b(ibdim),aflag(8)
-      real time, y12cck
+      real a(iadim),pivot(ibdim),b(ibdim),aflag(8),tm
 c     integer*2 snr(iadim),rnr(icdim),ha(ibdim,11),iflag(10)
       integer snr(iadim),rnr(icdim),ha(ibdim,11),iflag(10)
       data nin/5/, nout /6/
@@ -117,15 +116,14 @@ c52    format(10(1x,i5))
       do 2 i=1,z
       lrow=rnr(i)
       lcol=snr(i)
-2     b(lrow)=b(lrow)+a(i)
-      ifail1=0
-      time=y12cck(1,ifail1)
+ 2     b(lrow)=b(lrow)+a(i)
+      call time(itime1)
       call y12mae(n,z,a,snr,nn,rnr,nn1,pivot,ha,iha,aflag,iflag,b,ifail)
-      ifail1=0
-      time=-time+y12cck(1,ifail1)
+      call time(itime2)
+      tm=real(itime2-itime1)/1.e+6
       if(ifail.ne.0)go to 3
-      write(nout,110)time
-110   format(' subs after y12mae: ',f12.2)
+      write(nout,110)tm
+ 110  format(' subs after y12mae: ',f12.2)
       t=0.0
       do 4 i=1,n
       tt=abs(b(i)-1.)
