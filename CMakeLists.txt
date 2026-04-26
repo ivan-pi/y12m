@@ -5,6 +5,8 @@ project(y12m
     DESCRIPTION "Sparse Direct Solver"
     LANGUAGES Fortran)
 
+option(BUILD_EXAMPLES "Build the example programs" ON)
+
 # Collect all legacy fixed-form Fortran sources.
 file(GLOB LEGACY_SOURCES "${CMAKE_SOURCE_DIR}/src/legacy/*.f")
 
@@ -20,9 +22,13 @@ set_target_properties(y12m_legacy PROPERTIES
     Fortran_MODULE_DIRECTORY "${FORTRAN_MOD_DIR}")
 target_include_directories(y12m_legacy INTERFACE "${FORTRAN_MOD_DIR}")
 
+include(CTest)
 
-find_package(LAPACK)
+if(BUILD_TESTING)
+    find_package(LAPACK)
+    add_subdirectory(test)
+endif()
 
-enable_testing()
-add_subdirectory(test)
-add_subdirectory(examples)
+if(BUILD_EXAMPLES)
+    add_subdirectory(examples)
+endif()

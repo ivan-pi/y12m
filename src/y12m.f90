@@ -211,6 +211,19 @@ module y12m
       integer, intent(in) :: iflag(5)
       integer, intent(inout) :: ifail
     end subroutine
+    subroutine y12mgf(n,nn,a,snr,w,pivot,anorm,rcond,iha,ha,iflag,ifail)
+      implicit none
+      integer, intent(in) :: n, nn, iha
+      double precision, intent(in) :: a(nn)
+      integer, intent(in) :: snr(nn)
+      double precision, intent(inout) :: w(n)
+      double precision, intent(in) :: pivot(n)
+      double precision, intent(in) :: anorm
+      double precision, intent(out) :: rcond
+      integer, intent(in) :: ha(iha,3)
+      integer, intent(in) :: iflag(5)
+      integer, intent(inout) :: ifail
+    end subroutine
   end interface
 
   !> Compute the one-norm of a sparse matrix A stored in coordinate form.

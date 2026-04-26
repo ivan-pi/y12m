@@ -33,6 +33,7 @@ program test_y12ma_5x5
 
   real    :: resid(n)
   real    :: normrinf, normbinf, denominf, relinf
+  real    :: normb2, normr2, denom, relerr
   real    :: rtol2, rtoli
   integer :: i, ifail
 
