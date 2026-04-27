@@ -423,7 +423,7 @@ program timings_de
 
    ! ---- Total elapsed wall-clock time ------------------------------------
    call system_clock(t_prog_end)
-   write(output_unit, '(/,a,f12.3,a)') &
+   write(output_unit, '(/,a,G12.3,a)') &
       'Total elapsed wall-clock time: ', &
       real(t_prog_end - t_prog_start, dp) / real(wall_rate, dp), ' s'
 
