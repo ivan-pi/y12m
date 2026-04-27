@@ -1,42 +1,55 @@
 ! MatrixMarket I/O Functions for Fortran (F77/F90)
 !
-! A full description can be found at
-! https://math.nist.gov/MatrixMarket/mmio/f/mmiof77.html
+! Interface block for mmio.f from NIST:
+!   https://math.nist.gov/MatrixMarket/mmio/f/mmio.f
+!
+! Cross-checked against the actual mmio.f source. Key points:
+!   - mmread has 13 arguments: ival (integer array) sits between jndx and rval
+!     and was absent from the previous version of this file.
+!   - cval is declared as plain complex (single precision) in mmio.f; it is
+!     kept that way here.  Callers that only handle real/integer data may pass
+!     a size-1 dummy array for cval.
+!   - mmwrite takes character*(*) for rep, field, and symm.
 !
 interface
-    !> Queries the contents of the Matrix Market file connected to the unit iunit to extract size and storage information.
-    subroutine mminfo(iunit,rep,field,symm,rows,cols,entries)
-       integer, intent(in) :: iunit
-       character(len=10), intent(out) :: rep
-       character(len=7), intent(out) :: field
-       character(len=19), intent(out) :: symm
-       integer, intent(out) :: rows, cols, entries
-    end subroutine
 
-    !> Reads the contents of the Matrix Market file connected to the unit iunit into the storage arrays provided.
-    subroutine mmread(iunit,rep,field,symm,rows,cols,entries,nnzmax,indx, jndx, rval, cval)
-        integer, intent(in) :: iunit
-        character(len=10), intent(out) :: rep
-        character(len=7), intent(out) :: field
-        character(len=19), intent(out) :: symm
-        integer, intent(out) :: rows, cols, entries
-        integer, intent(in) :: nnzmax
-        ! The next arguments use inout, as they may also be unchanged
-        integer, intent(inout) :: indx(*), jndx(*)
-        real(kind(1.0d0)), intent(inout) :: rval(*)
-        complex(kind(1.0d0)), intent(inout) :: cval(*)
-    end subroutine
+   !> Read header information from a Matrix Market file.
+   !> The file unit must be open; it will be rewound on return.
+   subroutine mminfo(iunit, rep, field, symm, rows, cols, nnz)
+      integer,           intent(in)  :: iunit
+      character(len=10), intent(out) :: rep
+      character(len=7),  intent(out) :: field
+      character(len=19), intent(out) :: symm
+      integer,           intent(out) :: rows, cols, nnz
+   end subroutine mminfo
 
-    !> Writes matrix data to a Matrix Market formatted file connected to the unit ounit.
-    subroutine mmwrite(ounit,rep,field,symm,rows,cols,entries,
-    indx, jndx, rval, cval)
-        integer, intent(in) :: ounit
-        character(len=10), intent(in) :: rep
-        character(len=7), intent(in) :: field
-        character(len=19), intent(in) :: symm
-        integer, intent(in) :: rows, cols, entries
-        integer, intent(in) :: indx(*), jndx(*)
-        real(kind(1.0d0)), intent(in) :: rval(*)
-        complex(kind(1.0d0)), intent(in) :: cval(*)
-    end subroutine
+   !> Read matrix data from a Matrix Market file.
+   !> The file unit must be open; it will be rewound on return.
+   subroutine mmread(iunit, rep, field, symm, rows, cols, nnz, nnzmax, &
+                     indx, jndx, ival, rval, cval)
+      integer,                    intent(in)    :: iunit
+      character(len=10),          intent(out)   :: rep
+      character(len=7),           intent(out)   :: field
+      character(len=19),          intent(out)   :: symm
+      integer,                    intent(out)   :: rows, cols, nnz
+      integer,                    intent(in)    :: nnzmax
+      integer,                    intent(inout) :: indx(*), jndx(*)
+      integer,                    intent(inout) :: ival(*)
+      double precision,           intent(inout) :: rval(*)
+      complex,                    intent(inout) :: cval(*)
+   end subroutine mmread
+
+   !> Write matrix data to a Matrix Market file.
+   !> The file unit must be open.
+   subroutine mmwrite(ounit, rep, field, symm, rows, cols, nnz, &
+                      indx, jndx, ival, rval, cval)
+      integer,          intent(in) :: ounit
+      character(len=*), intent(in) :: rep, field, symm
+      integer,          intent(in) :: rows, cols, nnz
+      integer,          intent(in) :: indx(*), jndx(*)
+      integer,          intent(in) :: ival(*)
+      double precision, intent(in) :: rval(*)
+      complex,          intent(in) :: cval(*)
+   end subroutine mmwrite
+
 end interface

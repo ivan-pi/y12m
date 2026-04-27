@@ -6,6 +6,12 @@ project(y12m
     LANGUAGES Fortran)
 
 option(BUILD_EXAMPLES "Build the example programs" ON)
+option(WITH_NIST_MMIO "Build the Matrix Market driver (y12m_mm)" ON)
+
+if(WITH_NIST_MMIO)
+    include(cmake/FetchMMIO.cmake)
+endif()
+
 
 # Collect all legacy fixed-form Fortran sources.
 file(GLOB LEGACY_SOURCES "${CMAKE_SOURCE_DIR}/src/legacy/*.f")

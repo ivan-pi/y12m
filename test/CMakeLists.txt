@@ -126,3 +126,18 @@ else()
   message(STATUS
     "LAPACK not found -- skipping test_y12ma_rand_sp/dp (sparse-dense comparison tests)")
 endif()
+
+
+# ---------------------------------------------------------------------------
+# Matrix Market driver — requires mmio.f downloaded by cmake/FetchMMIO.cmake.
+# mmio.fi lives in test/ and is shared with the test suite.
+# ---------------------------------------------------------------------------
+if(WITH_NIST_MMIO)
+    add_executable(y12m_mm y12m_mm.f90 "${MMIO_F}")
+    target_compile_options(y12m_mm PRIVATE ${TEST_COMPILE_FLAGS})
+    target_link_libraries(y12m_mm PRIVATE y12m_legacy)
+    # mmio.fi is found via INCLUDE in y12m_mm.f90; expose test/ for that.
+    target_include_directories(y12m_mm PRIVATE "${CMAKE_SOURCE_DIR}/test")
+    # mmio.f is fixed-form F77; suppress free-form style warnings.
+    set_source_files_properties("${MMIO_F}" PROPERTIES Fortran_FORMAT FIXED)
+endif()
