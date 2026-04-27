@@ -11,7 +11,6 @@ foreach(tname
     test_y12mb_mc_md_dp
     test_y12mf_sp
     test_y12mg_mh
-    test_y12mc_z_intent
     test_y12ma_5x5)
 
   add_executable(${tname} ${tname}.f90)
@@ -30,7 +29,7 @@ foreach(tname
   target_link_libraries(${tname} PRIVATE y12m_legacy)
   # Check if the target name ends with _sp
   if(tname MATCHES "_sp$")
-    target_compile_definitions(${tname} PRIVATE SINGLE_PRECISION)
+    target_compile_definitions(${tname} PRIVATE TEST_SINGLE_PRECISION)
   endif()
   add_test(NAME ${tname} COMMAND ${tname})
 
@@ -41,6 +40,20 @@ foreach(tname
     test_y12mc_errors_dp)
 
   add_executable(${tname} test_y12mc_errors.F90)
+  target_compile_options(${tname} PRIVATE ${TEST_COMPILE_FLAGS})
+  target_link_libraries(${tname} PRIVATE y12m_legacy)
+  if(tname MATCHES "_sp$")
+    target_compile_definitions(${tname} PRIVATE TEST_SINGLE_PRECISION)
+  endif()
+  add_test(NAME ${tname} COMMAND ${tname})
+
+endforeach()
+
+foreach(tname
+    test_y12mc_z_intent_sp
+    test_y12mc_z_intent_dp)
+
+  add_executable(${tname} test_y12mc_z_intent.F90)
   target_compile_options(${tname} PRIVATE ${TEST_COMPILE_FLAGS})
   target_link_libraries(${tname} PRIVATE y12m_legacy)
   if(tname MATCHES "_sp$")
