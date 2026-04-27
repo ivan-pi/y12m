@@ -32,7 +32,9 @@ c
 c
 c  use the information about fill-ins if it is possible.
 c
-      nr=n*n
+c  nr is the initial upper bound on the Markowitz pivot cost (nnz_row-1)*(nnz_col-1).
+c  use huge(nr) instead of n*n to avoid 32-bit integer overflow when n >= 46341.
+      nr=huge(nr)
       if(iflag(4).ne.2)go to 100
       if(iflag(10).gt.nn)go to 50
       l1=iflag(10)

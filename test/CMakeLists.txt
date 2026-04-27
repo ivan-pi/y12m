@@ -12,7 +12,8 @@ foreach(tname
     test_y12mf_sp
     test_y12mg_mh
     test_y12mc_z_intent
-    test_y12ma_5x5)
+    test_y12ma_5x5
+    test_y12mc_large_n_dp)
 
   add_executable(${tname} ${tname}.f90)
   target_compile_options(${tname} PRIVATE ${TEST_COMPILE_FLAGS})
