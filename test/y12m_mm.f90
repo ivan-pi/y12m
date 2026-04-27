@@ -56,11 +56,13 @@ module y12m_mm_driver
 
   !> Options collected from the command line.
   type :: cli_opts
-    character(len=512) :: infile    = ''
-    character(len=512) :: outfile   = ''
-    logical            :: to_file   = .false.
-    logical            :: verbose   = .false.
-    logical            :: use_stdin = .false.
+    character(len=512) :: infile      = ''
+    character(len=512) :: outfile     = ''
+    logical            :: to_file     = .false.
+    logical            :: verbose     = .false.
+    logical            :: print_all   = .false.  ! print full x and r vectors
+    logical            :: use_stdin   = .false.
+    integer            :: fill_factor = 3        ! nn = fill_factor * z
   end type cli_opts
 
 contains
@@ -127,7 +129,7 @@ contains
 
     ! ---- Post-solve diagnostics ----
     real(dp), allocatable :: resid(:)
-    real(dp) :: res_inf, res_1norm, res_2norm, max_err, elapsed
+    real(dp) :: res_inf, res_2norm, err_inf, err_2norm, elapsed
 
     ! ---- Miscellaneous ----
     integer :: n, nn, nn1, iha, ifail
@@ -242,8 +244,8 @@ contains
     ! 8. Allocate solver arrays and call y12ma
     !    NN >= 2*Z (recommended 2*Z to 3*Z); NN1 >= Z (recommended 2*Z to 3*Z)
     ! =========================================================================
-    nn  = 10 * z
-    nn1 = 10 * z
+    nn  = opts%fill_factor * z
+    nn1 = opts%fill_factor * z
     iha = n
 
     allocate(a(nn), snr(nn), rnr(nn1), ha(iha, 11), aflag(8), iflag(10))
@@ -260,8 +262,7 @@ contains
                aflag, iflag, b, ifail)
     call system_clock(t2)
 
-    elapsed = merge(real(t2 - t1, dp) / real(clock_rate, dp), 0.0_dp, &
-                    clock_rate > 0)
+    elapsed = real(t2 - t1, dp) / real(clock_rate, dp)
 
     ! =========================================================================
     ! 9. Open output stream
@@ -297,15 +298,15 @@ contains
     call sparse_gemv(n, z, -1.0_dp, val_orig, row_orig, col_orig, b, resid)
 
     res_inf   = maxval(abs(resid))
-    res_1norm = sum(abs(resid))
     res_2norm = norm2(resid)
-    max_err   = maxval(abs(b(1:n) - 1.0_dp))
+    err_inf   = maxval(abs(b(1:n) - 1.0_dp))
+    err_2norm = norm2(b(1:n) - 1.0_dp)
 
     ! =========================================================================
     ! 12. Print results
     ! =========================================================================
-    call print_results(out_unit, opts%verbose, n, b, resid, &
-                       res_inf, res_1norm, res_2norm, max_err, &
+    call print_results(out_unit, opts%verbose, opts%print_all, n, b, resid, &
+                       res_inf, res_2norm, err_inf, err_2norm, &
                        elapsed, aflag, iflag, ifail)
 
     if (opts%to_file) close(out_unit)
@@ -376,33 +377,47 @@ contains
   ! ---------------------------------------------------------------------------
   !> Write the solution, residual, norms, timing, and optional diagnostics
   !> to out_unit.
-  subroutine print_results(out_unit, verbose, n, x, resid, &
-                           res_inf, res_1norm, res_2norm, max_err, &
+  !>
+  !> x and r are printed side-by-side, one row per index.  When n > 6 and
+  !> print_all is .false., only the first and last 3 elements are shown with
+  !> a ":" separator; set print_all = .true. to print every element.
+  subroutine print_results(out_unit, verbose, print_all, n, x, resid, &
+                           res_inf, res_2norm, err_inf, err_2norm, &
                            elapsed, aflag, iflag, ifail)
     integer,  intent(in) :: out_unit, n, iflag(10), ifail
-    logical,  intent(in) :: verbose
+    logical,  intent(in) :: verbose, print_all
     real(dp), intent(in) :: x(n), resid(n)
-    real(dp), intent(in) :: res_inf, res_1norm, res_2norm, max_err
+    real(dp), intent(in) :: res_inf, res_2norm, err_inf, err_2norm
     real(dp), intent(in) :: elapsed, aflag(8)
-    integer :: i
 
-    write(out_unit,'(a)') 'Solution x  (exact = 1 for all components):'
+    integer :: i, k
+    integer, parameter :: NHALF = 3
+    logical :: full
+
+    full = print_all .or. n <= 2 * NHALF
+
+    write(out_unit,'(a)') &
+        '     i       x[i]              err(x)          r[i]'
+    write(out_unit,'(a)') &
+        '  ----  ----------------  ------------  ----------------'
+
     do i = 1, n
-      write(out_unit,'(2x,a,i0,a,es22.14,a,es10.3,a)') &
-          'x[', i, '] = ', x(i), '   (err: ', x(i) - 1.0_dp, ')'
+      ! In preview mode skip the middle block; print a single ":" instead.
+      if (.not. full .and. i == NHALF + 1) then
+        write(out_unit,'(a)') '     :'
+      end if
+      if (full .or. i <= NHALF .or. i > n - NHALF) then
+        k = i
+        write(out_unit,'(2x,i6,2x,es16.8,2x,es12.4,2x,es16.8)') &
+            k, x(k), x(k) - 1.0_dp, resid(k)
+      end if
     end do
 
     write(out_unit,'(a)') ''
-    write(out_unit,'(a)') 'Residual r = b - A*x:'
-    do i = 1, n
-      write(out_unit,'(2x,a,i0,a,es22.14)') 'r[', i, '] = ', resid(i)
-    end do
-
-    write(out_unit,'(a)') ''
-    write(out_unit,'(a,es14.6)') '||r||_inf  = ', res_inf
-    write(out_unit,'(a,es14.6)') '||r||_1    = ', res_1norm
-    write(out_unit,'(a,es14.6)') '||r||_2    = ', res_2norm
-    write(out_unit,'(a,es14.6)') 'max|x - 1| = ', max_err
+    write(out_unit,'(a,es14.6)') '||r||_inf   = ', res_inf
+    write(out_unit,'(a,es14.6)') '||r||_2     = ', res_2norm
+    write(out_unit,'(a,es14.6)') '||x - 1||_inf = ', err_inf
+    write(out_unit,'(a,es14.6)') '||x - 1||_2   = ', err_2norm
 
     write(out_unit,'(a)') ''
     write(out_unit,'(a,f14.6,a)') 'Wall time: ', elapsed, ' s'
@@ -464,6 +479,20 @@ contains
         opts%to_file = .true.
       case ('-v', '--verbose')
         opts%verbose = .true.
+      case ('-p', '--print-all')
+        opts%print_all = .true.
+      case ('-f', '--fill-factor')
+        iarg = iarg + 1
+        if (iarg > nargs) then
+          write(*,'(a)') 'Error: -f/--fill-factor requires an integer argument.'
+          stop 1
+        end if
+        call get_command_argument(iarg, arg)
+        read(arg, *, iostat=ios) opts%fill_factor
+        if (ios /= 0 .or. opts%fill_factor < 2) then
+          write(*,'(a)') 'Error: --fill-factor must be an integer >= 2.'
+          stop 1
+        end if
       case ('-h', '--help')
         call print_help()
         stop 0
@@ -506,6 +535,8 @@ contains
     write(*,'(a)') 'Options:'
     write(*,'(a)') '  -o, --output FILE   Write results to FILE (default: stdout)'
     write(*,'(a)') '  -v, --verbose       Print solver diagnostics (AFLAG, IFLAG)'
+    write(*,'(a)') '  -p, --print-all     Print full x and r vectors (default: head/tail preview)'
+    write(*,'(a)') '  -f, --fill-factor N Over-provision solver arrays: nn = N*nnz (default: 3)'
     write(*,'(a)') '  -h, --help          Show this help and exit'
     write(*,'(a)') ''
     write(*,'(a)') 'Supported Matrix Market formats:'
