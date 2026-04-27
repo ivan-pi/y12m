@@ -27,14 +27,20 @@ program test_y12mc_z_intent
   use y12m
   implicit none
 
+#ifdef TEST_SINGLE_PRECISION
+  integer, parameter :: wp = kind(1.0e0)
+#else
+  integer, parameter :: wp = kind(1.0d0)
+#endif
+
   integer, parameter :: NMAX  = 10
   integer, parameter :: NNP   = 200
   integer, parameter :: NN1P  = 200
 
-  real    :: a(NNP), pivot(NMAX), b(NMAX), aflag(8)
-  integer :: snr(NNP), rnr(NN1P), ha(NMAX,11), iflag(10)
-  integer :: n, z, z_saved, ifail, nfail
-  real    :: err
+  real(wp) :: a(NNP), pivot(NMAX), b(NMAX), aflag(8)
+  integer  :: snr(NNP), rnr(NN1P), ha(NMAX,11), iflag(10)
+  integer  :: n, z, z_saved, ifail, nfail
+  real(wp) :: err
 
   nfail = 0
 
@@ -42,7 +48,7 @@ program test_y12mc_z_intent
   ! Test 1: z must be unchanged after a successful factorization (normal path).
   ! -----------------------------------------------------------------------
   n = 4
-  call build_tridiag_sp(n, NNP, NN1P, z, a, snr, rnr, b)
+  call build_tridiag(n, NNP, NN1P, z, a, snr, rnr, b)
   z_saved = z
 
   iflag(1) = 0
@@ -50,10 +56,10 @@ program test_y12mc_z_intent
   iflag(3) = 1
   iflag(4) = 0
   iflag(5) = 1
-  aflag(1) = 16.0
-  aflag(2) = 1.0e-12
-  aflag(3) = 1.0e+16
-  aflag(4) = 1.0e-12
+  aflag(1) = 16.0_wp
+  aflag(2) = 1.0e-12_wp
+  aflag(3) = 1.0e+16_wp
+  aflag(4) = 1.0e-12_wp
 
   call y12mb(n, z, a, snr, NNP, rnr, NN1P, ha, NMAX, aflag, iflag, ifail)
   if (ifail /= 0) then
@@ -93,7 +99,7 @@ program test_y12mc_z_intent
   ! set to 0); with the fix z is never written to.
   ! -----------------------------------------------------------------------
   n = 4
-  call build_tridiag_sp(n, NNP, NN1P, z, a, snr, rnr, b)
+  call build_tridiag(n, NNP, NN1P, z, a, snr, rnr, b)
 
   ! Prepare the matrix first so iflag(1) is set to -1.
   iflag(1) = 0
@@ -101,10 +107,10 @@ program test_y12mc_z_intent
   iflag(3) = 1
   iflag(4) = 0
   iflag(5) = 1
-  aflag(1) = 16.0
-  aflag(2) = 1.0e-12
-  aflag(3) = 1.0e+16
-  aflag(4) = 1.0e-12
+  aflag(1) = 16.0_wp
+  aflag(2) = 1.0e-12_wp
+  aflag(3) = 1.0e+16_wp
+  aflag(4) = 1.0e-12_wp
 
   call y12mb(n, z, a, snr, NNP, rnr, NN1P, ha, NMAX, aflag, iflag, ifail)
   if (ifail /= 0) then
@@ -154,22 +160,22 @@ program test_y12mc_z_intent
   ! read-only constant storage and causes a segmentation fault.
   ! -----------------------------------------------------------------------
   n = 3
-  a(1) = 1.0  ; snr(1) = 1 ; rnr(1) = 1
-  a(2) = 3.0  ; snr(2) = 3 ; rnr(2) = 1
-  a(3) = -1.0 ; snr(3) = 2 ; rnr(3) = 2
-  a(4) = 4.0  ; snr(4) = 3 ; rnr(4) = 2
-  a(5) = 2.0  ; snr(5) = 1 ; rnr(5) = 3
-  b(1) = 4.0 ; b(2) = 3.0 ; b(3) = 2.0
+  a(1) = 1.0_wp  ; snr(1) = 1 ; rnr(1) = 1
+  a(2) = 3.0_wp  ; snr(2) = 3 ; rnr(2) = 1
+  a(3) = -1.0_wp ; snr(3) = 2 ; rnr(3) = 2
+  a(4) = 4.0_wp  ; snr(4) = 3 ; rnr(4) = 2
+  a(5) = 2.0_wp  ; snr(5) = 1 ; rnr(5) = 3
+  b(1) = 4.0_wp ; b(2) = 3.0_wp ; b(3) = 2.0_wp
 
   iflag(1) = 0
   iflag(2) = 3
   iflag(3) = 1
   iflag(4) = 0
   iflag(5) = 1
-  aflag(1) = 16.0
-  aflag(2) = 1.0e-12
-  aflag(3) = 1.0e+16
-  aflag(4) = 1.0e-12
+  aflag(1) = 16.0_wp
+  aflag(2) = 1.0e-12_wp
+  aflag(3) = 1.0e+16_wp
+  aflag(4) = 1.0e-12_wp
 
   call y12mb(n, 5, a, snr, NNP, rnr, NN1P, ha, NMAX, aflag, iflag, ifail)
   if (ifail /= 0) then
@@ -188,8 +194,8 @@ program test_y12mc_z_intent
 
   call y12md(n, a, NNP, b, pivot, snr, ha, NMAX, iflag, ifail)
 
-  err = maxval(abs(b(1:n) - 1.0))
-  if (err > 1.0e-4) then
+  err = maxval(abs(b(1:n) - 1.0_wp))
+  if (err > 1.0e-4_wp) then
     write(*,'(a,es10.3)') 'FAIL test3: z as literal, max_err=', err
     nfail = nfail + 1
   else
@@ -210,26 +216,26 @@ program test_y12mc_z_intent
 contains
 
   ! n-by-n tridiagonal (diag=3, off-diag=-1), solution x=[1,...,1].
-  subroutine build_tridiag_sp(n, nnmax, nn1max, z, a, snr, rnr, b)
-    integer, intent(in)  :: n, nnmax, nn1max
-    integer, intent(out) :: z
-    real,    intent(out) :: a(nnmax), b(n)
-    integer, intent(out) :: snr(nnmax), rnr(nn1max)
+  subroutine build_tridiag(n, nnmax, nn1max, z, a, snr, rnr, b)
+    integer,  intent(in)  :: n, nnmax, nn1max
+    integer,  intent(out) :: z
+    real(wp), intent(out) :: a(nnmax), b(n)
+    integer,  intent(out) :: snr(nnmax), rnr(nn1max)
     integer :: i
     z = 0
     do i = 1, n
-      z = z + 1 ; rnr(z) = i ; snr(z) = i   ; a(z) =  3.0
+      z = z + 1 ; rnr(z) = i ; snr(z) = i   ; a(z) =  3.0_wp
     end do
     do i = 2, n
-      z = z + 1 ; rnr(z) = i ; snr(z) = i-1 ; a(z) = -1.0
+      z = z + 1 ; rnr(z) = i ; snr(z) = i-1 ; a(z) = -1.0_wp
     end do
     do i = 1, n-1
-      z = z + 1 ; rnr(z) = i ; snr(z) = i+1 ; a(z) = -1.0
+      z = z + 1 ; rnr(z) = i ; snr(z) = i+1 ; a(z) = -1.0_wp
     end do
-    b(1:n) = 0.0
+    b(1:n) = 0.0_wp
     do i = 1, z
       b(rnr(i)) = b(rnr(i)) + a(i)
     end do
-  end subroutine build_tridiag_sp
+  end subroutine build_tridiag
 
 end program test_y12mc_z_intent
