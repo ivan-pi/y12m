@@ -10,19 +10,19 @@
 !
 ! Usage
 ! -----
-!   timings_de [--help] [-class {d|e|de}] [-n RANGE] [-c RANGE]
+!   timings_de [--help] [-class {d|e}] [-n RANGE] [-c RANGE]
 !
 !   RANGE  a single integer (e.g. 650) or begin:end:step (e.g. 650:1000:50)
 !
 ! Defaults (Zlatev benchmark table):
-!   -class de  -n 650:1000:50  -c 4:204:40
+!   -class d  -n 650:1000:50  -c 4:204:40
 !
-! Class D(n,c): square,          NNZ = 4*n + 55
-! Class E(n,c): symmetric SPD,   NNZ = 5*n - 2*c - 2
+! Class D(n,c): square,          NNZ = 4*n + 55;    n > 22, 1 <= c <= n-13
+! Class E(n,c): symmetric SPD,   NNZ = 5*n - 2*c - 2;   n >= 3, 2 <= c <= n-1
 !
 ! Output
 ! ------
-!   For every (class, n, c): elapsed time, max error, and the same aflag /
+!   For every (n, c): elapsed time, max error, and the same aflag /
 !   iflag diagnostics as the original example drivers (maind.f, maine.f).
 !   At the end: total elapsed wall-clock time.
 !
@@ -32,6 +32,7 @@
 
 module coo_matrix_mod
    use, intrinsic :: iso_fortran_env, only: real64, int64
+   use y12m, only: y12ma
    implicit none
    private
 
@@ -43,12 +44,11 @@ module coo_matrix_mod
 
    !> Abstract COO sparse matrix.
    !>
-   !> Concrete subclasses override `fill` to populate the COO arrays.
-   !> The parent provides `prepare` (allocates storage, then calls fill)
-   !> and `solve` (invokes y12maf and reports diagnostics).
+   !> Concrete subclasses override `fill(n, c)` to populate the COO arrays.
+   !> The parent provides `prepare` (private allocator, called by fill) and
+   !> `solve` (invokes y12ma and reports diagnostics).
    type, public, abstract :: coo_matrix
       integer :: n   = 0  !< Matrix dimension
-      integer :: c   = 0  !< Structure parameter
       integer :: nnz = 0  !< Non-zeros in the original matrix
       integer :: nn  = 0  !< Allocated length of a / snr
       integer :: nn1 = 0  !< Allocated length of rnr
@@ -61,13 +61,12 @@ module coo_matrix_mod
    end type coo_matrix
 
    abstract interface
-      !> Populate the COO arrays.  Called by coo_prepare after allocation.
-      !> On entry self%n, self%c, self%nn, self%nn1 are set and
-      !> self%a(1:nn), self%snr(1:nn), self%rnr(1:nn1) are allocated.
-      !> On exit self%nnz holds the non-zero count.
-      subroutine fill_iface(self)
+      !> Populate the COO arrays for a matrix of dimension n with parameter c.
+      !> Must call self%prepare(n, nnz) before writing to the COO arrays.
+      subroutine fill_iface(self, n, c)
          import :: coo_matrix
          class(coo_matrix), intent(inout) :: self
+         integer, intent(in) :: n, c
       end subroutine fill_iface
    end interface
 
@@ -90,15 +89,30 @@ module coo_matrix_mod
 contains
 
    ! ------------------------------------------------------------------
-   !> Allocate storage sized for LU fill-in and populate the matrix.
-   subroutine coo_prepare(self, n, c)
+   !> Allocate COO storage for a matrix of dimension n and nnz non-zeros.
+   !>
+   !> Called by concrete fill implementations before writing to the arrays.
+   !> Optional nn and nn1 set the buffer lengths (for LU fill-in space);
+   !> if omitted, sane defaults of 25*n and 20*n are used.
+   subroutine coo_prepare(self, n, nnz, nn, nn1)
       class(coo_matrix), intent(inout) :: self
-      integer, intent(in) :: n, c
+      integer, intent(in) :: n, nnz
+      integer, intent(in), optional :: nn, nn1
 
       self%n   = n
-      self%c   = c
-      self%nn  = 25 * n
-      self%nn1 = 20 * n
+      self%nnz = nnz
+
+      if (present(nn)) then
+         self%nn = nn
+      else
+         self%nn = 25 * n
+      end if
+
+      if (present(nn1)) then
+         self%nn1 = nn1
+      else
+         self%nn1 = 20 * n
+      end if
 
       if (allocated(self%a))   deallocate(self%a)
       if (allocated(self%snr)) deallocate(self%snr)
@@ -107,21 +121,18 @@ contains
       allocate(self%a(self%nn))
       allocate(self%snr(self%nn))
       allocate(self%rnr(self%nn1))
-
-      call self%fill()
    end subroutine coo_prepare
 
    ! ------------------------------------------------------------------
    !> Solve A x = b where b = A * 1 (row sums; exact solution is all-ones).
    !>
-   !> Uses y12maf (double precision) directly to avoid the incorrect
-   !> intent declarations in the y12m generic wrapper module.
+   !> Uses the y12ma generic interface (double precision path).
    !>
    !> Returns:
-   !>   aflag(8)  — diagnostic reals as set by y12maf
-   !>   iflag(10) — diagnostic integers as set by y12maf
+   !>   aflag(8)  — diagnostic reals as set by y12ma
+   !>   iflag(10) — diagnostic integers as set by y12ma
    !>   ifail     — error diagnostic parameter (0 = success)
-   !>   elapsed   — wall-clock time in seconds for the y12maf call
+   !>   elapsed   — wall-clock time in seconds for the y12ma call
    !>   max_err   — max(|x - 1|); or -1 if ifail /= 0
    subroutine coo_solve(self, aflag, iflag, ifail, elapsed, max_err)
       class(coo_matrix), intent(inout) :: self
@@ -148,9 +159,9 @@ contains
       ifail   = 0
 
       call system_clock(t1, rate)
-      call y12maf(self%n, z_local, self%a, self%snr, self%nn, &
-                  self%rnr, self%nn1, pivot, ha, self%n, &
-                  aflag, iflag, b, ifail)
+      call y12ma(self%n, z_local, self%a, self%snr, self%nn, &
+                 self%rnr, self%nn1, pivot, ha, self%n, &
+                 aflag, iflag, b, ifail)
       call system_clock(t2)
 
       elapsed = real(t2 - t1, dp) / real(rate, dp)
@@ -160,8 +171,6 @@ contains
       else
          max_err = -1.0_dp
       end if
-
-      deallocate(b, pivot, ha)
    end subroutine coo_solve
 
    ! ------------------------------------------------------------------
@@ -172,16 +181,16 @@ contains
    !   a(i, c+i wrapping around n)  = i+1  (band 1, cyclic column c+i)
    !   a(i, c+i+1 wrapping)         = -i   (band 2, cyclic column c+i+1)
    !   a(i, c+i+2 wrapping)         = 16   (band 3, cyclic column c+i+2)
-   !   a(i, n-10+j) = 100*j, i=1..11-j, j=1..10  (dense 10×10 corner)
+   !   a(i, n-10+j) = 100*j, i=1..11-j, j=1..10  (dense 10x10 corner)
    ! NNZ = 4*n + 55
    ! ------------------------------------------------------------------
-   subroutine fill_d(self)
+   subroutine fill_d(self, n, c)
       class(matrix_d), intent(inout) :: self
+      integer, intent(in) :: n, c
 
-      integer :: n, c, i, r, s, l, k, rr1, rr2, rr3
+      integer :: i, r, s, l, k, rr1, rr2, rr3
 
-      n = self%n
-      c = self%c
+      call self%prepare(n, 4*n + 55)
 
       ! Diagonal: a(i,i) = 1
       do i = 1, n
@@ -246,8 +255,6 @@ contains
          rr1 = rr1 - 1
          rr3 = rr3 + 1
       end do
-
-      self%nnz = 4 * n + 55
    end subroutine fill_d
 
    ! ------------------------------------------------------------------
@@ -261,13 +268,13 @@ contains
    !   a(i+c,i)   = -1      (lower band at distance c, i=1..n-c)
    ! NNZ = 5*n - 2*c - 2
    ! ------------------------------------------------------------------
-   subroutine fill_e(self)
+   subroutine fill_e(self, n, c)
       class(matrix_e), intent(inout) :: self
+      integer, intent(in) :: n, c
 
-      integer :: n, c, i, r, r1, r2
+      integer :: i, r, r1, r2
 
-      n = self%n
-      c = self%c
+      call self%prepare(n, 5*n - 2*c - 2)
 
       ! Diagonal: a(i,i) = 4
       do i = 1, n
@@ -312,8 +319,6 @@ contains
          self%snr(r1) = i
          self%rnr(r1) = i + c
       end do
-
-      self%nnz = 5 * n - 2 * c - 2
    end subroutine fill_e
 
 end module coo_matrix_mod
@@ -328,40 +333,48 @@ program timings_de
    use, intrinsic :: iso_fortran_env, only: output_unit, error_unit, int64
    implicit none
 
-   ! ---- Parameter ranges (default = Zlatev benchmark) ------------------
-   integer :: nstart, nstep, nend
-   integer :: cstart, cstep, cend
-   logical :: run_d, run_e
+   ! ---- Local type for command-line arguments (includes defaults) --------
+   type :: cmdargs
+      integer        :: nstart = 650
+      integer        :: nstep  = 50
+      integer        :: nend   = 1000
+      integer        :: cstart = 4
+      integer        :: cstep  = 40
+      integer        :: cend   = 204
+      !> Matrix class: 'D' or 'E'
+      character(len=1) :: matrix_class = 'D'
+   end type cmdargs
 
    ! ---- Working variables -----------------------------------------------
-   type(matrix_d) :: mat_d
-   type(matrix_e) :: mat_e
+   type(cmdargs) :: args
+   class(coo_matrix), allocatable :: mat
    real(dp) :: aflag(8)
    integer  :: iflag(10), ifail
    real(dp) :: elapsed, max_err, total_elapsed
    integer(int64) :: t_prog_start, t_prog_end, wall_rate
    integer :: n, c
 
-   ! ---- Defaults (Zlatev benchmark: n=650(50)1000, c=4(40)204) ---------
-   nstart = 650
-   nstep  = 50
-   nend   = 1000
-   cstart = 4
-   cstep  = 40
-   cend   = 204
-   run_d  = .true.
-   run_e  = .true.
+   args = parse_args()
 
-   call parse_args(nstart, nstep, nend, cstart, cstep, cend, run_d, run_e)
+   ! Allocate the concrete matrix type based on the chosen class
+   select case (args%matrix_class)
+   case ('D')
+      allocate(matrix_d :: mat)
+   case ('E')
+      allocate(matrix_e :: mat)
+   end select
 
    call system_clock(t_prog_start, wall_rate)
    total_elapsed = 0.0_dp
 
-   ! ---- Class D -----------------------------------------------------------
-   ! Valid parameter range: n > 22, 1 <= c <= n-13
-   if (run_d) then
-      do n = nstart, nend, nstep
-         do c = cstart, cend, cstep
+   ! ---- Main loop ---------------------------------------------------------
+   ! D(n,c): valid range  n > 22, 1 <= c <= n-13
+   ! E(n,c): valid range  n >= 3, 2 <= c <= n-1
+   do n = args%nstart, args%nend, args%nstep
+      do c = args%cstart, args%cend, args%cstep
+
+         select case (args%matrix_class)
+         case ('D')
             if (n <= 22) then
                write(output_unit, '(a,i0,a)') &
                   '  Skipping D(n=', n, '): n must be > 22'
@@ -375,21 +388,7 @@ program timings_de
             end if
             write(output_unit, '(/,a,i0,a,i0)') &
                'Matrix of class D(n,c):  n=', n, '  c=', c
-            call mat_d%prepare(n, c)
-            write(output_unit, '(a,i0)') &
-               '  Non-zeros in original matrix: ', mat_d%nnz
-            call mat_d%solve(aflag, iflag, ifail, elapsed, max_err)
-            total_elapsed = total_elapsed + elapsed
-            call print_solve_stats(aflag, iflag, ifail, elapsed, max_err)
-         end do
-      end do
-   end if
-
-   ! ---- Class E -----------------------------------------------------------
-   ! Valid parameter range: n >= 3, 2 <= c <= n-1
-   if (run_e) then
-      do n = nstart, nend, nstep
-         do c = cstart, cend, cstep
+         case ('E')
             if (n < 3) then
                write(output_unit, '(a,i0,a)') &
                   '  Skipping E(n=', n, '): n must be >= 3'
@@ -403,15 +402,16 @@ program timings_de
             end if
             write(output_unit, '(/,a,i0,a,i0)') &
                'Matrix of class E(n,c):  n=', n, '  c=', c
-            call mat_e%prepare(n, c)
-            write(output_unit, '(a,i0)') &
-               '  Non-zeros in original matrix: ', mat_e%nnz
-            call mat_e%solve(aflag, iflag, ifail, elapsed, max_err)
-            total_elapsed = total_elapsed + elapsed
-            call print_solve_stats(aflag, iflag, ifail, elapsed, max_err)
-         end do
+         end select
+
+         call mat%fill(n, c)
+         write(output_unit, '(a,i0)') &
+            '  Non-zeros in original matrix: ', mat%nnz
+         call mat%solve(aflag, iflag, ifail, elapsed, max_err)
+         total_elapsed = total_elapsed + elapsed
+         call print_solve_stats(aflag, iflag, ifail, elapsed, max_err)
       end do
-   end if
+   end do
 
    ! ---- Total elapsed wall-clock time ------------------------------------
    call system_clock(t_prog_end)
@@ -458,13 +458,10 @@ contains
    end subroutine print_solve_stats
 
    ! -----------------------------------------------------------------------
-   !> Parse command-line arguments.  Unknown flags cause a help printout
-   !> followed by a non-zero exit.
-   subroutine parse_args(nstart, nstep, nend, cstart, cstep, cend, &
-                         run_d, run_e)
-      integer, intent(inout) :: nstart, nstep, nend
-      integer, intent(inout) :: cstart, cstep, cend
-      logical, intent(inout) :: run_d, run_e
+   !> Parse command-line arguments and return a cmdargs instance.
+   !> Unknown flags cause a help printout followed by a non-zero exit.
+   function parse_args() result(args)
+      type(cmdargs) :: args
 
       integer :: i, nargs
       character(len=64) :: arg, val
@@ -485,7 +482,7 @@ contains
                stop 1
             end if
             call get_command_argument(i, val)
-            call parse_range(val, nstart, nend, nstep)
+            call parse_range(val, args%nstart, args%nend, args%nstep)
 
          case ('-c')
             i = i + 1
@@ -494,7 +491,7 @@ contains
                stop 1
             end if
             call get_command_argument(i, val)
-            call parse_range(val, cstart, cend, cstep)
+            call parse_range(val, args%cstart, args%cend, args%cstep)
 
          case ('-class')
             i = i + 1
@@ -504,15 +501,10 @@ contains
             end if
             call get_command_argument(i, val)
             select case (trim(val))
-            case ('d')
-               run_d = .true.
-               run_e = .false.
-            case ('e')
-               run_d = .false.
-               run_e = .true.
-            case ('de', 'ed')
-               run_d = .true.
-               run_e = .true.
+            case ('d', 'D')
+               args%matrix_class = 'D'
+            case ('e', 'E')
+               args%matrix_class = 'E'
             case default
                write(error_unit, '(2a)') 'Error: unknown -class value: ', trim(val)
                stop 1
@@ -525,13 +517,13 @@ contains
          end select
          i = i + 1
       end do
-   end subroutine parse_args
+   end function parse_args
 
    ! -----------------------------------------------------------------------
    !> Parse a range string of the form:
-   !>   VALUE            → vstart=VALUE, vend=VALUE, vstep=1
-   !>   BEGIN:END        → vstart=BEGIN, vend=END,   vstep=1
-   !>   BEGIN:END:STEP   → vstart=BEGIN, vend=END,   vstep=STEP
+   !>   VALUE            -> vstart=VALUE, vend=VALUE, vstep=1
+   !>   BEGIN:END        -> vstart=BEGIN, vend=END,   vstep=1
+   !>   BEGIN:END:STEP   -> vstart=BEGIN, vend=END,   vstep=STEP
    subroutine parse_range(str, vstart, vend, vstep)
       character(len=*), intent(in)  :: str
       integer, intent(out) :: vstart, vend, vstep
@@ -598,7 +590,7 @@ contains
    !> Print the help message and return.
    subroutine print_help()
       write(output_unit, '(a)') &
-         'Usage: timings_de [--help] [-class {d|e|de}] [-n RANGE] [-c RANGE]'
+         'Usage: timings_de [--help] [-class {d|e}] [-n RANGE] [-c RANGE]'
       write(output_unit, '(a)') ''
       write(output_unit, '(a)') &
          'Timing driver for sparse class D and E matrices (double precision).'
@@ -607,13 +599,20 @@ contains
       write(output_unit, '(a)') ''
       write(output_unit, '(a)') 'Options:'
       write(output_unit, '(a)') &
-         '  --help            Show this help message and exit.'
+         '  --help         Show this help message and exit.'
+      ! -class {d|e}: run one class at a time; valid ranges differ by class:
+      !   D(n,c): n > 22, 1 <= c <= n-13
+      !   E(n,c): n >= 3, 2 <= c <= n-1
       write(output_unit, '(a)') &
-         '  -class {d|e|de}   Matrix classes to benchmark (default: de).'
+         '  -class {d|e}   Matrix class to benchmark (default: d).'
       write(output_unit, '(a)') &
-         '  -n RANGE          Matrix dimension range (default: 650:1000:50).'
+         '                   d: D(n,c), n > 22, 1 <= c <= n-13'
       write(output_unit, '(a)') &
-         '  -c RANGE          Structure parameter range (default: 4:204:40).'
+         '                   e: E(n,c), n >= 3, 2 <= c <= n-1'
+      write(output_unit, '(a)') &
+         '  -n RANGE       Matrix dimension range (default: 650:1000:50).'
+      write(output_unit, '(a)') &
+         '  -c RANGE       Structure parameter range (default: 4:204:40).'
       write(output_unit, '(a)') ''
       write(output_unit, '(a)') 'RANGE syntax:'
       write(output_unit, '(a)') &
@@ -625,23 +624,7 @@ contains
       write(output_unit, '(a)') ''
       write(output_unit, '(a)') 'Defaults (Zlatev benchmark):'
       write(output_unit, '(a)') &
-         '  -class de  -n 650:1000:50  -c 4:204:40'
-      write(output_unit, '(a)') ''
-      write(output_unit, '(a)') 'Matrix descriptions:'
-      write(output_unit, '(a)') &
-         '  D(n,c): square, NNZ = 4*n + 55.'
-      write(output_unit, '(a)') &
-         '          Diagonal ones, three cyclic bands above diagonal,'
-      write(output_unit, '(a)') &
-         '          and a 10x10 dense triangle in the upper-right corner.'
-      write(output_unit, '(a)') &
-         '  E(n,c): symmetric SPD, NNZ = 5*n - 2*c - 2.'
-      write(output_unit, '(a)') &
-         '          Diagonal 4, side-diagonals -1, two off-diagonal'
-      write(output_unit, '(a)') &
-         '          bands at distance c with value -1.'
-      write(output_unit, '(a)') &
-         '          Similar to the five-point Laplacian on a 1-D grid.'
+         '  -class d  -n 650:1000:50  -c 4:204:40'
    end subroutine print_help
 
 end program timings_de

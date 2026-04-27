@@ -57,14 +57,14 @@ add_executable(timings_de timings_de.f90)
 target_compile_options(timings_de PRIVATE ${TEST_COMPILE_FLAGS})
 target_link_libraries(timings_de PRIVATE y12m_legacy)
 
-add_test(NAME timings_de_help
-    COMMAND timings_de --help
+# Smoke tests: one for class D and one for class E
+add_test(NAME timings_de_d
+    COMMAND timings_de -class d -n 100 -c 10
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
 )
 
-# Quick smoke test: one small D matrix and one small E matrix
-add_test(NAME timings_de_smoke
-    COMMAND timings_de -class de -n 100 -c 10
+add_test(NAME timings_de_e
+    COMMAND timings_de -class e -n 100 -c 10
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
 )
 
