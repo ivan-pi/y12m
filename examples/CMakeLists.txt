@@ -52,6 +52,22 @@ add_test(NAME maind
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
 )
 
+# Double-precision timing driver for class D and E matrices
+add_executable(timings_de timings_de.f90)
+target_compile_options(timings_de PRIVATE ${TEST_COMPILE_FLAGS})
+target_link_libraries(timings_de PRIVATE y12m_legacy)
+
+add_test(NAME timings_de_help
+    COMMAND timings_de --help
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+)
+
+# Quick smoke test: one small D matrix and one small E matrix
+add_test(NAME timings_de_smoke
+    COMMAND timings_de -class de -n 100 -c 10
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+)
+
 # 9-point isotropic Poisson/Laplace example
 add_executable(poisson_9pt poisson_9pt.f90)
 target_compile_options(poisson_9pt PRIVATE ${TEST_COMPILE_FLAGS})
