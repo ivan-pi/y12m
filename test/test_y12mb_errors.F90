@@ -1,7 +1,7 @@
 ! SPDX-License-Identifier: GPL-2.0-only
 ! Assisted-by: GitHub Copilot:claude-sonnet-4-5
 !
-! test_y12mb_errors_dp.f90 - Error-branch coverage for y12mb.
+! test_y12mb_errors.f90 - Error-branch coverage for y12mb.
 !
 ! Each sub-test supplies a deliberately invalid argument to force a specific
 ! positive IFAIL return value, then verifies the expected code is returned.
@@ -37,10 +37,16 @@ program test_y12mb_errors
   use y12m, only: y12mb
   implicit none
 
+#ifdef TEST_SINGLE_PRECISION
+  integer, parameter :: dp = kind(1.0e0)
+#else
+  integer, parameter :: dp = kind(1.0d0)
+#endif
+
   ! Array capacities - y12mbf copies a(1:z) to a(z+1:2*z) and snr(1:z) to
   ! snr(z+1:2*z) while scanning column/row indices; nn >= 2*z is therefore
   ! required even for tests that expect an early-error return.
-  integer, parameter :: dp = kind(1.0d0), NMAX = 12, NNMAX = 60, NN1MAX = 60
+  integer, parameter :: NMAX = 12, NNMAX = 60, NN1MAX = 60
 
   real(dp) :: a(NNMAX), aflag(8)
   integer :: snr(NNMAX), rnr(NN1MAX), ha(NMAX,11), iflag(10)
@@ -253,7 +259,8 @@ program test_y12mb_errors
       write(*,'(a,i0)') 'FAIL valid: expected iflag(1)=-1, got ', iflag(1)
       nfail = nfail + 1
     end if
-    if (aflag(6) /= amax_expected) then
+    if (aflag(6) /= amax_expected .or. &
+        maxval(abs(a(1:z))) /= amax_expected) then
       write(*,'(a,es12.5,a,es12.5)') &
           'FAIL valid: aflag(6)=', aflag(6), ' expected ', amax_expected
       nfail = nfail + 1
