@@ -176,6 +176,10 @@ contains
    ! ------------------------------------------------------------------
    ! fill_d — populate COO arrays for class D(n,c)
    !
+   ! Input parameters:
+   !   n  — matrix dimension (n > 22)
+   !   c  — band offset (1 <= c <= n-13)
+   !
    ! Pattern:
    !   a(i,i)                       = 1    (diagonal)
    !   a(i, c+i wrapping around n)  = i+1  (band 1, cyclic column c+i)
@@ -259,6 +263,10 @@ contains
 
    ! ------------------------------------------------------------------
    ! fill_e — populate COO arrays for class E(n,c)
+   !
+   ! Input parameters:
+   !   n  — matrix dimension (n >= 3)
+   !   c  — band offset (2 <= c <= n-1)
    !
    ! Pattern (symmetric matrix):
    !   a(i,i)     = 4       (diagonal)
