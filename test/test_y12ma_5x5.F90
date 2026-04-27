@@ -1,4 +1,4 @@
-!> @file test_y12ma_5x5.f90
+!> @file test_y12ma_5x5.F90
 !> @brief Regression test for the Y12M high-level driver `y12ma` on a 5x5 sparse system.
 !>
 !> This test solves a fixed 5x5 sparse linear system using the high-level routine `y12ma`,
@@ -7,7 +7,7 @@
 !> arrays during factorization/solve.
 !>
 !> PASS/FAIL is determined by a relative residual check:
-!>   relerr = ||r||_2 / max(||b||_2, sqrt(tiny(1.0)))
+!>   relerr = ||r||_2 / max(||b||_2, sqrt(tiny(1.0_wp)))
 !>
 !> Matrix provenance:
 !>   The matrix and RHS in this test were taken from the “UMFPACK” Fortran examples page
@@ -17,24 +17,30 @@ program test_y12ma_5x5
   use y12m, only: y12ma
   implicit none
 
+#ifdef TEST_SINGLE_PRECISION
+  integer, parameter :: wp = kind(1.0e0)
+#else
+  integer, parameter :: wp = kind(1.0d0)
+#endif
+
   integer, parameter :: n   = 5
   integer, parameter :: nz  = 12
   integer, parameter :: nn  = 50
   integer, parameter :: nn1 = 50
   integer, parameter :: iha = n
 
-  real    :: a(nn), b(n), pivot(n)
+  real(wp) :: a(nn), b(n), pivot(n)
   integer :: snr(nn), rnr(nn1)
   integer :: ha(iha, 11), iflag(10)
-  real    :: aflag(8)
+  real(wp) :: aflag(8)
 
-  real    :: a0(nz), b0(n)
+  real(wp) :: a0(nz), b0(n)
   integer :: snr0(nz), rnr0(nz)
 
-  real    :: resid(n)
-  real    :: normrinf, normbinf, denominf, relinf
-  real    :: normb2, normr2, denom, relerr
-  real    :: rtol2, rtoli
+  real(wp) :: resid(n)
+  real(wp) :: normrinf, normbinf, denominf, relinf
+  real(wp) :: normb2, normr2, denom, relerr
+  real(wp) :: rtol2, rtoli
   integer :: i, ifail
 
   ! Workspace constraints from doc
@@ -43,7 +49,7 @@ program test_y12ma_5x5
   if (iha < n)    error stop "FAIL: invalid workspace (IHA must be >= N)"
 
   ! --- Define A in triplet form ---
-  a0   = [ 2.0,  3.0,  3.0,  4.0,  6.0, -1.0, -3.0,  2.0,  1.0,  4.0,  2.0,  1.0]
+  a0   = [ 2.0_wp,  3.0_wp,  3.0_wp,  4.0_wp,  6.0_wp, -1.0_wp, -3.0_wp,  2.0_wp,  1.0_wp,  4.0_wp,  2.0_wp,  1.0_wp]
 
   ! Per doc:
   !   SNR(j) = column number of A(j)
@@ -51,7 +57,7 @@ program test_y12ma_5x5
   rnr0 = [ 1, 1, 2, 2, 2, 3, 3, 3, 4, 5, 5, 5 ]   ! rows
   snr0 = [ 1, 2, 1, 3, 5, 2, 3, 4, 3, 2, 3, 5 ]   ! cols
 
-  b0 = [ 8.0, 45.0, -3.0, 3.0, 19.0 ]
+  b0 = [ 8.0_wp, 45.0_wp, -3.0_wp, 3.0_wp, 19.0_wp ]
 
   ! Copy into working arrays (y12ma overwrites these)
   a(1:nz)   = a0
@@ -87,17 +93,22 @@ program test_y12ma_5x5
   normr2 = norm2(resid)
   normb2 = norm2(b0)
 
-  denom  = max(normb2, sqrt(tiny(1.0)))
+  denom  = max(normb2, sqrt(tiny(1.0_wp)))
   relerr = normr2 / denom
 
   normrinf = maxval(abs(resid))
   normbinf = maxval(abs(b0))
 
-  denominf = max(normbinf, tiny(1.0))
+  denominf = max(normbinf, tiny(1.0_wp))
   relinf   = normrinf / denominf
 
-  rtol2  = 1.0e-5
-  rtoli  = 1.0e-5
+#ifdef TEST_SINGLE_PRECISION
+  rtol2  = 1.0e-4_wp
+  rtoli  = 1.0e-4_wp
+#else
+  rtol2  = 1.0e-10_wp
+  rtoli  = 1.0e-10_wp
+#endif
 
   if (relerr <= rtol2 .and. relinf <= rtoli) then
     print "(a,1x,g0.7,1x,a,1x,g0.7)", "PASS: rel2=", relerr, "<= rtol2=", rtol2
