@@ -21,15 +21,17 @@ Gaussian elimination with sparse matrix techniques and partial pivoting.
 **Contents:**
 
 - [Overview](#overview)
+  - [Common API points](#common-api-points)
+  - [Subroutine summary](#subroutine-summary)
 - [Procedure Reference](#procedure-reference)
   - [Input storage format](#input-storage-format)
-  - [Y12MA](#y12ma)
-  - [Y12MB](#y12mb)
-  - [Y12MC](#y12mc)
-  - [Y12MD](#y12md)
-  - [Y12MF](#y12mf)
-  - [Y12MH](#y12mh)
-  - [Y12MG](#y12mg)
+  - [Y12MA](#y12ma) — single-system black-box driver
+  - [Y12MB](#y12mb) — reorder matrix and prepare work arrays
+  - [Y12MC](#y12mc) — sparse LU factorization
+  - [Y12MD](#y12md) — triangular back-substitution
+  - [Y12MF](#y12mf) — black-box driver with iterative refinement
+  - [Y12MH](#y12mh) — compute matrix one-norm
+  - [Y12MG](#y12mg) — reciprocal condition-number estimate
 - [Flag arrays](#flag-arrays)
   - [AFLAG](#aflag)
   - [IFLAG](#iflag)
@@ -80,13 +82,13 @@ Gaussian elimination with sparse matrix techniques and partial pivoting.
 
 | Subroutine | Purpose |
 |------------|---------|
-| `Y12MA` | Black-box driver: prepare, factorize, and solve in one call |
-| `Y12MB` | Prepare and reorder the sparse matrix |
-| `Y12MC` | LU factorization |
-| `Y12MD` | Triangular solve (back-substitution) |
-| `Y12MF` | Black-box driver with iterative refinement |
-| `Y12MH` | One-norm of the original matrix (input to Y12MG) |
-| `Y12MG` | Reciprocal condition-number estimate |
+| [`Y12MA`](#y12ma) | Black-box driver: prepare, factorize, and solve in one call |
+| [`Y12MB`](#y12mb) | Prepare and reorder the sparse matrix |
+| [`Y12MC`](#y12mc) | LU factorization |
+| [`Y12MD`](#y12md) | Triangular solve (back-substitution) |
+| [`Y12MF`](#y12mf) | Black-box driver with iterative refinement |
+| [`Y12MH`](#y12mh) | One-norm of the original matrix (input to Y12MG) |
+| [`Y12MG`](#y12mg) | Reciprocal condition-number estimate |
 
 ---
 
@@ -103,6 +105,44 @@ coordinate (COO) format on entry to Y12MB / Y12MA / Y12MF:
 
 Arrays `A` and `SNR` have length `NN ≥ 2*Z`; array `RNR` has length `NN1 ≥ Z`.
 The extra space beyond `Z` is working storage for fill-in during factorization.
+
+**Example** — `n = 5`, `Z = 12`:
+
+```
+    ┌                ┐
+    │  5  0  0  3  0 │
+    │  2  4  0  0  1 │
+A = │  0  1  3  0  2 │
+    │  0  0  0  2  3 │
+    │  0  0  0  2  1 │
+    └                ┘
+```
+
+The 12 non-zeros may be listed in any order.  A row-major ordering gives:
+
+```
+Index  :  1   2   3   4   5   6   7   8   9  10  11  12
+A      :  5   3   2   4   1   1   3   2   2   3   2   1
+SNR    :  1   4   1   2   5   2   3   5   4   5   4   5
+RNR    :  1   1   2   2   2   3   3   3   4   4   5   5
+```
+
+Arrays `A`, `SNR`, and `RNR` must be allocated longer than `Z` to accommodate
+fill-in.  With `NN = NN1 = 2*Z = 24` (the minimum), the layout looks like:
+
+```
+A  (1:NN=24) :  5  3  2  4  1  1  3  2  2  3  2  1  _  _  _  _  _  _  _  _  _  _  _  _
+               |<──────── non-zeros (1:Z=12) ────────>|<──── workspace (Z+1:NN) ─────────>|
+
+SNR(1:NN=24) :  1  4  1  2  5  2  3  5  4  5  4  5  _  _  _  _  _  _  _  _  _  _  _  _
+
+RNR(1:NN1=24):  1  1  2  2  2  3  3  3  4  4  5  5  _  _  _  _  _  _  _  _  _  _  _  _
+               |<──────── non-zeros (1:Z=12) ────────>|<──── workspace (Z+1:NN1) ─────────>|
+```
+
+The recommended allocation is `2*Z ≤ NN ≤ 3*Z` and `2*Z ≤ NN1 ≤ 3*Z`; for
+matrices with high fill-in a larger `NN` may be needed.  Increase `NN` (or
+`NN1`) when `iflag(6)` (or `iflag(7)`) is large after a solve.
 
 ---
 
@@ -149,16 +189,23 @@ subroutine y12ma[e|f](n, z, a, snr, nn, rnr, nn1, pivot, ha, iha, aflag, iflag, 
 
 **Defaults set by Y12MA:**
 
-| Flag | Value |
-|------|-------|
-| `aflag(1)` | 16.0 |
-| `aflag(2)` | 1.0 × 10⁻¹² |
-| `aflag(3)` | 1.0 × 10¹⁶ |
-| `aflag(4)` | 1.0 × 10⁻¹² |
-| `iflag(2)` | 2 |
-| `iflag(3)` | 1 |
-| `iflag(4)` | 0 |
-| `iflag(5)` | 1 |
+These values reflect the recommended settings from the original documentation
+and have been found satisfactory for a wide range of sparse matrices with
+elements of order 1.  Y12MA **overwrites** these entries on every call, so
+user-provided values are ignored.  When implementing a custom calling sequence
+with Y12MB / Y12MC / Y12MD directly, these same values are a useful starting
+point — only adjust them if you have specific knowledge of your matrix.
+
+| Flag | Value | Rationale |
+|------|-------|-----------|
+| `aflag(1)` | 16.0 | Stability factor; limits pivot to elements ≥ max_row / 16 |
+| `aflag(2)` | 1.0 × 10⁻¹² | Drop-tolerance; suited for well-scaled matrices (elements ≈ 1) |
+| `aflag(3)` | 1.0 × 10¹⁶ | Growth-factor limit; high threshold minimises false stops |
+| `aflag(4)` | 1.0 × 10⁻¹² | Singularity threshold relative to `aflag(6)` |
+| `iflag(2)` | 2 | Markowitz search width; scan 2 rows with fewest non-zeros |
+| `iflag(3)` | 1 | General Markowitz pivoting strategy |
+| `iflag(4)` | 0 | No structure reuse (single-system solve) |
+| `iflag(5)` | 1 | Discard **L** after factorization (saves memory for single-RHS solves) |
 
 **Calls:** Y12MB, Y12MC, Y12MD.
 
@@ -402,16 +449,25 @@ subroutine y12mg[e|f](n, nn, a, snr, w, pivot, anorm, rcond, iha, ha, iflag, ifa
 - `iflag(5)`: Only `iflag(5)` is examined: if `iflag(5) = 1` (L was discarded),
   `ifail` is set to 26.
 - `ifail`: On entry, checked; if already non-zero, returns immediately.  On
-  exit: 0 = success; 26 = L was discarded.
+  exit: 0 = success; 26 = L was discarded.  See [Error codes](#error-codes).
 
 > **Note:** The argument order places `iha` **before** `ha`, which differs from
-> the convention used in Y12MB, Y12MC, and Y12MD.  Y12MG also uses only
-> `ha(iha,3)` (3 columns) and `iflag(5)` (5 entries) — smaller extents than the
-> other subroutines.
+> the convention used in Y12MB, Y12MC, and Y12MD.  Y12MG only reads the first
+> three columns of `ha` and the first five entries of `iflag`.  However, when
+> Y12MG is called as part of the Y12MB → Y12MC → Y12MG workflow, `ha` and
+> `iflag` must still be allocated at their full sizes (`(iha,11)` and `(10)`
+> respectively) because those larger extents are required by Y12MB and Y12MC.
+> Declaring them smaller solely for Y12MG would be incorrect.
 
 ---
 
 ## Flag arrays
+
+The `AFLAG` and `IFLAG` arrays are the primary mechanism for communicating
+numerical tolerances, pivoting strategy, storage options, and diagnostic
+results between the caller and the solver.  The caller initializes the
+relevant input entries before each call; on return the output entries contain
+diagnostics that can be used to assess solution quality and tune future calls.
 
 ### AFLAG
 
