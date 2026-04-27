@@ -58,16 +58,16 @@ program test_y12mc_errors
   implicit none
 
 #ifdef TEST_SINGLE_PRECISION
-  integer, parameter :: dp = kind(1.0e0)
+  integer, parameter :: wp = kind(1.0e0)
 #else
-  integer, parameter :: dp = kind(1.0d0)
+  integer, parameter :: wp = kind(1.0d0)
 #endif
 
   integer, parameter :: NMAX   = 10
   integer, parameter :: NNMAX  = 200
   integer, parameter :: NN1MAX = 100
 
-  real(dp) :: a(NNMAX), aflag(8), pivot(NMAX), b(NMAX)
+  real(wp) :: a(NNMAX), aflag(8), pivot(NMAX), b(NMAX)
   integer  :: snr(NNMAX), rnr(NN1MAX), ha(NMAX,11), iflag(10)
   integer  :: ifail, nfail
 
@@ -201,7 +201,7 @@ program test_y12mc_errors
   ! =========================================================================
   blk3a: block
     integer :: n = 3, z = 3, nn = NNMAX, nn1 = NN1MAX, iha = NMAX
-    a(1:z)   = [1.0_dp, 1.0e-12_dp, 1.0_dp]
+    a(1:z)   = [1.0_wp, 1.0e-12_wp, 1.0_wp]
     snr(1:z) = [1, 2, 3]
     rnr(1:z) = [1, 2, 3]
     b(1:n)   = [1, 1, 1]
@@ -210,7 +210,7 @@ program test_y12mc_errors
     iflag(3) = 0      ! take diagonal pivots in order
     ! aflag(6) has been set by y12mb to max|A|=1; preserve it.
     ! grmin = aflag(4)*aflag(6) = 0.1*1 = 0.1 > 1e-12 (step 2 pivot) -> ifail=3
-    aflag(4) = 0.1_dp
+    aflag(4) = 0.1_wp
     call y12mc(n, z, a, snr, nn, rnr, nn1, pivot, b, ha, iha, aflag, iflag, ifail)
     call check_ifail('ifail=3 small pivot in loop', ifail, 3, nfail)
   end block blk3a
@@ -230,7 +230,7 @@ program test_y12mc_errors
   ! =========================================================================
   blk3b: block
     integer :: n = 2, z = 2, nn = NNMAX, nn1 = NN1MAX, iha = NMAX
-    a(1:z)   = [10.0_dp, 1.0e-12_dp]
+    a(1:z)   = [10.0_wp, 1.0e-12_wp]
     snr(1:z) = [1, 2]
     rnr(1:z) = [1, 2]
     b(1:n)   = [1, 1]
@@ -239,7 +239,7 @@ program test_y12mc_errors
     iflag(3) = 0
     ! aflag(6) has been set by y12mb to max|A|=10; preserve it.
     ! grmin = aflag(4)*aflag(6) = 0.1*10 = 1 > 1e-12 (last pivot) -> ifail=3
-    aflag(4) = 0.1_dp
+    aflag(4) = 0.1_wp
     call y12mc(n, z, a, snr, nn, rnr, nn1, pivot, b, ha, iha, aflag, iflag, ifail)
     call check_ifail('ifail=3 small last pivot', ifail, 3, nfail)
   end block blk3b
@@ -261,7 +261,7 @@ program test_y12mc_errors
   ! =========================================================================
   blk7: block
     integer :: n = 3, z = 4, nn = NNMAX, nn1 = NN1MAX, iha = NMAX
-    a(1:z)   = [5.0_dp, 1.0_dp, 1.0_dp, 3.0_dp]
+    a(1:z)   = [5.0_wp, 1.0_wp, 1.0_wp, 3.0_wp]
     snr(1:z) = [1, 1, 2, 3]
     rnr(1:z) = [1, 2, 3, 3]
     b(1:n)   = [1, 1, 1]
@@ -294,7 +294,7 @@ program test_y12mc_errors
   ! =========================================================================
   blk8: block
     integer :: n = 3, z = 4, nn = NNMAX, nn1 = NN1MAX, iha = NMAX
-    a(1:z)   = [5.0_dp, 1.0_dp, 1.0_dp, 3.0_dp]
+    a(1:z)   = [5.0_wp, 1.0_wp, 1.0_wp, 3.0_wp]
     snr(1:z) = [1, 2, 3, 3]
     rnr(1:z) = [1, 1, 2, 3]
     b(1:n)   = [1, 1, 1]
@@ -328,7 +328,7 @@ program test_y12mc_errors
   ! =========================================================================
   blk4: block
     integer :: n = 3, z = 5, nn = NNMAX, nn1 = NN1MAX, iha = NMAX
-    a(1:z)   = [1.0e-10_dp, 1.0_dp, 1.0_dp, 1.0_dp, 1.0_dp]
+    a(1:z)   = [1.0e-10_wp, 1.0_wp, 1.0_wp, 1.0_wp, 1.0_wp]
     snr(1:z) = [1, 2, 1, 2, 3]
     rnr(1:z) = [1, 1, 2, 2, 3]
     b(1:n)   = [1, 1, 1]
@@ -338,8 +338,8 @@ program test_y12mc_errors
     ! aflag(6) has been set by y12mb to max|A|=1; preserve it.
     ! Set a small growth threshold so that the ratio aflag(7)/aflag(6) = 1e10
     ! exceeds it.  y12mc enforces minimum 1e5, so set exactly that.
-    aflag(4) = 0.0_dp   ! no singularity threshold; accept tiny pivot
-    aflag(3) = 1.0e5_dp ! growth threshold (y12mc clips to max(user,1e5))
+    aflag(4) = 0.0_wp   ! no singularity threshold; accept tiny pivot
+    aflag(3) = 1.0e5_wp ! growth threshold (y12mc clips to max(user,1e5))
     call y12mc(n, z, a, snr, nn, rnr, nn1, pivot, b, ha, iha, aflag, iflag, ifail)
     call check_ifail('ifail=4 growth factor', ifail, 4, nfail)
   end block blk4
@@ -410,21 +410,21 @@ program test_y12mc_errors
   success: block
     integer  :: n = 6, z = 15, nn = NNMAX, nn1 = NN1MAX, iha = NMAX
     integer  :: i, k
-    real(dp) :: resid, atol
+    real(wp) :: resid, atol
     ! Original COO arrays saved for residual computation after solve.
     integer  :: row_orig(15), col_orig(15)
-    real(dp) :: val_orig(15), b_orig(6)
-    real(dp) :: expected_pivot(6)
-    real(dp) :: r(6)
+    real(wp) :: val_orig(15), b_orig(6)
+    real(wp) :: expected_pivot(6)
+    real(wp) :: r(6)
 
     ! --- input matrix in non-row-major COO ordering ---
     rnr(1:z) = [1, 6, 6, 6, 2, 2, 2, 4, 5, 5, 5, 5, 4, 4, 3]
     snr(1:z) = [1, 6, 2, 1, 2, 3, 4, 1, 1, 6, 5, 4, 4, 5, 3]
-    a(1:z)   = [10.0_dp,  6.0_dp, -2.0_dp, -1.0_dp, &
-                12.0_dp, -3.0_dp, -1.0_dp, -2.0_dp, &
-                -1.0_dp, -1.0_dp,  1.0_dp, -5.0_dp, &
-                20.0_dp, -2.0_dp, 15.0_dp]
-    b(1:n) = [10.0_dp, 11.0_dp, 45.0_dp, 33.0_dp, -22.0_dp, 31.0_dp]
+    a(1:z)   = [10.0_wp,  6.0_wp, -2.0_wp, -1.0_wp, &
+                12.0_wp, -3.0_wp, -1.0_wp, -2.0_wp, &
+                -1.0_wp, -1.0_wp,  1.0_wp, -5.0_wp, &
+                20.0_wp, -2.0_wp, 15.0_wp]
+    b(1:n) = [10.0_wp, 11.0_wp, 45.0_wp, 33.0_wp, -22.0_wp, 31.0_wp]
 
     ! Save original matrix and RHS for residual check after solve.
     row_orig(1:z) = rnr(1:z)
@@ -434,8 +434,8 @@ program test_y12mc_errors
 
     ! Expected pivots in Markowitz order (as produced by y12mcf).
     ! Schur complement of the remaining 1x1 block: 179/360 ~= 0.4972
-    expected_pivot = [15.0_dp, 10.0_dp, 12.0_dp, 6.0_dp, 20.0_dp, &
-                      179.0_dp / 360.0_dp]
+    expected_pivot = [15.0_wp, 10.0_wp, 12.0_wp, 6.0_wp, 20.0_wp, &
+                      179.0_wp / 360.0_wp]
 
     call set_flags(iflag)
     call set_aflag(aflag)
@@ -463,13 +463,13 @@ program test_y12mc_errors
       nfail = nfail + 1
     end if
 
-    if (aflag(6) /= 20.0_dp) then
+    if (aflag(6) /= 20.0_wp) then
       write(*,'(a,es12.5,a)') &
           'FAIL success: aflag(6)=', aflag(6), ' expected 20 (max|A|, unchanged)'
       nfail = nfail + 1
     end if
 
-    if (aflag(8) <= 0.0_dp) then
+    if (aflag(8) <= 0.0_wp) then
       write(*,'(a,es12.5)') 'FAIL success: aflag(8) should be > 0, got ', aflag(8)
       nfail = nfail + 1
     end if
@@ -477,11 +477,11 @@ program test_y12mc_errors
     ! Min |pivot| is the last Schur complement = 179/360 ~= 0.4972.
     ! Use precision-appropriate tolerances for all floating-point comparisons.
 #ifdef TEST_SINGLE_PRECISION
-    atol = 1.0e-4_dp   ! absolute tolerance (sp rounding)
+    atol = 1.0e-4_wp   ! absolute tolerance (sp rounding)
 #else
-    atol = 1.0e-10_dp  ! absolute tolerance (dp rounding)
+    atol = 1.0e-10_wp  ! absolute tolerance (dp rounding)
 #endif
-    if (abs(aflag(8) - 179.0_dp/360.0_dp) > atol) then
+    if (abs(aflag(8) - 179.0_wp/360.0_wp) > atol) then
       write(*,'(a,es12.5,a)') &
           'FAIL success: aflag(8)=', aflag(8), ' expected ~179/360 (min|pivot|)'
       nfail = nfail + 1
@@ -523,9 +523,9 @@ program test_y12mc_errors
     end do
     resid = maxval(abs(r(1:n)))
 #ifdef TEST_SINGLE_PRECISION
-    atol = 1.0e-3_dp
+    atol = 1.0e-3_wp
 #else
-    atol = 1.0e-10_dp
+    atol = 1.0e-10_wp
 #endif
     if (resid > atol) then
       write(*,'(a,es12.5)') &
@@ -559,31 +559,31 @@ contains
 
   ! Initialise AFLAG to sensible defaults (mirrors y12ma defaults).
   subroutine set_aflag(aflag)
-    real(dp), intent(out) :: aflag(8)
-    aflag(1) = 16.0_dp       ! stability factor u
-    aflag(2) = 1.0e-12_dp    ! drop tolerance
-    aflag(3) = 1.0e+16_dp    ! growth threshold
-    aflag(4) = 1.0e-12_dp    ! singularity threshold
-    aflag(5:8) = 0.0_dp
+    real(wp), intent(out) :: aflag(8)
+    aflag(1) = 16.0_wp       ! stability factor u
+    aflag(2) = 1.0e-12_wp    ! drop tolerance
+    aflag(3) = 1.0e+16_wp    ! growth threshold
+    aflag(4) = 1.0e-12_wp    ! singularity threshold
+    aflag(5:8) = 0.0_wp
   end subroutine set_aflag
 
   ! Load a 3x3 diagonal matrix diag(11,22,33) into COO arrays and RHS.
   ! Used as the "setup" matrix for early-flag-check tests that only need a
   ! valid y12mb state; the matrix values are irrelevant for those tests.
   subroutine init_diag3(a, snr, rnr, b)
-    real(dp), intent(out) :: a(NNMAX), b(NMAX)
+    real(wp), intent(out) :: a(NNMAX), b(NMAX)
     integer,  intent(out) :: snr(NNMAX), rnr(NN1MAX)
-    a(1:3)   = [11.0_dp, 22.0_dp, 33.0_dp]
+    a(1:3)   = [11.0_wp, 22.0_wp, 33.0_wp]
     snr(1:3) = [1, 2, 3]
     rnr(1:3) = [1, 2, 3]
-    b(1:3)   = [1.0_dp, 1.0_dp, 1.0_dp]
+    b(1:3)   = [1.0_wp, 1.0_wp, 1.0_wp]
   end subroutine init_diag3
 
   ! Call y12mb for a diagonal n=3 system, initialising ha and flags.
   ! Records a failure in nfail if y12mb returns non-zero.
   subroutine setup_y12mb(n, z, nn, nn1, iha, a, snr, rnr, ha, aflag, iflag, ifail, nfail)
     integer,  intent(in)    :: n, z, nn, nn1, iha
-    real(dp), intent(inout) :: a(NNMAX), aflag(8)
+    real(wp), intent(inout) :: a(NNMAX), aflag(8)
     integer,  intent(inout) :: snr(NNMAX), rnr(NN1MAX), ha(NMAX,11), iflag(10)
     integer,  intent(out)   :: ifail
     integer,  intent(inout) :: nfail
