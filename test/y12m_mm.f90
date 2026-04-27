@@ -461,7 +461,7 @@ contains
   subroutine parse_args(opts)
     type(cli_opts), intent(out) :: opts
 
-    integer :: iarg, nargs
+    integer :: iarg, nargs, ios
     character(len=512) :: arg
 
     nargs = command_argument_count()
