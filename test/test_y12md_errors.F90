@@ -56,18 +56,18 @@ program test_y12md_errors
   integer, parameter :: dp = kind(1.0d0)
 #endif
 
-  integer, parameter :: NMAX   = 10
-  integer, parameter :: NNMAX  = 200
-  integer, parameter :: NN1MAX = 100
+  integer, parameter :: NMAX = 10, NNMAX = 200, NN1MAX = 100
+  integer, parameter :: N_REF = 6, Z_REF = 15   ! reference matrix: 6x6, 15 non-zeros
 
-  ! Reference matrix dimensions: 6x6, Z=15 non-zeros.
-  integer, parameter :: N_REF = 6
-  integer, parameter :: Z_REF = 15
-
-  real(dp) :: a(NNMAX), aflag(8), pivot(NMAX), b(NMAX)
+  real(dp) :: a(NNMAX), aflag(8), pivot(NMAX), b(NMAX), atol
   integer  :: snr(NNMAX), rnr(NN1MAX), ha(NMAX,11), iflag(10)
   integer  :: ifail, nfail
 
+#ifdef TEST_SINGLE_PRECISION
+  atol = 1.0e-3_dp
+#else
+  atol = 1.0e-10_dp
+#endif
   nfail = 0
 
   ! =========================================================================
@@ -116,7 +116,6 @@ program test_y12md_errors
   ! =========================================================================
   success_no_l: block
     integer  :: n = N_REF, z = Z_REF, nn = NNMAX, nn1 = NN1MAX, iha = NMAX
-    real(dp) :: atol
 
     call setup_ref6(n, z, nn, nn1, iha, a, snr, rnr, b, ha, aflag, iflag, ifail, nfail)
     if (ifail /= 0) exit success_no_l
@@ -139,11 +138,6 @@ program test_y12md_errors
       exit success_no_l
     end if
 
-#ifdef TEST_SINGLE_PRECISION
-    atol = 1.0e-3_dp
-#else
-    atol = 1.0e-10_dp
-#endif
     call check_solution('success_no_l', n, b(1:n), &
         [1.0_dp, 2.0_dp, 3.0_dp, 4.0_dp, 5.0_dp, 6.0_dp], atol, nfail)
 
@@ -160,7 +154,6 @@ program test_y12md_errors
   ! =========================================================================
   success_with_l: block
     integer  :: n = N_REF, z = Z_REF, nn = NNMAX, nn1 = NN1MAX, iha = NMAX
-    real(dp) :: atol
 
     call setup_ref6(n, z, nn, nn1, iha, a, snr, rnr, b, ha, aflag, iflag, ifail, nfail)
     if (ifail /= 0) exit success_with_l
@@ -183,11 +176,6 @@ program test_y12md_errors
       exit success_with_l
     end if
 
-#ifdef TEST_SINGLE_PRECISION
-    atol = 1.0e-3_dp
-#else
-    atol = 1.0e-10_dp
-#endif
     call check_solution('success_with_l', n, b(1:n), &
         [1.0_dp, 2.0_dp, 3.0_dp, 4.0_dp, 5.0_dp, 6.0_dp], atol, nfail)
 
@@ -207,15 +195,22 @@ program test_y12md_errors
   ! b2 = (60, 45, 60, 44, -20, -10) -> x2 = (6, 5, 4, 3, 2, 1)
   ! =========================================================================
   multi_rhs: block
-    integer  :: n = N_REF, z = Z_REF, nn = NNMAX, nn1 = NN1MAX, iha = NMAX
-    real(dp) :: atol, rhs(NMAX,2)   ! rhs(:,1) = b1 (filled by setup_ref6); rhs(:,2) = b2
+    integer  :: n = N_REF, z = Z_REF, nn = NNMAX, nn1 = NN1MAX, iha = NMAX, k
+    real(dp) :: rhs(NMAX,2), expected(N_REF,2)
+    character(len=12), parameter :: labels(2) = &
+        [character(len=12) :: 'multi_rhs x1', 'multi_rhs x2']
 
-    rhs(1:N_REF, 2) = [60.0_dp, 45.0_dp, 60.0_dp, 44.0_dp, -20.0_dp, -10.0_dp]
+    ! b1 = (10,11,45,68,-22,31) -> x1 = (1..6)
+    ! b2 = (60,45,60,44,-20,-10) -> x2 = (6..1)
+    rhs(1:N_REF, 2)     = [60.0_dp, 45.0_dp, 60.0_dp, 44.0_dp, -20.0_dp, -10.0_dp]
+    expected(1:N_REF,1) = [1.0_dp,  2.0_dp,  3.0_dp,  4.0_dp,  5.0_dp,  6.0_dp]
+    expected(1:N_REF,2) = [6.0_dp,  5.0_dp,  4.0_dp,  3.0_dp,  2.0_dp,  1.0_dp]
 
     call setup_ref6(n, z, nn, nn1, iha, a, snr, rnr, rhs(:,1), ha, aflag, iflag, ifail, nfail)
     if (ifail /= 0) exit multi_rhs
 
-    iflag(5) = 2   ! keep L for multiple-RHS reuse
+    ! Keep L: y12mc transforms rhs(:,1) to c = L^{-1}Pb1; rhs(:,2) is untouched.
+    iflag(5) = 2
     call y12mc(n, z, a, snr, nn, rnr, nn1, pivot, rhs(:,1), ha, iha, aflag, iflag, ifail)
     if (ifail /= 0) then
       write(*,'(a,i0)') 'FAIL multi_rhs y12mc: ifail=', ifail
@@ -223,42 +218,21 @@ program test_y12md_errors
       exit multi_rhs
     end if
 
-    ! First RHS: rhs(:,1) has been transformed to c = L^{-1}Pb1 by y12mc.
-    ifail = 0   ! pre-initialise (see discrepancy #2: y12mde does not set ifail=0)
-    call y12md(n, a, nn, rhs(:,1), pivot, snr, ha, iha, iflag, ifail)
-    if (ifail /= 0) then
-      write(*,'(a,i0)') 'FAIL multi_rhs y12md(b1): ifail=', ifail
-      nfail = nfail + 1
-      exit multi_rhs
-    end if
+    ! Loop over right-hand sides.
+    ! k=1: iflag(5)=2, rhs(:,1) already holds c=L^{-1}Pb1 (U-solve + col-perm only).
+    ! k=2: iflag(5)=3, rhs(:,2) holds raw b2 (full row-perm + L-solve + U-solve + col-perm).
+    do k = 1, 2
+      call y12md(n, a, nn, rhs(:,k), pivot, snr, ha, iha, iflag, ifail)
+      if (ifail /= 0) then
+        write(*,'(a,i0,a,i0)') 'FAIL multi_rhs y12md k=', k, ': ifail=', ifail
+        nfail = nfail + 1
+        exit multi_rhs
+      end if
+      call check_solution(labels(k), n, rhs(1:n,k), expected(1:n,k), atol, nfail)
 
-#ifdef TEST_SINGLE_PRECISION
-    atol = 1.0e-3_dp
-#else
-    atol = 1.0e-10_dp
-#endif
-    call check_solution('multi_rhs x1', n, rhs(1:n,1), &
-        [1.0_dp, 2.0_dp, 3.0_dp, 4.0_dp, 5.0_dp, 6.0_dp], atol, nfail)
-
-    ! Second RHS: set iflag(5)=3 and provide fresh rhs(:,2).
-    ! y12md applies row permutation, L-solve, U-solve, column permutation.
-    iflag(5) = 3
-    ifail = 0   ! pre-initialise (see discrepancy #2: y12mde does not set ifail=0)
-    call y12md(n, a, nn, rhs(:,2), pivot, snr, ha, iha, iflag, ifail)
-    if (ifail /= 0) then
-      write(*,'(a,i0)') 'FAIL multi_rhs y12md(b2): ifail=', ifail
-      nfail = nfail + 1
-      exit multi_rhs
-    end if
-
-    call check_solution('multi_rhs x2', n, rhs(1:n,2), &
-        [6.0_dp, 5.0_dp, 4.0_dp, 3.0_dp, 2.0_dp, 1.0_dp], atol, nfail)
-
-    if (iflag(1) /= -2) then
-      write(*,'(a,i0)') &
-          'FAIL multi_rhs: iflag(1) changed after y12md(b2), got ', iflag(1)
-      nfail = nfail + 1
-    end if
+      ! Prepare to reuse L for the next right-hand side.
+      iflag(5) = 3
+    end do
 
   end block multi_rhs
 
