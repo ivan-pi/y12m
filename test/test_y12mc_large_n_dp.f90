@@ -22,10 +22,11 @@
 ! RHS:           b = A*x = [1, 0, 0, ..., 0, 1]^T.
 !
 program test_y12mc_large_n_dp
+  use, intrinsic :: iso_fortran_env, only: real64
   use y12m
   implicit none
 
-  integer, parameter :: dp = kind(1.0d0)
+  integer, parameter :: dp = real64
 
   ! n is chosen so that n*n overflows INT32 (overflow threshold is 46341).
   integer, parameter :: n = 50000
@@ -57,15 +58,24 @@ program test_y12mc_large_n_dp
   ! ---------------------------------------------------------------
   z = 0
   do i = 1, n
-    z = z + 1 ; rnr(z) = i ; snr(z) = i   ; a(z) =  2.0_dp
+    z = z + 1
+    rnr(z) = i
+    snr(z) = i
+    a(z) = 2.0_dp
   end do
   ! Sub-diagonal entries (value = -1).
   do i = 2, n
-    z = z + 1 ; rnr(z) = i ; snr(z) = i-1 ; a(z) = -1.0_dp
+    z = z + 1
+    rnr(z) = i
+    snr(z) = i - 1
+    a(z) = -1.0_dp
   end do
   ! Super-diagonal entries (value = -1).
-  do i = 1, n-1
-    z = z + 1 ; rnr(z) = i ; snr(z) = i+1 ; a(z) = -1.0_dp
+  do i = 1, n - 1
+    z = z + 1
+    rnr(z) = i
+    snr(z) = i + 1
+    a(z) = -1.0_dp
   end do
 
   ! RHS: b = A * [1,...,1]^T = [1, 0, 0, ..., 0, 1]^T
