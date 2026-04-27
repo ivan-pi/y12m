@@ -10,12 +10,12 @@
 !
 ! Usage
 ! -----
-!   timings_de [--help] [-class {d|e}] [-n RANGE] [-c RANGE]
+!   timings_de [--help] [-M {d|e}] [-n RANGE] [-c RANGE]
 !
 !   RANGE  a single integer (e.g. 650) or begin:end:step (e.g. 650:1000:50)
 !
 ! Defaults (Zlatev benchmark table):
-!   -class d  -n 650:1000:50  -c 4:204:40
+!   -M d  -n 650:1000:50  -c 4:204:40
 !
 ! Class D(n,c): square,          NNZ = 4*n + 55;    n > 22, 1 <= c <= n-13
 ! Class E(n,c): symmetric SPD,   NNZ = 5*n - 2*c - 2;   n >= 3, 2 <= c <= n-1
@@ -31,12 +31,11 @@
 ! ==========================================================================
 
 module coo_matrix_mod
-   use, intrinsic :: iso_fortran_env, only: real64, int64
-   use y12m, only: y12ma
+   use, intrinsic :: iso_fortran_env, only: int64
    implicit none
    private
 
-   integer, parameter, public :: dp = real64
+   integer, parameter, public :: dp = kind(1.0d0)
 
    ! ------------------------------------------------------------------
    ! Abstract base type
@@ -135,6 +134,7 @@ contains
    !>   elapsed   — wall-clock time in seconds for the y12ma call
    !>   max_err   — max(|x - 1|); or -1 if ifail /= 0
    subroutine coo_solve(self, aflag, iflag, ifail, elapsed, max_err)
+      use y12m, only: y12ma
       class(coo_matrix), intent(inout) :: self
       real(dp), intent(out) :: aflag(8)
       integer,  intent(out) :: iflag(10)
@@ -479,7 +479,7 @@ contains
       do while (i <= nargs)
          call get_command_argument(i, arg)
          select case (trim(arg))
-         case ('--help', '-help', '-h')
+         case ('--help', '-h')
             call print_help()
             stop
 
@@ -501,10 +501,10 @@ contains
             call get_command_argument(i, val)
             call parse_range(val, args%cstart, args%cend, args%cstep)
 
-         case ('-class')
+         case ('-M', '--matrix')
             i = i + 1
             if (i > nargs) then
-               write(error_unit, '(a)') 'Error: -class requires an argument'
+               write(error_unit, '(a)') 'Error: -M/--matrix requires an argument'
                stop 1
             end if
             call get_command_argument(i, val)
@@ -514,7 +514,7 @@ contains
             case ('e', 'E')
                args%matrix_class = 'E'
             case default
-               write(error_unit, '(2a)') 'Error: unknown -class value: ', trim(val)
+               write(error_unit, '(2a)') 'Error: unknown -M/--matrix value: ', trim(val)
                stop 1
             end select
 
@@ -598,7 +598,7 @@ contains
    !> Print the help message and return.
    subroutine print_help()
       write(output_unit, '(a)') &
-         'Usage: timings_de [--help] [-class {d|e}] [-n RANGE] [-c RANGE]'
+         'Usage: timings_de [--help] [-M {d|e}] [-n RANGE] [-c RANGE]'
       write(output_unit, '(a)') ''
       write(output_unit, '(a)') &
          'Timing driver for sparse class D and E matrices (double precision).'
@@ -607,12 +607,14 @@ contains
       write(output_unit, '(a)') ''
       write(output_unit, '(a)') 'Options:'
       write(output_unit, '(a)') &
-         '  --help         Show this help message and exit.'
-      ! -class {d|e}: run one class at a time; valid ranges differ by class:
+         '  --help, -h     Show this help message and exit.'
+      ! -M/--matrix {d|e}: run one class at a time; valid ranges differ by class:
       !   D(n,c): n > 22, 1 <= c <= n-13
       !   E(n,c): n >= 3, 2 <= c <= n-1
       write(output_unit, '(a)') &
-         '  -class {d|e}   Matrix class to benchmark (default: d).'
+         '  -M, --matrix {d|e}'
+      write(output_unit, '(a)') &
+         '                 Matrix class to benchmark (default: d).'
       write(output_unit, '(a)') &
          '                   d: D(n,c), n > 22, 1 <= c <= n-13'
       write(output_unit, '(a)') &
@@ -632,7 +634,7 @@ contains
       write(output_unit, '(a)') ''
       write(output_unit, '(a)') 'Defaults (Zlatev benchmark):'
       write(output_unit, '(a)') &
-         '  -class d  -n 650:1000:50  -c 4:204:40'
+         '  -M d  -n 650:1000:50  -c 4:204:40'
    end subroutine print_help
 
 end program timings_de

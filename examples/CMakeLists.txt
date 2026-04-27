@@ -59,12 +59,12 @@ target_link_libraries(timings_de PRIVATE y12m_legacy)
 
 # Smoke tests: one for class D and one for class E
 add_test(NAME timings_de_d
-    COMMAND timings_de -class d -n 100 -c 10
+    COMMAND timings_de -M d -n 100 -c 10
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
 )
 
 add_test(NAME timings_de_e
-    COMMAND timings_de -class e -n 100 -c 10
+    COMMAND timings_de -M e -n 100 -c 10
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
 )
 
