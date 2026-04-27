@@ -11,6 +11,17 @@
 ! Y12MB -> Y12MC -> Y12MD sequence on the 6-by-6 reference matrix from the
 ! problem statement and checks the documented postconditions.
 !
+! Note on error-triggering flag values: some tests modify IFLAG(2), IFLAG(3),
+! or IFLAG(5) after calling y12mb to force a specific error condition in y12mc.
+! This is done purely to exercise y12mc's input validation; in normal use
+! these flags should be set once before the y12mb call and not modified
+! between y12mb and y12mc.  Specifically:
+!   - IFLAG(2) must be >= 1 (Markowitz search width).
+!   - IFLAG(3) must be 0, 1, or 2 (pivoting strategy).
+!   - IFLAG(5) must be 1 or 2 for the first y12mc call; value 3 is only
+!     valid for y12md when reusing a factorization from a previous
+!     IFLAG(5)=2 call.
+!
 ! Error codes exercised and their triggering conditions:
 !
 !   ifail= 2  iflag(1) /= -1         (y12mc called without prior y12mb)
@@ -38,9 +49,7 @@
 !   * IFLAG(1) = -2    (state flag set by y12mc on success)
 !   * AFLAG(6) = maxval(abs(A_original))  (unchanged by y12mc)
 !   * AFLAG(8) > 0     (minimum absolute pivot, set during factorization)
-!   * AFLAG(8) is close to 1 (from the pivot element -1 in the reference system)
 !   * IFLAG(6) >= 0, IFLAG(7) >= 0  (garbage-collection counters)
-!   * RNR(1:Z) = 0     (column linked list zeroed out by y12mc)
 !   * pivot(1:N) close to the expected pivotal sequence
 !   * Solution x satisfies ||A*x - b||_inf < tolerance
 !
@@ -54,9 +63,9 @@ program test_y12mc_errors
   integer, parameter :: dp = kind(1.0d0)
 #endif
 
-  integer, parameter :: NMAX   = 12
-  integer, parameter :: NNMAX  = 500
-  integer, parameter :: NN1MAX = 500
+  integer, parameter :: NMAX   = 10
+  integer, parameter :: NNMAX  = 200
+  integer, parameter :: NN1MAX = 100
 
   real(dp) :: a(NNMAX), aflag(8), pivot(NMAX), b(NMAX)
   integer  :: snr(NNMAX), rnr(NN1MAX), ha(NMAX,11), iflag(10)
@@ -89,69 +98,70 @@ program test_y12mc_errors
   ! ifail = 19 : iflag(2) < 1
   !
   ! iflag(2) is the Markowitz search width; the minimum legal value is 1.
+  ! Setting it to 0 here after a valid y12mb call forces the error path in
+  ! y12mc; in practice iflag(2) should always remain >= 1.
   ! =========================================================================
-  block
+  blk19: block
     integer :: n = 3, z = 3, nn = NNMAX, nn1 = NN1MAX, iha = NMAX
     call init_diag3(a, snr, rnr, b)
     call setup_y12mb(n, z, nn, nn1, iha, a, snr, rnr, ha, aflag, iflag, ifail, nfail)
-    if (ifail /= 0) go to 19
+    if (ifail /= 0) exit blk19
     iflag(2) = 0   ! < 1 -> ifail=19
     call y12mc(n, z, a, snr, nn, rnr, nn1, pivot, b, ha, iha, aflag, iflag, ifail)
     call check_ifail('ifail=19 iflag(2)<1', ifail, 19, nfail)
-19  continue
-  end block
+  end block blk19
 
   ! =========================================================================
   ! ifail = 20 : iflag(3) not in {0, 1, 2}
   !
   ! iflag(3) selects the pivoting strategy (0=diagonal, 1=Markowitz,
   ! 2=diagonal-preference Markowitz).  Values outside this set are invalid.
+  ! Setting it to 3 here purely to exercise the check; in practice only
+  ! 0, 1, or 2 are meaningful.
   ! =========================================================================
-  block
+  blk20: block
     integer :: n = 3, z = 3, nn = NNMAX, nn1 = NN1MAX, iha = NMAX
     call init_diag3(a, snr, rnr, b)
     call setup_y12mb(n, z, nn, nn1, iha, a, snr, rnr, ha, aflag, iflag, ifail, nfail)
-    if (ifail /= 0) go to 20
+    if (ifail /= 0) exit blk20
     iflag(3) = 3   ! > 2 -> ifail=20
     call y12mc(n, z, a, snr, nn, rnr, nn1, pivot, b, ha, iha, aflag, iflag, ifail)
     call check_ifail('ifail=20 iflag(3)=3', ifail, 20, nfail)
-20  continue
-  end block
+  end block blk20
 
   ! =========================================================================
   ! ifail = 21 : iflag(5) not in {1, 2, 3}
   !
   ! iflag(5) controls L-factor storage (1=discard, 2=keep, 3=back-sub only).
-  ! Values 0 and 4 are both invalid.
+  ! Values 0 and 4 are both invalid.  Setting it to 0 after y12mb exercises
+  ! the lower-bound check in y12mc.
   ! =========================================================================
-  block
+  blk21: block
     integer :: n = 3, z = 3, nn = NNMAX, nn1 = NN1MAX, iha = NMAX
     call init_diag3(a, snr, rnr, b)
     call setup_y12mb(n, z, nn, nn1, iha, a, snr, rnr, ha, aflag, iflag, ifail, nfail)
-    if (ifail /= 0) go to 21
+    if (ifail /= 0) exit blk21
     iflag(5) = 0   ! < 1 -> ifail=21
     call y12mc(n, z, a, snr, nn, rnr, nn1, pivot, b, ha, iha, aflag, iflag, ifail)
     call check_ifail('ifail=21 iflag(5)=0', ifail, 21, nfail)
-21  continue
-  end block
+  end block blk21
 
   ! =========================================================================
   ! ifail = 22 : iflag(5) = 3
   !
-  ! iflag(5)=3 means "use stored L to perform back-substitution only" — this
+  ! iflag(5)=3 means "use stored L to perform back-substitution only" - this
   ! is only valid after a previous full factorisation (iflag(5)=2).  y12mc
   ! rejects it here because it is called without a stored L.
   ! =========================================================================
-  block
+  blk22: block
     integer :: n = 3, z = 3, nn = NNMAX, nn1 = NN1MAX, iha = NMAX
     call init_diag3(a, snr, rnr, b)
     call setup_y12mb(n, z, nn, nn1, iha, a, snr, rnr, ha, aflag, iflag, ifail, nfail)
-    if (ifail /= 0) go to 22
+    if (ifail /= 0) exit blk22
     iflag(5) = 3   ! back-sub only without stored L -> ifail=22
     call y12mc(n, z, a, snr, nn, rnr, nn1, pivot, b, ha, iha, aflag, iflag, ifail)
     call check_ifail('ifail=22 iflag(5)=3', ifail, 22, nfail)
-22  continue
-  end block
+  end block blk22
 
   ! =========================================================================
   ! ifail = 9 : no pivot element in the current row
@@ -164,19 +174,18 @@ program test_y12mc_errors
   !       [ 0 0 1 ]
   !       [ 1 0 0 ]
   ! =========================================================================
-  block
+  blk9: block
     integer :: n = 3, z = 3, nn = NNMAX, nn1 = NN1MAX, iha = NMAX
     a(1:z)   = [1, 1, 1]
     snr(1:z) = [2, 3, 1]
     rnr(1:z) = [1, 2, 3]
     b(1:n)   = [1, 1, 1]
     call setup_y12mb(n, z, nn, nn1, iha, a, snr, rnr, ha, aflag, iflag, ifail, nfail)
-    if (ifail /= 0) go to 9
+    if (ifail /= 0) exit blk9
     iflag(3) = 0   ! no pivot search; take diagonal -> row 1 has no diagonal
     call y12mc(n, z, a, snr, nn, rnr, nn1, pivot, b, ha, iha, aflag, iflag, ifail)
     call check_ifail('ifail=9 no diagonal pivot', ifail, 9, nfail)
-9   continue
-  end block
+  end block blk9
 
   ! =========================================================================
   ! ifail = 3 : pivot too small (during the elimination loop, step i < n)
@@ -190,22 +199,21 @@ program test_y12mc_errors
   !   grmin    = aflag(4)*aflag(6) = 0.1
   !   step 2 pivot = 1e-12 < 0.1  ->  ifail=3
   ! =========================================================================
-  block
+  blk3a: block
     integer :: n = 3, z = 3, nn = NNMAX, nn1 = NN1MAX, iha = NMAX
     a(1:z)   = [1.0_dp, 1.0e-12_dp, 1.0_dp]
     snr(1:z) = [1, 2, 3]
     rnr(1:z) = [1, 2, 3]
     b(1:n)   = [1, 1, 1]
     call setup_y12mb(n, z, nn, nn1, iha, a, snr, rnr, ha, aflag, iflag, ifail, nfail)
-    if (ifail /= 0) go to 31
+    if (ifail /= 0) exit blk3a
     iflag(3) = 0      ! take diagonal pivots in order
     ! aflag(6) has been set by y12mb to max|A|=1; preserve it.
     ! grmin = aflag(4)*aflag(6) = 0.1*1 = 0.1 > 1e-12 (step 2 pivot) -> ifail=3
     aflag(4) = 0.1_dp
     call y12mc(n, z, a, snr, nn, rnr, nn1, pivot, b, ha, iha, aflag, iflag, ifail)
     call check_ifail('ifail=3 small pivot in loop', ifail, 3, nfail)
-31  continue
-  end block
+  end block blk3a
 
   ! =========================================================================
   ! ifail = 3 : pivot too small (the very last pivot, checked after the loop)
@@ -220,22 +228,21 @@ program test_y12mc_errors
   !   step 1 pivot = 10 >= 1  ->  OK
   !   last pivot   = 1e-12 < 1  ->  ifail=3
   ! =========================================================================
-  block
+  blk3b: block
     integer :: n = 2, z = 2, nn = NNMAX, nn1 = NN1MAX, iha = NMAX
     a(1:z)   = [10.0_dp, 1.0e-12_dp]
     snr(1:z) = [1, 2]
     rnr(1:z) = [1, 2]
     b(1:n)   = [1, 1]
     call setup_y12mb(n, z, nn, nn1, iha, a, snr, rnr, ha, aflag, iflag, ifail, nfail)
-    if (ifail /= 0) go to 32
+    if (ifail /= 0) exit blk3b
     iflag(3) = 0
     ! aflag(6) has been set by y12mb to max|A|=10; preserve it.
     ! grmin = aflag(4)*aflag(6) = 0.1*10 = 1 > 1e-12 (last pivot) -> ifail=3
     aflag(4) = 0.1_dp
     call y12mc(n, z, a, snr, nn, rnr, nn1, pivot, b, ha, iha, aflag, iflag, ifail)
     call check_ifail('ifail=3 small last pivot', ifail, 3, nfail)
-32  continue
-  end block
+  end block blk3b
 
   ! =========================================================================
   ! ifail = 7 : a row becomes empty during elimination
@@ -252,19 +259,18 @@ program test_y12mc_errors
   ! off-diagonal elements in the pivot row, so no fill-in is added to row 2.
   ! After removing (2,1) the row has no active elements -> ifail=7.
   ! =========================================================================
-  block
+  blk7: block
     integer :: n = 3, z = 4, nn = NNMAX, nn1 = NN1MAX, iha = NMAX
     a(1:z)   = [5.0_dp, 1.0_dp, 1.0_dp, 3.0_dp]
     snr(1:z) = [1, 1, 2, 3]
     rnr(1:z) = [1, 2, 3, 3]
     b(1:n)   = [1, 1, 1]
     call setup_y12mb(n, z, nn, nn1, iha, a, snr, rnr, ha, aflag, iflag, ifail, nfail)
-    if (ifail /= 0) go to 7
+    if (ifail /= 0) exit blk7
     iflag(3) = 0
     call y12mc(n, z, a, snr, nn, rnr, nn1, pivot, b, ha, iha, aflag, iflag, ifail)
     call check_ifail('ifail=7 empty row', ifail, 7, nfail)
-7   continue
-  end block
+  end block blk7
 
   ! =========================================================================
   ! ifail = 8 : a column becomes empty during step cleanup
@@ -286,19 +292,18 @@ program test_y12mc_errors
   ! Note: col 1 has only row 1 as well, so no other rows are eliminated in
   ! step 1 (no fill-in loop executes).
   ! =========================================================================
-  block
+  blk8: block
     integer :: n = 3, z = 4, nn = NNMAX, nn1 = NN1MAX, iha = NMAX
     a(1:z)   = [5.0_dp, 1.0_dp, 1.0_dp, 3.0_dp]
     snr(1:z) = [1, 2, 3, 3]
     rnr(1:z) = [1, 1, 2, 3]
     b(1:n)   = [1, 1, 1]
     call setup_y12mb(n, z, nn, nn1, iha, a, snr, rnr, ha, aflag, iflag, ifail, nfail)
-    if (ifail /= 0) go to 8
+    if (ifail /= 0) exit blk8
     iflag(3) = 0
     call y12mc(n, z, a, snr, nn, rnr, nn1, pivot, b, ha, iha, aflag, iflag, ifail)
     call check_ifail('ifail=8 empty col', ifail, 8, nfail)
-8   continue
-  end block
+  end block blk8
 
   ! =========================================================================
   ! ifail = 4 : growth factor exceeded
@@ -321,14 +326,14 @@ program test_y12mc_errors
   !   A(2,2) <- 1 - 1*1e10 = -1e10+1 ~= -1e10
   ! aflag(7) is updated to 1e10.  Growth = 1e10/1 = 1e10 > 1e5 -> ifail=4.
   ! =========================================================================
-  block
+  blk4: block
     integer :: n = 3, z = 5, nn = NNMAX, nn1 = NN1MAX, iha = NMAX
     a(1:z)   = [1.0e-10_dp, 1.0_dp, 1.0_dp, 1.0_dp, 1.0_dp]
     snr(1:z) = [1, 2, 1, 2, 3]
     rnr(1:z) = [1, 1, 2, 2, 3]
     b(1:n)   = [1, 1, 1]
     call setup_y12mb(n, z, nn, nn1, iha, a, snr, rnr, ha, aflag, iflag, ifail, nfail)
-    if (ifail /= 0) go to 4
+    if (ifail /= 0) exit blk4
     iflag(3) = 0
     ! aflag(6) has been set by y12mb to max|A|=1; preserve it.
     ! Set a small growth threshold so that the ratio aflag(7)/aflag(6) = 1e10
@@ -337,8 +342,7 @@ program test_y12mc_errors
     aflag(3) = 1.0e5_dp ! growth threshold (y12mc clips to max(user,1e5))
     call y12mc(n, z, a, snr, nn, rnr, nn1, pivot, b, ha, iha, aflag, iflag, ifail)
     call check_ifail('ifail=4 growth factor', ifail, 4, nfail)
-4   continue
-  end block
+  end block blk4
 
   ! =========================================================================
   ! TODO (future work): ifail=5 and ifail=6
@@ -371,19 +375,39 @@ program test_y12mc_errors
   !
   ! b = [10, 11, 45, 33, -22, 31]
   !
+  ! The matrix is supplied in the following non-row-major COO ordering so
+  ! that y12mb's reordering logic is exercised:
+  !
+  !   rnr snr    a
+  !     1   1  10.
+  !     6   6   6.
+  !     6   2  -2.
+  !     6   1  -1.
+  !     2   2  12.
+  !     2   3  -3.
+  !     2   4  -1.
+  !     4   1  -2.
+  !     5   1  -1.
+  !     5   6  -1.
+  !     5   5   1.
+  !     5   4  -5.
+  !     4   4  20.
+  !     4   5  -2.
+  !     3   3  15.
+  !
   ! Pivot order (Markowitz, iflag(3)=1, iflag(2)=3):
   !   step 1: row 3, col 3 = 15       (single-element row, selected first)
   !   step 2: row 1, col 1 = 10       (other single-element row)
   !   step 3: row 2, col 2 = 12       (2-element row)
   !   step 4: row 6, col 6 =  6       (2-element row after step-3 fill-in)
   !   step 5: row 4, col 4 = 20       (last 2-element row)
-  !   step 6: Schur complement = 179/360 ≈ 0.4972  (remaining 1x1 block)
+  !   step 6: Schur complement = 179/360 ~= 0.4972  (remaining 1x1 block)
   !
   ! Note: the problem statement quotes pivots [10,15,-1,6,12,4.972], which
   ! appear to reflect a different Markowitz search or manual elimination order.
   ! The values below are those produced by y12mcf with the default settings.
   ! =========================================================================
-  block
+  success: block
     integer  :: n = 6, z = 15, nn = NNMAX, nn1 = NN1MAX, iha = NMAX
     integer  :: i, k
     real(dp) :: resid, atol
@@ -393,13 +417,13 @@ program test_y12mc_errors
     real(dp) :: expected_pivot(6)
     real(dp) :: r(6)
 
-    ! --- input matrix in COO format (row-major order) ---
-    rnr(1:z) = [1, 2,2,2, 3, 4,4,4, 5,5,5,5, 6,6,6]
-    snr(1:z) = [1, 2,3,4, 3, 1,4,5, 1,4,5,6, 1,2,6]
-    a(1:z)   = [10.0_dp, 12.0_dp,-3.0_dp,-1.0_dp, &
-                15.0_dp, -2.0_dp,20.0_dp,-2.0_dp, &
-                -1.0_dp, -5.0_dp, 1.0_dp,-1.0_dp, &
-                -1.0_dp, -2.0_dp, 6.0_dp]
+    ! --- input matrix in non-row-major COO ordering ---
+    rnr(1:z) = [1, 6, 6, 6, 2, 2, 2, 4, 5, 5, 5, 5, 4, 4, 3]
+    snr(1:z) = [1, 6, 2, 1, 2, 3, 4, 1, 1, 6, 5, 4, 4, 5, 3]
+    a(1:z)   = [10.0_dp,  6.0_dp, -2.0_dp, -1.0_dp, &
+                12.0_dp, -3.0_dp, -1.0_dp, -2.0_dp, &
+                -1.0_dp, -1.0_dp,  1.0_dp, -5.0_dp, &
+                20.0_dp, -2.0_dp, 15.0_dp]
     b(1:n) = [10.0_dp, 11.0_dp, 45.0_dp, 33.0_dp, -22.0_dp, 31.0_dp]
 
     ! Save original matrix and RHS for residual check after solve.
@@ -409,13 +433,9 @@ program test_y12mc_errors
     b_orig(1:n)   = b(1:n)
 
     ! Expected pivots in Markowitz order (as produced by y12mcf).
-    expected_pivot(1) = 15.0_dp
-    expected_pivot(2) = 10.0_dp
-    expected_pivot(3) = 12.0_dp
-    expected_pivot(4) =  6.0_dp
-    expected_pivot(5) = 20.0_dp
-    ! Schur complement of the remaining 1x1 block: 179/360
-    expected_pivot(6) = 179.0_dp / 360.0_dp  ! ≈ 0.4972
+    ! Schur complement of the remaining 1x1 block: 179/360 ~= 0.4972
+    expected_pivot = [15.0_dp, 10.0_dp, 12.0_dp, 6.0_dp, 20.0_dp, &
+                      179.0_dp / 360.0_dp]
 
     call set_flags(iflag)
     call set_aflag(aflag)
@@ -426,7 +446,7 @@ program test_y12mc_errors
     if (ifail /= 0) then
       write(*,'(a,i0)') 'FAIL success y12mb: ifail=', ifail
       nfail = nfail + 1
-      go to 99
+      exit success
     end if
 
     ! --- y12mc ---
@@ -434,7 +454,7 @@ program test_y12mc_errors
     if (ifail /= 0) then
       write(*,'(a,i0)') 'FAIL success y12mc: ifail=', ifail
       nfail = nfail + 1
-      go to 99
+      exit success
     end if
 
     ! Post-conditions after successful y12mc.
@@ -454,7 +474,7 @@ program test_y12mc_errors
       nfail = nfail + 1
     end if
 
-    ! Min |pivot| is the last Schur complement = 179/360 ≈ 0.4972.
+    ! Min |pivot| is the last Schur complement = 179/360 ~= 0.4972.
     ! Use precision-appropriate tolerances for all floating-point comparisons.
 #ifdef TEST_SINGLE_PRECISION
     atol = 1.0e-4_dp   ! absolute tolerance (sp rounding)
@@ -493,7 +513,7 @@ program test_y12mc_errors
     if (ifail /= 0) then
       write(*,'(a,i0)') 'FAIL success y12md: ifail=', ifail
       nfail = nfail + 1
-      go to 99
+      exit success
     end if
 
     ! Residual  r = A_original * x - b_original
@@ -513,8 +533,7 @@ program test_y12mc_errors
       nfail = nfail + 1
     end if
 
-99  continue
-  end block
+  end block success
 
   ! =========================================================================
   ! Summary
