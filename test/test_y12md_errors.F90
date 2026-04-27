@@ -24,7 +24,7 @@
 !
 !   3. y12md performs no input-validation checks beyond iflag(1) == -2.
 !      In particular it does NOT verify:
-!        NN >= 2*Z  (when iflag(5) = 1; note: the docs say NN > 2*Z —
+!        NN >= 2*Z  (when iflag(5) = 1; note: the docs say NN > 2*Z --
 !                    the exact boundary condition >= vs > is ambiguous)
 !        NN >= 3*Z  (when iflag(5) = 2, L is stored alongside U)
 !        IHA >= N
