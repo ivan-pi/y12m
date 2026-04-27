@@ -3,6 +3,19 @@
 Y12M solves large, sparse systems of linear algebraic equations **Ax = b** by
 Gaussian elimination with sparse matrix techniques and partial pivoting.
 
+> **Disclaimer:** This document was reworked from the original Netlib `doc` file
+> using AI-assisted tools.  The information may differ from, or contain errors
+> relative to, the original text.  We have **not** cross-checked against the
+> authoritative Springer publication:
+>
+> > Zlatev, Z., Wasniewski, J., & Schaumburg, K. (1981). *Y12M: Solution of
+> > Large and Sparse Systems of Linear Algebraic Equations*. Lecture Notes in
+> > Computer Science, Vol. 121. Springer.
+> > https://doi.org/10.1007/3-540-10874-2
+>
+> Known discrepancies between this document and the `doc` file (or the source
+> code) are listed in the [Discrepancies](#discrepancies) section.
+
 ---
 
 **Contents:**
@@ -525,7 +538,5 @@ against the source files in `src/legacy/`.
 
 ## References
 
-1. Zlatev, Z., Wasniewski, J., & Schaumburg, K. (1981). *Y12M: solution of large and sparse systems of linear algebraic equations*. Lecture Notes in Computer Science, Vol. 121. Springer. https://doi.org/10.1007/3-540-10874-2
-2. Cline, A.K., Moler, C.B., Stewart, G.W., and Wilkinson, J.H. (1979). "An estimate for the condition number of a matrix." *SIAM J. Numer. Anal.* 16, 368–375.
-3. Dongarra, J.J., Bunch, J.R., Moler, C.B., and Stewart, G.W. (1979). *LINPACK User's Guide*. SIAM, Philadelphia.
-4. Gustavson, F.G. (1972). "Some basic techniques for solving sparse systems of linear equations." In: *Sparse Matrices and Their Applications* (Rose & Willoughby, eds.), pp. 41–52. Plenum Press, New York.
+See [references.md](references.md) for the full reference list from the original
+Netlib documentation (40 entries).
