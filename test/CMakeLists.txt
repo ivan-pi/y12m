@@ -80,13 +80,22 @@ foreach(MAT_ID mat0 mat1 mat2 mat3 mat5)
     )
 endforeach()
 
-# ---- Random 9x9 double-precision test (requires LAPACK) ----
+# ---- Random 9x9 test (single and double precision, requires LAPACK) ----
 if(LAPACK_FOUND)
-  add_executable(test_y12ma_rand_dp test_y12ma_rand_dp.f90)
-  target_compile_options(test_y12ma_rand_dp PRIVATE ${TEST_COMPILE_FLAGS})
-  target_link_libraries(test_y12ma_rand_dp PRIVATE y12m_legacy LAPACK::LAPACK)
-  add_test(NAME test_y12ma_rand_dp COMMAND test_y12ma_rand_dp)
+  foreach(tname
+      test_y12ma_rand_sp
+      test_y12ma_rand_dp)
+
+    add_executable(${tname} test_y12ma_rand.F90)
+    target_compile_options(${tname} PRIVATE ${TEST_COMPILE_FLAGS})
+    target_link_libraries(${tname} PRIVATE y12m_legacy LAPACK::LAPACK)
+    if(tname MATCHES "_sp$")
+      target_compile_definitions(${tname} PRIVATE TEST_SINGLE_PRECISION)
+    endif()
+    add_test(NAME ${tname} COMMAND ${tname})
+
+  endforeach()
 else()
   message(STATUS
-    "LAPACK not found -- skipping test_y12ma_rand_dp (sparse-dense comparison test)")
+    "LAPACK not found -- skipping test_y12ma_rand_sp/dp (sparse-dense comparison tests)")
 endif()
