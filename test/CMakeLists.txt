@@ -50,6 +50,20 @@ foreach(tname
 
 endforeach()
 
+foreach(tname
+    test_y12md_errors_sp
+    test_y12md_errors_dp)
+
+  add_executable(${tname} test_y12md_errors.F90)
+  target_compile_options(${tname} PRIVATE ${TEST_COMPILE_FLAGS})
+  target_link_libraries(${tname} PRIVATE y12m_legacy)
+  if(tname MATCHES "_sp$")
+    target_compile_definitions(${tname} PRIVATE TEST_SINGLE_PRECISION)
+  endif()
+  add_test(NAME ${tname} COMMAND ${tname})
+
+endforeach()
+
 
 # ---- File-based test driver ----
 add_executable(y12m_solve y12m_solve.f90)
