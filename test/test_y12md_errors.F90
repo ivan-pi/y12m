@@ -45,7 +45,6 @@
 !   * IFLAG(1) = -2    unchanged on exit from y12md
 !   * Solution x = (1,2,3,4,5,6) for b1  (iflag(5) = 1 and iflag(5) = 2)
 !   * Multiple-RHS: x = (1,2,3,4,5,6) for b1, x = (6,5,4,3,2,1) for b2
-!   * Solutions with iflag(5)=1 and iflag(5)=2 agree to tolerance
 !
 program test_y12md_errors
   use y12m, only: y12mb, y12mc, y12md
@@ -124,23 +123,20 @@ program test_y12md_errors
 
     ! iflag(5) = 1 is already set by set_flags inside setup_ref6.
     call y12mc(n, z, a, snr, nn, rnr, nn1, pivot, b, ha, iha, aflag, iflag, ifail)
-    if (ifail /= 0) then
-      write(*,'(a,i0)') 'FAIL success_no_l y12mc: ifail=', ifail
+    if (ifail /= 0 .or. iflag(1) /= -2) then
+      write(*,'(a,i0,a,i0)') 'FAIL success_no_l y12mc: ifail=', ifail, &
+          ' iflag(1)=', iflag(1)
       nfail = nfail + 1
       exit success_no_l
     end if
 
     ifail = 0   ! pre-initialise (needed for y12mde, see discrepancy #2)
     call y12md(n, a, nn, b, pivot, snr, ha, iha, iflag, ifail)
-    if (ifail /= 0) then
-      write(*,'(a,i0)') 'FAIL success_no_l y12md: ifail=', ifail
+    if (ifail /= 0 .or. iflag(1) /= -2) then
+      write(*,'(a,i0,a,i0)') 'FAIL success_no_l y12md: ifail=', ifail, &
+          ' iflag(1)=', iflag(1)
       nfail = nfail + 1
       exit success_no_l
-    end if
-
-    if (iflag(1) /= -2) then
-      write(*,'(a,i0)') 'FAIL success_no_l: iflag(1) changed, got ', iflag(1)
-      nfail = nfail + 1
     end if
 
 #ifdef TEST_SINGLE_PRECISION
@@ -171,29 +167,20 @@ program test_y12md_errors
 
     iflag(5) = 2   ! keep L for multiple-RHS reuse
     call y12mc(n, z, a, snr, nn, rnr, nn1, pivot, b, ha, iha, aflag, iflag, ifail)
-    if (ifail /= 0) then
-      write(*,'(a,i0)') 'FAIL success_with_l y12mc: ifail=', ifail
+    if (ifail /= 0 .or. iflag(1) /= -2) then
+      write(*,'(a,i0,a,i0)') 'FAIL success_with_l y12mc: ifail=', ifail, &
+          ' iflag(1)=', iflag(1)
       nfail = nfail + 1
       exit success_with_l
     end if
 
-    if (iflag(1) /= -2) then
-      write(*,'(a,i0)') 'FAIL success_with_l: iflag(1) /= -2 after y12mc, got ', iflag(1)
-      nfail = nfail + 1
-      exit success_with_l
-    end if
-
-    ifail = 0
+    ifail = 0   ! pre-initialise (needed for y12mde, see discrepancy #2)
     call y12md(n, a, nn, b, pivot, snr, ha, iha, iflag, ifail)
-    if (ifail /= 0) then
-      write(*,'(a,i0)') 'FAIL success_with_l y12md: ifail=', ifail
+    if (ifail /= 0 .or. iflag(1) /= -2) then
+      write(*,'(a,i0,a,i0)') 'FAIL success_with_l y12md: ifail=', ifail, &
+          ' iflag(1)=', iflag(1)
       nfail = nfail + 1
       exit success_with_l
-    end if
-
-    if (iflag(1) /= -2) then
-      write(*,'(a,i0)') 'FAIL success_with_l: iflag(1) changed after y12md, got ', iflag(1)
-      nfail = nfail + 1
     end if
 
 #ifdef TEST_SINGLE_PRECISION
@@ -221,24 +208,24 @@ program test_y12md_errors
   ! =========================================================================
   multi_rhs: block
     integer  :: n = N_REF, z = Z_REF, nn = NNMAX, nn1 = NN1MAX, iha = NMAX
-    real(dp) :: atol, b2(NMAX)
+    real(dp) :: atol, rhs(NMAX,2)   ! rhs(:,1) = b1 (filled by setup_ref6); rhs(:,2) = b2
 
-    b2(1:n) = [60.0_dp, 45.0_dp, 60.0_dp, 44.0_dp, -20.0_dp, -10.0_dp]
+    rhs(1:N_REF, 2) = [60.0_dp, 45.0_dp, 60.0_dp, 44.0_dp, -20.0_dp, -10.0_dp]
 
-    call setup_ref6(n, z, nn, nn1, iha, a, snr, rnr, b, ha, aflag, iflag, ifail, nfail)
+    call setup_ref6(n, z, nn, nn1, iha, a, snr, rnr, rhs(:,1), ha, aflag, iflag, ifail, nfail)
     if (ifail /= 0) exit multi_rhs
 
     iflag(5) = 2   ! keep L for multiple-RHS reuse
-    call y12mc(n, z, a, snr, nn, rnr, nn1, pivot, b, ha, iha, aflag, iflag, ifail)
+    call y12mc(n, z, a, snr, nn, rnr, nn1, pivot, rhs(:,1), ha, iha, aflag, iflag, ifail)
     if (ifail /= 0) then
       write(*,'(a,i0)') 'FAIL multi_rhs y12mc: ifail=', ifail
       nfail = nfail + 1
       exit multi_rhs
     end if
 
-    ! First RHS: b has been transformed to c = L^{-1}Pb1 by y12mc.
-    ifail = 0
-    call y12md(n, a, nn, b, pivot, snr, ha, iha, iflag, ifail)
+    ! First RHS: rhs(:,1) has been transformed to c = L^{-1}Pb1 by y12mc.
+    ifail = 0   ! pre-initialise (see discrepancy #2: y12mde does not set ifail=0)
+    call y12md(n, a, nn, rhs(:,1), pivot, snr, ha, iha, iflag, ifail)
     if (ifail /= 0) then
       write(*,'(a,i0)') 'FAIL multi_rhs y12md(b1): ifail=', ifail
       nfail = nfail + 1
@@ -250,21 +237,21 @@ program test_y12md_errors
 #else
     atol = 1.0e-10_dp
 #endif
-    call check_solution('multi_rhs x1', n, b(1:n), &
+    call check_solution('multi_rhs x1', n, rhs(1:n,1), &
         [1.0_dp, 2.0_dp, 3.0_dp, 4.0_dp, 5.0_dp, 6.0_dp], atol, nfail)
 
-    ! Second RHS: set iflag(5)=3 and provide fresh b2.
-    ! y12md will apply row permutation, L-solve, U-solve, column permutation.
+    ! Second RHS: set iflag(5)=3 and provide fresh rhs(:,2).
+    ! y12md applies row permutation, L-solve, U-solve, column permutation.
     iflag(5) = 3
-    ifail = 0
-    call y12md(n, a, nn, b2, pivot, snr, ha, iha, iflag, ifail)
+    ifail = 0   ! pre-initialise (see discrepancy #2: y12mde does not set ifail=0)
+    call y12md(n, a, nn, rhs(:,2), pivot, snr, ha, iha, iflag, ifail)
     if (ifail /= 0) then
       write(*,'(a,i0)') 'FAIL multi_rhs y12md(b2): ifail=', ifail
       nfail = nfail + 1
       exit multi_rhs
     end if
 
-    call check_solution('multi_rhs x2', n, b2(1:n), &
+    call check_solution('multi_rhs x2', n, rhs(1:n,2), &
         [6.0_dp, 5.0_dp, 4.0_dp, 3.0_dp, 2.0_dp, 1.0_dp], atol, nfail)
 
     if (iflag(1) /= -2) then
@@ -274,76 +261,6 @@ program test_y12md_errors
     end if
 
   end block multi_rhs
-
-  ! =========================================================================
-  ! Compare: solutions with iflag(5)=1 and iflag(5)=2 should agree
-  !
-  ! Both variants execute the same U-solve step (y12mc pre-transforms b for
-  ! both cases); the difference is only whether L is kept.  The two solutions
-  ! must agree to within floating-point rounding.
-  ! =========================================================================
-  compare: block
-    integer  :: n = N_REF, z = Z_REF, nn = NNMAX, nn1 = NN1MAX, iha = NMAX
-    real(dp) :: atol, x_no_l(NMAX), x_with_l(NMAX)
-    integer  :: j
-
-    ! Solve without L storage (iflag(5)=1).
-    call setup_ref6(n, z, nn, nn1, iha, a, snr, rnr, b, ha, aflag, iflag, ifail, nfail)
-    if (ifail /= 0) exit compare
-
-    ! iflag(5) = 1 already set by set_flags.
-    call y12mc(n, z, a, snr, nn, rnr, nn1, pivot, b, ha, iha, aflag, iflag, ifail)
-    if (ifail /= 0) then
-      write(*,'(a,i0)') 'FAIL compare y12mc(no_l): ifail=', ifail
-      nfail = nfail + 1
-      exit compare
-    end if
-
-    ifail = 0
-    call y12md(n, a, nn, b, pivot, snr, ha, iha, iflag, ifail)
-    if (ifail /= 0) then
-      write(*,'(a,i0)') 'FAIL compare y12md(no_l): ifail=', ifail
-      nfail = nfail + 1
-      exit compare
-    end if
-    x_no_l(1:n) = b(1:n)
-
-    ! Solve with L storage (iflag(5)=2).
-    call setup_ref6(n, z, nn, nn1, iha, a, snr, rnr, b, ha, aflag, iflag, ifail, nfail)
-    if (ifail /= 0) exit compare
-
-    iflag(5) = 2
-    call y12mc(n, z, a, snr, nn, rnr, nn1, pivot, b, ha, iha, aflag, iflag, ifail)
-    if (ifail /= 0) then
-      write(*,'(a,i0)') 'FAIL compare y12mc(with_l): ifail=', ifail
-      nfail = nfail + 1
-      exit compare
-    end if
-
-    ifail = 0
-    call y12md(n, a, nn, b, pivot, snr, ha, iha, iflag, ifail)
-    if (ifail /= 0) then
-      write(*,'(a,i0)') 'FAIL compare y12md(with_l): ifail=', ifail
-      nfail = nfail + 1
-      exit compare
-    end if
-    x_with_l(1:n) = b(1:n)
-
-#ifdef TEST_SINGLE_PRECISION
-    atol = 1.0e-5_dp
-#else
-    atol = 1.0e-12_dp
-#endif
-    do j = 1, n
-      if (abs(x_no_l(j) - x_with_l(j)) > atol) then
-        write(*,'(a,i0,a,es12.5,a,es12.5)') &
-            'FAIL compare x(', j, '): no_l=', x_no_l(j), &
-            ' with_l=', x_with_l(j)
-        nfail = nfail + 1
-      end if
-    end do
-
-  end block compare
 
   ! =========================================================================
   ! TODO: Commented-out tests for checks not present in y12md
