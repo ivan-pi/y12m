@@ -31,7 +31,7 @@ c  the non-zero elements in the end of the arrays a and snr;find the
 c  largest non-zero element in a(in absolute value).
 c
       do 20 i=1,z
-      t=dabs(a(i))
+      t=abs(a(i))
       l3=rnr(i)
       l4=snr(i)
       if(l4.gt.n.or.l4.lt.1)ifail=24

@@ -114,11 +114,11 @@ c
       r9=r8-r7
       t=0.0 d0
       do 140 k=r7,r8
-      td=dabs(a(k))
+      td=abs(a(k))
   140 if(t.lt.td)t=td
       t=t/u
       do 160 k=r7,r8
-      td=dabs(a(k))
+      td=abs(a(k))
       if(td.lt.t)go to 150
       r6=snr(k)
       r3=r9*(ha(r6,6)-ha(r6,5))
@@ -234,7 +234,7 @@ c
       go to 1110
   370 v=a(rr)
       pivot(i)=v
-      td=dabs(v)
+      td=abs(v)
       if(td.lt.aflag(8))aflag(8)=td
       if(td.ge.grmin)go to 380
       ifail=3
@@ -292,7 +292,7 @@ c
       pivot(l1)=0.0 d0
       td=a(l)-td*t
       a(l)=td
-      td1=dabs(td)
+      td1=abs(td)
       if(td1.gt.aflag(7))aflag(7)=td1
 c
 c  too small element is created.remove it from the lists.
@@ -330,7 +330,7 @@ c
       pivot(r2)=a(r)
       if(tol2.eq.0.0d0)go to 740
       tol3=-tol2*t
-      tol1=dabs(tol3)
+      tol1=abs(tol3)
       if(tol1.lt.aflag(2))go to 740
       c2=ha(r2,4)
       cr2=ha(r2,6)
@@ -420,7 +420,7 @@ c
       a(i1)=a(l1)
   610 a(l1)=tol3
       snr(l1)=snr(r)
-      td=dabs(a(l1))
+      td=abs(a(l1))
       if(td.gt.aflag(7))aflag(7)=td
       zz=zz+1
       if(iflag(8).lt.zz) iflag(8)=zz
@@ -595,7 +595,7 @@ c
       index=ha(n,2)
       pivot(n)=a(index)
       a(index)=0.0 d0
-      td=dabs(pivot(n))
+      td=abs(pivot(n))
       if(td.gt.aflag(7))aflag(7)=td
       if(td.lt.aflag(8))aflag(8)=td
       if(td.gt.grmin)go to 960

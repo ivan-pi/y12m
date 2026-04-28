@@ -49,7 +49,7 @@ c
  1090 b(r1)=b(r1)/pivot(r1)
 c
 c if interchanges were used during the  elimination then a reordering in
-c lution vector is made.
+c the solution vector is made.
 c
       if(ipiv.eq.0)go to 1110
       do 1100 i=1,n7

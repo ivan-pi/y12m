@@ -82,10 +82,10 @@ c
       ha(i,2)=ha(i,1)
   110 ha(i,5)=ha(i,4)
       index=ha(n,8)
-      slut=ha(index,3)-ha(index,2)+1
 c
 c  start of gaussian elimination.
 c
+      slut=ha(index,3)-ha(index,2)+1
       do 950 i=1,n7
       rr3=ha(i,2)
       rr4=ha(i,3)
@@ -137,11 +137,11 @@ c
       ha(i,10)=r3
       r3=ha(rrow,9)
       ha(rrow,9)=ha(i,9)
-      ha(i,9)=r3
 c
 c  remove the pivot row of the list where the rows are ordered by
 c  increasing numbers of non-zero elements.
 c
+      ha(i,9)=r3
       l1=0
       l=i
       l2=ha(l4,3)-ha(l4,2)+1
@@ -166,10 +166,10 @@ c
       ha(l5,8)=rrow
       ha(rrow,7)=l5
   210 ha(i,7)=rrow
-      ha(i,8)=rcoll
 c
 c  row interchanges.
 c
+      ha(i,8)=rcoll
   220 if(rrow.eq.i)go to 290
       t=b(rrow)
       b(rrow)=b(i)
@@ -193,10 +193,10 @@ c
       do 280 j=1,3
       r3=ha(rrow,j)
       ha(rrow,j)=ha(i,j)
-  280 ha(i,j)=r3
 c
 c  column interchanges.
 c
+  280 ha(i,j)=r3
   290 if(rcoll.eq.i)go to 350
       do 310 j=c1,cr4
       l1=rnr(j)
@@ -220,12 +220,12 @@ c
       do 340 j=4,6
       r3=ha(rcoll,j)
       ha(rcoll,j)=ha(i,j)
-  340 ha(i,j)=r3
 c
 c end of the interchanges.
 c the row ordered list and the column ordered list are prepared to
 c begin step i of the elimination.
 c
+  340 ha(i,j)=r3
   350 r9=rr4-rr3
       do 360 rr=rr3,rr4
       if(snr(rr).eq.i)go to 370
@@ -294,10 +294,10 @@ c
       a(l)=td
       td1=abs(td)
       if(td1.gt.aflag(7))aflag(7)=td1
-      if(td1.gt.aflag(2))go to 450
 c
 c  too small element is created.remove it from the lists.
 c
+      if(td1.gt.aflag(2))go to 450
       zz=zz-1
       a(l)=a(rr1)
       snr(l)=snr(rr1)
@@ -344,13 +344,13 @@ c
       if(snr(i1-1).eq.0)go to 600
   490 if(rr2.eq.nn)go to 500
       if(snr(rr2+1).eq.0)go to 580
-  500 r10=nn-lfr
 c
 c  collection in row ordered list.
 c
+  500 r10=nn-lfr
       if(r10.ge.r4)go to 560
       iflag(6)=iflag(6)+1
-      do 520  jj=1,n
+      do 520 jj=1,n
       l1=ha(jj,3)
       if(l1.lt.ha(jj,1))go to 510
       ha(jj,3)=snr(l1)
@@ -359,7 +359,7 @@ c
   520 continue
       l3=0
       l4=1
-      do 550  jj=1,r4
+      do 550 jj=1,r4
       if(snr(jj).eq.0)go to 540
       l3=l3+1
       if(snr(jj).gt.0)go to 530
@@ -383,10 +383,10 @@ c
       r=rr3-1+j
       if(r10.ge.r4)go to 560
       ifail=5
-      go to 1110
 c
 c fill-in takes place in the row ordered list.
 c
+      go to 1110
   560 r8=lfr-1
       rr2=r4+lfr
       if(r8.le.0)go to 579
@@ -423,24 +423,24 @@ c
       td=abs(a(l1))
       if(td.gt.aflag(7))aflag(7)=td
       zz=zz+1
-      if(iflag(8).lt.zz)      iflag(8)=zz
+      if(iflag(8).lt.zz) iflag(8)=zz
       if(c2.eq.1)go to 620
       if(rnr(c2-1).eq.0)go to 720
   620 if(cr2.eq.nn1)go to 630
       if(rnr(cr2+1).eq.0)go to 700
-  630 r10=nn1-lfc
 c
 c  collection in column ordered list.
 c
+  630 r10=nn1-lfc
       if(r10.ge.r5)go to 680
       iflag(7)=iflag(7)+1
-      do 640  jj=i,n
+      do 640 jj=i,n
       l1=ha(jj,6)
       ha(jj,6)=rnr(l1)
   640 rnr(l1)=-jj
       l3=0
       l4=1
-      do 670  jj=1,r5
+      do 670 jj=1,r5
       if(rnr(jj).eq.0)go to 660
       l3=l3+1
       if(rnr(jj).gt.0)go to 650
@@ -462,10 +462,10 @@ c
       cr1=ha(r2,5)
       if(r10.ge.r5)go to 680
       ifail=6
-      go to 1110
 c
 c fill-in takes place in the column ordered list.
 c
+      go to 1110
   680 r8=lfc-1
       cr2=r5+lfc
       if(r8.le.0)go to 699
@@ -500,11 +500,11 @@ c
   750 continue
   669 if(rr1.le.rr2)go to 760
       ifail=7
-      go to 1110
 c
 c  update the information in the list where the rows are ordered by
 c  increasing numbers of the non-zero elements.
 c
+      go to 1110
   760 if(iflag(4).eq.2)go to 870
       if(iflag(3).eq.0)go to 870
       l1=rr2-rr1+1
@@ -588,10 +588,10 @@ c
       ifail=4
       go to 1110
   940 continue
-  950 continue
 c
 c  preparation to begin the back substitution.
 c
+  950 continue
       index=ha(n,2)
       pivot(n)=a(index)
       a(index)=0.0
