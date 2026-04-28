@@ -239,48 +239,6 @@ test_y12ma_5x5/fast:
 .PHONY : test_y12ma_5x5/fast
 
 # Convenience name for target.
-test/CMakeFiles/test_y12ma_output_params.dir/rule:
-	cd /home/runner/work/y12m/y12m/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test/CMakeFiles/test_y12ma_output_params.dir/rule
-.PHONY : test/CMakeFiles/test_y12ma_output_params.dir/rule
-
-# Convenience name for target.
-test_y12ma_output_params: test/CMakeFiles/test_y12ma_output_params.dir/rule
-.PHONY : test_y12ma_output_params
-
-# fast build rule for target.
-test_y12ma_output_params/fast:
-	cd /home/runner/work/y12m/y12m/build && $(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12ma_output_params.dir/build.make test/CMakeFiles/test_y12ma_output_params.dir/build
-.PHONY : test_y12ma_output_params/fast
-
-# Convenience name for target.
-test/CMakeFiles/test_y12m_errors.dir/rule:
-	cd /home/runner/work/y12m/y12m/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test/CMakeFiles/test_y12m_errors.dir/rule
-.PHONY : test/CMakeFiles/test_y12m_errors.dir/rule
-
-# Convenience name for target.
-test_y12m_errors: test/CMakeFiles/test_y12m_errors.dir/rule
-.PHONY : test_y12m_errors
-
-# fast build rule for target.
-test_y12m_errors/fast:
-	cd /home/runner/work/y12m/y12m/build && $(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12m_errors.dir/build.make test/CMakeFiles/test_y12m_errors.dir/build
-.PHONY : test_y12m_errors/fast
-
-# Convenience name for target.
-test/CMakeFiles/test_y12md_multi_rhs.dir/rule:
-	cd /home/runner/work/y12m/y12m/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test/CMakeFiles/test_y12md_multi_rhs.dir/rule
-.PHONY : test/CMakeFiles/test_y12md_multi_rhs.dir/rule
-
-# Convenience name for target.
-test_y12md_multi_rhs: test/CMakeFiles/test_y12md_multi_rhs.dir/rule
-.PHONY : test_y12md_multi_rhs
-
-# fast build rule for target.
-test_y12md_multi_rhs/fast:
-	cd /home/runner/work/y12m/y12m/build && $(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12md_multi_rhs.dir/build.make test/CMakeFiles/test_y12md_multi_rhs.dir/build
-.PHONY : test_y12md_multi_rhs/fast
-
-# Convenience name for target.
 test/CMakeFiles/test_y12mf_output_params.dir/rule:
 	cd /home/runner/work/y12m/y12m/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test/CMakeFiles/test_y12mf_output_params.dir/rule
 .PHONY : test/CMakeFiles/test_y12mf_output_params.dir/rule
@@ -307,30 +265,6 @@ y12m_solve: test/CMakeFiles/y12m_solve.dir/rule
 y12m_solve/fast:
 	cd /home/runner/work/y12m/y12m/build && $(MAKE) $(MAKESILENT) -f test/CMakeFiles/y12m_solve.dir/build.make test/CMakeFiles/y12m_solve.dir/build
 .PHONY : y12m_solve/fast
-
-test_y12m_errors.o: test_y12m_errors.f90.o
-.PHONY : test_y12m_errors.o
-
-# target to build an object file
-test_y12m_errors.f90.o:
-	cd /home/runner/work/y12m/y12m/build && $(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12m_errors.dir/build.make test/CMakeFiles/test_y12m_errors.dir/test_y12m_errors.f90.o
-.PHONY : test_y12m_errors.f90.o
-
-test_y12m_errors.i: test_y12m_errors.f90.i
-.PHONY : test_y12m_errors.i
-
-# target to preprocess a source file
-test_y12m_errors.f90.i:
-	cd /home/runner/work/y12m/y12m/build && $(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12m_errors.dir/build.make test/CMakeFiles/test_y12m_errors.dir/test_y12m_errors.f90.i
-.PHONY : test_y12m_errors.f90.i
-
-test_y12m_errors.s: test_y12m_errors.f90.s
-.PHONY : test_y12m_errors.s
-
-# target to generate assembly for a file
-test_y12m_errors.f90.s:
-	cd /home/runner/work/y12m/y12m/build && $(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12m_errors.dir/build.make test/CMakeFiles/test_y12m_errors.dir/test_y12m_errors.f90.s
-.PHONY : test_y12m_errors.f90.s
 
 test_y12ma_5x5.o: test_y12ma_5x5.f90.o
 .PHONY : test_y12ma_5x5.o
@@ -379,30 +313,6 @@ test_y12ma_dp.s: test_y12ma_dp.f90.s
 test_y12ma_dp.f90.s:
 	cd /home/runner/work/y12m/y12m/build && $(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12ma_dp.dir/build.make test/CMakeFiles/test_y12ma_dp.dir/test_y12ma_dp.f90.s
 .PHONY : test_y12ma_dp.f90.s
-
-test_y12ma_output_params.o: test_y12ma_output_params.f90.o
-.PHONY : test_y12ma_output_params.o
-
-# target to build an object file
-test_y12ma_output_params.f90.o:
-	cd /home/runner/work/y12m/y12m/build && $(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12ma_output_params.dir/build.make test/CMakeFiles/test_y12ma_output_params.dir/test_y12ma_output_params.f90.o
-.PHONY : test_y12ma_output_params.f90.o
-
-test_y12ma_output_params.i: test_y12ma_output_params.f90.i
-.PHONY : test_y12ma_output_params.i
-
-# target to preprocess a source file
-test_y12ma_output_params.f90.i:
-	cd /home/runner/work/y12m/y12m/build && $(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12ma_output_params.dir/build.make test/CMakeFiles/test_y12ma_output_params.dir/test_y12ma_output_params.f90.i
-.PHONY : test_y12ma_output_params.f90.i
-
-test_y12ma_output_params.s: test_y12ma_output_params.f90.s
-.PHONY : test_y12ma_output_params.s
-
-# target to generate assembly for a file
-test_y12ma_output_params.f90.s:
-	cd /home/runner/work/y12m/y12m/build && $(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12ma_output_params.dir/build.make test/CMakeFiles/test_y12ma_output_params.dir/test_y12ma_output_params.f90.s
-.PHONY : test_y12ma_output_params.f90.s
 
 test_y12ma_sp.o: test_y12ma_sp.f90.o
 .PHONY : test_y12ma_sp.o
@@ -499,30 +409,6 @@ test_y12mc_z_intent.s: test_y12mc_z_intent.f90.s
 test_y12mc_z_intent.f90.s:
 	cd /home/runner/work/y12m/y12m/build && $(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12mc_z_intent.dir/build.make test/CMakeFiles/test_y12mc_z_intent.dir/test_y12mc_z_intent.f90.s
 .PHONY : test_y12mc_z_intent.f90.s
-
-test_y12md_multi_rhs.o: test_y12md_multi_rhs.f90.o
-.PHONY : test_y12md_multi_rhs.o
-
-# target to build an object file
-test_y12md_multi_rhs.f90.o:
-	cd /home/runner/work/y12m/y12m/build && $(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12md_multi_rhs.dir/build.make test/CMakeFiles/test_y12md_multi_rhs.dir/test_y12md_multi_rhs.f90.o
-.PHONY : test_y12md_multi_rhs.f90.o
-
-test_y12md_multi_rhs.i: test_y12md_multi_rhs.f90.i
-.PHONY : test_y12md_multi_rhs.i
-
-# target to preprocess a source file
-test_y12md_multi_rhs.f90.i:
-	cd /home/runner/work/y12m/y12m/build && $(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12md_multi_rhs.dir/build.make test/CMakeFiles/test_y12md_multi_rhs.dir/test_y12md_multi_rhs.f90.i
-.PHONY : test_y12md_multi_rhs.f90.i
-
-test_y12md_multi_rhs.s: test_y12md_multi_rhs.f90.s
-.PHONY : test_y12md_multi_rhs.s
-
-# target to generate assembly for a file
-test_y12md_multi_rhs.f90.s:
-	cd /home/runner/work/y12m/y12m/build && $(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12md_multi_rhs.dir/build.make test/CMakeFiles/test_y12md_multi_rhs.dir/test_y12md_multi_rhs.f90.s
-.PHONY : test_y12md_multi_rhs.f90.s
 
 test_y12mf_output_params.o: test_y12mf_output_params.f90.o
 .PHONY : test_y12mf_output_params.o
@@ -629,31 +515,22 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... test"
-	@echo "... test_y12m_errors"
 	@echo "... test_y12ma_5x5"
 	@echo "... test_y12ma_dp"
-	@echo "... test_y12ma_output_params"
 	@echo "... test_y12ma_sp"
 	@echo "... test_y12mb_mc_md_dp"
 	@echo "... test_y12mb_mc_md_sp"
 	@echo "... test_y12mc_z_intent"
-	@echo "... test_y12md_multi_rhs"
 	@echo "... test_y12mf_output_params"
 	@echo "... test_y12mf_sp"
 	@echo "... test_y12mg_mh"
 	@echo "... y12m_solve"
-	@echo "... test_y12m_errors.o"
-	@echo "... test_y12m_errors.i"
-	@echo "... test_y12m_errors.s"
 	@echo "... test_y12ma_5x5.o"
 	@echo "... test_y12ma_5x5.i"
 	@echo "... test_y12ma_5x5.s"
 	@echo "... test_y12ma_dp.o"
 	@echo "... test_y12ma_dp.i"
 	@echo "... test_y12ma_dp.s"
-	@echo "... test_y12ma_output_params.o"
-	@echo "... test_y12ma_output_params.i"
-	@echo "... test_y12ma_output_params.s"
 	@echo "... test_y12ma_sp.o"
 	@echo "... test_y12ma_sp.i"
 	@echo "... test_y12ma_sp.s"
@@ -666,9 +543,6 @@ help:
 	@echo "... test_y12mc_z_intent.o"
 	@echo "... test_y12mc_z_intent.i"
 	@echo "... test_y12mc_z_intent.s"
-	@echo "... test_y12md_multi_rhs.o"
-	@echo "... test_y12md_multi_rhs.i"
-	@echo "... test_y12md_multi_rhs.s"
 	@echo "... test_y12mf_output_params.o"
 	@echo "... test_y12mf_output_params.i"
 	@echo "... test_y12mf_output_params.s"

@@ -10,9 +10,6 @@
 /home/runner/work/y12m/y12m/build/test/CMakeFiles/test_y12mg_mh.dir
 /home/runner/work/y12m/y12m/build/test/CMakeFiles/test_y12mc_z_intent.dir
 /home/runner/work/y12m/y12m/build/test/CMakeFiles/test_y12ma_5x5.dir
-/home/runner/work/y12m/y12m/build/test/CMakeFiles/test_y12ma_output_params.dir
-/home/runner/work/y12m/y12m/build/test/CMakeFiles/test_y12m_errors.dir
-/home/runner/work/y12m/y12m/build/test/CMakeFiles/test_y12md_multi_rhs.dir
 /home/runner/work/y12m/y12m/build/test/CMakeFiles/test_y12mf_output_params.dir
 /home/runner/work/y12m/y12m/build/test/CMakeFiles/y12m_solve.dir
 /home/runner/work/y12m/y12m/build/test/CMakeFiles/test.dir

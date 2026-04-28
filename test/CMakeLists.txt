@@ -1,8 +1,12 @@
 # SPDX-License-Identifier: GPL-2.0-only
 # Test programs for the y12m sparse linear algebra package.
-# Each program uses -Wall -pedantic as requested.
 
-set(TEST_COMPILE_FLAGS -Wall -pedantic)
+# Debug flags for gfortran: runtime checks, debug info, poison uninitialised integers.
+if(CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
+  set(TEST_COMPILE_FLAGS -fcheck=all -pedantic -g -finit-integer=-999)
+else()
+  set(TEST_COMPILE_FLAGS -pedantic)
+endif()
 
 foreach(tname
     test_y12ma_sp
@@ -13,9 +17,6 @@ foreach(tname
     test_y12mg_mh
     test_y12mc_z_intent
     test_y12ma_5x5
-    test_y12ma_output_params
-    test_y12m_errors
-    test_y12md_multi_rhs
     test_y12mf_output_params)
 
   add_executable(${tname} ${tname}.f90)

@@ -244,45 +244,6 @@ test_y12ma_5x5/fast:
 .PHONY : test_y12ma_5x5/fast
 
 #=============================================================================
-# Target rules for targets named test_y12ma_output_params
-
-# Build rule for target.
-test_y12ma_output_params: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test_y12ma_output_params
-.PHONY : test_y12ma_output_params
-
-# fast build rule for target.
-test_y12ma_output_params/fast:
-	$(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12ma_output_params.dir/build.make test/CMakeFiles/test_y12ma_output_params.dir/build
-.PHONY : test_y12ma_output_params/fast
-
-#=============================================================================
-# Target rules for targets named test_y12m_errors
-
-# Build rule for target.
-test_y12m_errors: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test_y12m_errors
-.PHONY : test_y12m_errors
-
-# fast build rule for target.
-test_y12m_errors/fast:
-	$(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12m_errors.dir/build.make test/CMakeFiles/test_y12m_errors.dir/build
-.PHONY : test_y12m_errors/fast
-
-#=============================================================================
-# Target rules for targets named test_y12md_multi_rhs
-
-# Build rule for target.
-test_y12md_multi_rhs: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test_y12md_multi_rhs
-.PHONY : test_y12md_multi_rhs
-
-# fast build rule for target.
-test_y12md_multi_rhs/fast:
-	$(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12md_multi_rhs.dir/build.make test/CMakeFiles/test_y12md_multi_rhs.dir/build
-.PHONY : test_y12md_multi_rhs/fast
-
-#=============================================================================
 # Target rules for targets named test_y12mf_output_params
 
 # Build rule for target.
@@ -764,15 +725,12 @@ help:
 	@echo "... test1"
 	@echo "... test2"
 	@echo "... test_matrix_generators"
-	@echo "... test_y12m_errors"
 	@echo "... test_y12ma_5x5"
 	@echo "... test_y12ma_dp"
-	@echo "... test_y12ma_output_params"
 	@echo "... test_y12ma_sp"
 	@echo "... test_y12mb_mc_md_dp"
 	@echo "... test_y12mb_mc_md_sp"
 	@echo "... test_y12mc_z_intent"
-	@echo "... test_y12md_multi_rhs"
 	@echo "... test_y12mf_output_params"
 	@echo "... test_y12mf_sp"
 	@echo "... test_y12mg_mh"

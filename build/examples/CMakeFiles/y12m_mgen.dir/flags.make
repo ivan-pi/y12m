@@ -6,5 +6,5 @@ Fortran_DEFINES =
 
 Fortran_INCLUDES = -I/home/runner/work/y12m/y12m/build/include
 
-Fortran_FLAGS = -g -Jinclude
+Fortran_FLAGS = -Jinclude
 

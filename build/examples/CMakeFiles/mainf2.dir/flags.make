@@ -6,5 +6,5 @@ Fortran_DEFINES =
 
 Fortran_INCLUDES = -I/home/runner/work/y12m/y12m/build/include -I/home/runner/work/y12m/y12m/build/examples/include
 
-Fortran_FLAGS = -g -Wall -pedantic
+Fortran_FLAGS = -Wall -pedantic
 

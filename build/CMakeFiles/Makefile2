@@ -137,9 +137,6 @@ test/all: test/CMakeFiles/test_y12mf_sp.dir/all
 test/all: test/CMakeFiles/test_y12mg_mh.dir/all
 test/all: test/CMakeFiles/test_y12mc_z_intent.dir/all
 test/all: test/CMakeFiles/test_y12ma_5x5.dir/all
-test/all: test/CMakeFiles/test_y12ma_output_params.dir/all
-test/all: test/CMakeFiles/test_y12m_errors.dir/all
-test/all: test/CMakeFiles/test_y12md_multi_rhs.dir/all
 test/all: test/CMakeFiles/test_y12mf_output_params.dir/all
 test/all: test/CMakeFiles/y12m_solve.dir/all
 .PHONY : test/all
@@ -153,9 +150,6 @@ test/codegen: test/CMakeFiles/test_y12mf_sp.dir/codegen
 test/codegen: test/CMakeFiles/test_y12mg_mh.dir/codegen
 test/codegen: test/CMakeFiles/test_y12mc_z_intent.dir/codegen
 test/codegen: test/CMakeFiles/test_y12ma_5x5.dir/codegen
-test/codegen: test/CMakeFiles/test_y12ma_output_params.dir/codegen
-test/codegen: test/CMakeFiles/test_y12m_errors.dir/codegen
-test/codegen: test/CMakeFiles/test_y12md_multi_rhs.dir/codegen
 test/codegen: test/CMakeFiles/test_y12mf_output_params.dir/codegen
 test/codegen: test/CMakeFiles/y12m_solve.dir/codegen
 .PHONY : test/codegen
@@ -173,9 +167,6 @@ test/clean: test/CMakeFiles/test_y12mf_sp.dir/clean
 test/clean: test/CMakeFiles/test_y12mg_mh.dir/clean
 test/clean: test/CMakeFiles/test_y12mc_z_intent.dir/clean
 test/clean: test/CMakeFiles/test_y12ma_5x5.dir/clean
-test/clean: test/CMakeFiles/test_y12ma_output_params.dir/clean
-test/clean: test/CMakeFiles/test_y12m_errors.dir/clean
-test/clean: test/CMakeFiles/test_y12md_multi_rhs.dir/clean
 test/clean: test/CMakeFiles/test_y12mf_output_params.dir/clean
 test/clean: test/CMakeFiles/y12m_solve.dir/clean
 .PHONY : test/clean
@@ -187,7 +178,7 @@ test/clean: test/CMakeFiles/y12m_solve.dir/clean
 CMakeFiles/y12m_legacy.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/y12m_legacy.dir/build.make CMakeFiles/y12m_legacy.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/y12m_legacy.dir/build.make CMakeFiles/y12m_legacy.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=39,40,41,42,43,44,45,46,47,48,49,50,51,52,53 "Built target y12m_legacy"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=33,34,35,36,37,38,39,40,41,42,43,44,45,46,47 "Built target y12m_legacy"
 .PHONY : CMakeFiles/y12m_legacy.dir/all
 
 # Build rule for subdir invocation for target.
@@ -204,7 +195,7 @@ y12m_legacy: CMakeFiles/y12m_legacy.dir/rule
 # codegen rule for target.
 CMakeFiles/y12m_legacy.dir/codegen:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/y12m_legacy.dir/build.make CMakeFiles/y12m_legacy.dir/codegen
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=39,40,41,42,43,44,45,46,47,48,49,50,51,52,53 "Finished codegen for target y12m_legacy"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=33,34,35,36,37,38,39,40,41,42,43,44,45,46,47 "Finished codegen for target y12m_legacy"
 .PHONY : CMakeFiles/y12m_legacy.dir/codegen
 
 # clean rule for target.
@@ -219,7 +210,7 @@ CMakeFiles/y12m_legacy.dir/clean:
 test/CMakeFiles/test_y12ma_sp.dir/all: CMakeFiles/y12m_legacy.dir/all
 	$(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12ma_sp.dir/build.make test/CMakeFiles/test_y12ma_sp.dir/depend
 	$(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12ma_sp.dir/build.make test/CMakeFiles/test_y12ma_sp.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=23,24 "Built target test_y12ma_sp"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=19,20 "Built target test_y12ma_sp"
 .PHONY : test/CMakeFiles/test_y12ma_sp.dir/all
 
 # Build rule for subdir invocation for target.
@@ -236,7 +227,7 @@ test_y12ma_sp: test/CMakeFiles/test_y12ma_sp.dir/rule
 # codegen rule for target.
 test/CMakeFiles/test_y12ma_sp.dir/codegen:
 	$(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12ma_sp.dir/build.make test/CMakeFiles/test_y12ma_sp.dir/codegen
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=23,24 "Finished codegen for target test_y12ma_sp"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=19,20 "Finished codegen for target test_y12ma_sp"
 .PHONY : test/CMakeFiles/test_y12ma_sp.dir/codegen
 
 # clean rule for target.
@@ -251,7 +242,7 @@ test/CMakeFiles/test_y12ma_sp.dir/clean:
 test/CMakeFiles/test_y12ma_dp.dir/all: CMakeFiles/y12m_legacy.dir/all
 	$(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12ma_dp.dir/build.make test/CMakeFiles/test_y12ma_dp.dir/depend
 	$(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12ma_dp.dir/build.make test/CMakeFiles/test_y12ma_dp.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=19,20 "Built target test_y12ma_dp"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=17,18 "Built target test_y12ma_dp"
 .PHONY : test/CMakeFiles/test_y12ma_dp.dir/all
 
 # Build rule for subdir invocation for target.
@@ -268,7 +259,7 @@ test_y12ma_dp: test/CMakeFiles/test_y12ma_dp.dir/rule
 # codegen rule for target.
 test/CMakeFiles/test_y12ma_dp.dir/codegen:
 	$(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12ma_dp.dir/build.make test/CMakeFiles/test_y12ma_dp.dir/codegen
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=19,20 "Finished codegen for target test_y12ma_dp"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=17,18 "Finished codegen for target test_y12ma_dp"
 .PHONY : test/CMakeFiles/test_y12ma_dp.dir/codegen
 
 # clean rule for target.
@@ -283,7 +274,7 @@ test/CMakeFiles/test_y12ma_dp.dir/clean:
 test/CMakeFiles/test_y12mb_mc_md_sp.dir/all: CMakeFiles/y12m_legacy.dir/all
 	$(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12mb_mc_md_sp.dir/build.make test/CMakeFiles/test_y12mb_mc_md_sp.dir/depend
 	$(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12mb_mc_md_sp.dir/build.make test/CMakeFiles/test_y12mb_mc_md_sp.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=27,28 "Built target test_y12mb_mc_md_sp"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=23,24 "Built target test_y12mb_mc_md_sp"
 .PHONY : test/CMakeFiles/test_y12mb_mc_md_sp.dir/all
 
 # Build rule for subdir invocation for target.
@@ -300,7 +291,7 @@ test_y12mb_mc_md_sp: test/CMakeFiles/test_y12mb_mc_md_sp.dir/rule
 # codegen rule for target.
 test/CMakeFiles/test_y12mb_mc_md_sp.dir/codegen:
 	$(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12mb_mc_md_sp.dir/build.make test/CMakeFiles/test_y12mb_mc_md_sp.dir/codegen
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=27,28 "Finished codegen for target test_y12mb_mc_md_sp"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=23,24 "Finished codegen for target test_y12mb_mc_md_sp"
 .PHONY : test/CMakeFiles/test_y12mb_mc_md_sp.dir/codegen
 
 # clean rule for target.
@@ -315,7 +306,7 @@ test/CMakeFiles/test_y12mb_mc_md_sp.dir/clean:
 test/CMakeFiles/test_y12mb_mc_md_dp.dir/all: CMakeFiles/y12m_legacy.dir/all
 	$(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12mb_mc_md_dp.dir/build.make test/CMakeFiles/test_y12mb_mc_md_dp.dir/depend
 	$(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12mb_mc_md_dp.dir/build.make test/CMakeFiles/test_y12mb_mc_md_dp.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=25,26 "Built target test_y12mb_mc_md_dp"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=21,22 "Built target test_y12mb_mc_md_dp"
 .PHONY : test/CMakeFiles/test_y12mb_mc_md_dp.dir/all
 
 # Build rule for subdir invocation for target.
@@ -332,7 +323,7 @@ test_y12mb_mc_md_dp: test/CMakeFiles/test_y12mb_mc_md_dp.dir/rule
 # codegen rule for target.
 test/CMakeFiles/test_y12mb_mc_md_dp.dir/codegen:
 	$(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12mb_mc_md_dp.dir/build.make test/CMakeFiles/test_y12mb_mc_md_dp.dir/codegen
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=25,26 "Finished codegen for target test_y12mb_mc_md_dp"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=21,22 "Finished codegen for target test_y12mb_mc_md_dp"
 .PHONY : test/CMakeFiles/test_y12mb_mc_md_dp.dir/codegen
 
 # clean rule for target.
@@ -347,7 +338,7 @@ test/CMakeFiles/test_y12mb_mc_md_dp.dir/clean:
 test/CMakeFiles/test_y12mf_sp.dir/all: CMakeFiles/y12m_legacy.dir/all
 	$(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12mf_sp.dir/build.make test/CMakeFiles/test_y12mf_sp.dir/depend
 	$(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12mf_sp.dir/build.make test/CMakeFiles/test_y12mf_sp.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=35,36 "Built target test_y12mf_sp"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=29,30 "Built target test_y12mf_sp"
 .PHONY : test/CMakeFiles/test_y12mf_sp.dir/all
 
 # Build rule for subdir invocation for target.
@@ -364,7 +355,7 @@ test_y12mf_sp: test/CMakeFiles/test_y12mf_sp.dir/rule
 # codegen rule for target.
 test/CMakeFiles/test_y12mf_sp.dir/codegen:
 	$(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12mf_sp.dir/build.make test/CMakeFiles/test_y12mf_sp.dir/codegen
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=35,36 "Finished codegen for target test_y12mf_sp"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=29,30 "Finished codegen for target test_y12mf_sp"
 .PHONY : test/CMakeFiles/test_y12mf_sp.dir/codegen
 
 # clean rule for target.
@@ -379,7 +370,7 @@ test/CMakeFiles/test_y12mf_sp.dir/clean:
 test/CMakeFiles/test_y12mg_mh.dir/all: CMakeFiles/y12m_legacy.dir/all
 	$(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12mg_mh.dir/build.make test/CMakeFiles/test_y12mg_mh.dir/depend
 	$(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12mg_mh.dir/build.make test/CMakeFiles/test_y12mg_mh.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=37,38 "Built target test_y12mg_mh"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=31,32 "Built target test_y12mg_mh"
 .PHONY : test/CMakeFiles/test_y12mg_mh.dir/all
 
 # Build rule for subdir invocation for target.
@@ -396,7 +387,7 @@ test_y12mg_mh: test/CMakeFiles/test_y12mg_mh.dir/rule
 # codegen rule for target.
 test/CMakeFiles/test_y12mg_mh.dir/codegen:
 	$(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12mg_mh.dir/build.make test/CMakeFiles/test_y12mg_mh.dir/codegen
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=37,38 "Finished codegen for target test_y12mg_mh"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=31,32 "Finished codegen for target test_y12mg_mh"
 .PHONY : test/CMakeFiles/test_y12mg_mh.dir/codegen
 
 # clean rule for target.
@@ -411,7 +402,7 @@ test/CMakeFiles/test_y12mg_mh.dir/clean:
 test/CMakeFiles/test_y12mc_z_intent.dir/all: CMakeFiles/y12m_legacy.dir/all
 	$(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12mc_z_intent.dir/build.make test/CMakeFiles/test_y12mc_z_intent.dir/depend
 	$(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12mc_z_intent.dir/build.make test/CMakeFiles/test_y12mc_z_intent.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=29,30 "Built target test_y12mc_z_intent"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=25,26 "Built target test_y12mc_z_intent"
 .PHONY : test/CMakeFiles/test_y12mc_z_intent.dir/all
 
 # Build rule for subdir invocation for target.
@@ -428,7 +419,7 @@ test_y12mc_z_intent: test/CMakeFiles/test_y12mc_z_intent.dir/rule
 # codegen rule for target.
 test/CMakeFiles/test_y12mc_z_intent.dir/codegen:
 	$(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12mc_z_intent.dir/build.make test/CMakeFiles/test_y12mc_z_intent.dir/codegen
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=29,30 "Finished codegen for target test_y12mc_z_intent"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=25,26 "Finished codegen for target test_y12mc_z_intent"
 .PHONY : test/CMakeFiles/test_y12mc_z_intent.dir/codegen
 
 # clean rule for target.
@@ -443,7 +434,7 @@ test/CMakeFiles/test_y12mc_z_intent.dir/clean:
 test/CMakeFiles/test_y12ma_5x5.dir/all: CMakeFiles/y12m_legacy.dir/all
 	$(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12ma_5x5.dir/build.make test/CMakeFiles/test_y12ma_5x5.dir/depend
 	$(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12ma_5x5.dir/build.make test/CMakeFiles/test_y12ma_5x5.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=17,18 "Built target test_y12ma_5x5"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=15,16 "Built target test_y12ma_5x5"
 .PHONY : test/CMakeFiles/test_y12ma_5x5.dir/all
 
 # Build rule for subdir invocation for target.
@@ -460,7 +451,7 @@ test_y12ma_5x5: test/CMakeFiles/test_y12ma_5x5.dir/rule
 # codegen rule for target.
 test/CMakeFiles/test_y12ma_5x5.dir/codegen:
 	$(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12ma_5x5.dir/build.make test/CMakeFiles/test_y12ma_5x5.dir/codegen
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=17,18 "Finished codegen for target test_y12ma_5x5"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=15,16 "Finished codegen for target test_y12ma_5x5"
 .PHONY : test/CMakeFiles/test_y12ma_5x5.dir/codegen
 
 # clean rule for target.
@@ -469,109 +460,13 @@ test/CMakeFiles/test_y12ma_5x5.dir/clean:
 .PHONY : test/CMakeFiles/test_y12ma_5x5.dir/clean
 
 #=============================================================================
-# Target rules for target test/CMakeFiles/test_y12ma_output_params.dir
-
-# All Build rule for target.
-test/CMakeFiles/test_y12ma_output_params.dir/all: CMakeFiles/y12m_legacy.dir/all
-	$(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12ma_output_params.dir/build.make test/CMakeFiles/test_y12ma_output_params.dir/depend
-	$(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12ma_output_params.dir/build.make test/CMakeFiles/test_y12ma_output_params.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=21,22 "Built target test_y12ma_output_params"
-.PHONY : test/CMakeFiles/test_y12ma_output_params.dir/all
-
-# Build rule for subdir invocation for target.
-test/CMakeFiles/test_y12ma_output_params.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/runner/work/y12m/y12m/build/CMakeFiles 17
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test/CMakeFiles/test_y12ma_output_params.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/runner/work/y12m/y12m/build/CMakeFiles 0
-.PHONY : test/CMakeFiles/test_y12ma_output_params.dir/rule
-
-# Convenience name for target.
-test_y12ma_output_params: test/CMakeFiles/test_y12ma_output_params.dir/rule
-.PHONY : test_y12ma_output_params
-
-# codegen rule for target.
-test/CMakeFiles/test_y12ma_output_params.dir/codegen:
-	$(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12ma_output_params.dir/build.make test/CMakeFiles/test_y12ma_output_params.dir/codegen
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=21,22 "Finished codegen for target test_y12ma_output_params"
-.PHONY : test/CMakeFiles/test_y12ma_output_params.dir/codegen
-
-# clean rule for target.
-test/CMakeFiles/test_y12ma_output_params.dir/clean:
-	$(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12ma_output_params.dir/build.make test/CMakeFiles/test_y12ma_output_params.dir/clean
-.PHONY : test/CMakeFiles/test_y12ma_output_params.dir/clean
-
-#=============================================================================
-# Target rules for target test/CMakeFiles/test_y12m_errors.dir
-
-# All Build rule for target.
-test/CMakeFiles/test_y12m_errors.dir/all: CMakeFiles/y12m_legacy.dir/all
-	$(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12m_errors.dir/build.make test/CMakeFiles/test_y12m_errors.dir/depend
-	$(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12m_errors.dir/build.make test/CMakeFiles/test_y12m_errors.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=15,16 "Built target test_y12m_errors"
-.PHONY : test/CMakeFiles/test_y12m_errors.dir/all
-
-# Build rule for subdir invocation for target.
-test/CMakeFiles/test_y12m_errors.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/runner/work/y12m/y12m/build/CMakeFiles 17
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test/CMakeFiles/test_y12m_errors.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/runner/work/y12m/y12m/build/CMakeFiles 0
-.PHONY : test/CMakeFiles/test_y12m_errors.dir/rule
-
-# Convenience name for target.
-test_y12m_errors: test/CMakeFiles/test_y12m_errors.dir/rule
-.PHONY : test_y12m_errors
-
-# codegen rule for target.
-test/CMakeFiles/test_y12m_errors.dir/codegen:
-	$(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12m_errors.dir/build.make test/CMakeFiles/test_y12m_errors.dir/codegen
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=15,16 "Finished codegen for target test_y12m_errors"
-.PHONY : test/CMakeFiles/test_y12m_errors.dir/codegen
-
-# clean rule for target.
-test/CMakeFiles/test_y12m_errors.dir/clean:
-	$(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12m_errors.dir/build.make test/CMakeFiles/test_y12m_errors.dir/clean
-.PHONY : test/CMakeFiles/test_y12m_errors.dir/clean
-
-#=============================================================================
-# Target rules for target test/CMakeFiles/test_y12md_multi_rhs.dir
-
-# All Build rule for target.
-test/CMakeFiles/test_y12md_multi_rhs.dir/all: CMakeFiles/y12m_legacy.dir/all
-	$(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12md_multi_rhs.dir/build.make test/CMakeFiles/test_y12md_multi_rhs.dir/depend
-	$(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12md_multi_rhs.dir/build.make test/CMakeFiles/test_y12md_multi_rhs.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=31,32 "Built target test_y12md_multi_rhs"
-.PHONY : test/CMakeFiles/test_y12md_multi_rhs.dir/all
-
-# Build rule for subdir invocation for target.
-test/CMakeFiles/test_y12md_multi_rhs.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/runner/work/y12m/y12m/build/CMakeFiles 17
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test/CMakeFiles/test_y12md_multi_rhs.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/runner/work/y12m/y12m/build/CMakeFiles 0
-.PHONY : test/CMakeFiles/test_y12md_multi_rhs.dir/rule
-
-# Convenience name for target.
-test_y12md_multi_rhs: test/CMakeFiles/test_y12md_multi_rhs.dir/rule
-.PHONY : test_y12md_multi_rhs
-
-# codegen rule for target.
-test/CMakeFiles/test_y12md_multi_rhs.dir/codegen:
-	$(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12md_multi_rhs.dir/build.make test/CMakeFiles/test_y12md_multi_rhs.dir/codegen
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=31,32 "Finished codegen for target test_y12md_multi_rhs"
-.PHONY : test/CMakeFiles/test_y12md_multi_rhs.dir/codegen
-
-# clean rule for target.
-test/CMakeFiles/test_y12md_multi_rhs.dir/clean:
-	$(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12md_multi_rhs.dir/build.make test/CMakeFiles/test_y12md_multi_rhs.dir/clean
-.PHONY : test/CMakeFiles/test_y12md_multi_rhs.dir/clean
-
-#=============================================================================
 # Target rules for target test/CMakeFiles/test_y12mf_output_params.dir
 
 # All Build rule for target.
 test/CMakeFiles/test_y12mf_output_params.dir/all: CMakeFiles/y12m_legacy.dir/all
 	$(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12mf_output_params.dir/build.make test/CMakeFiles/test_y12mf_output_params.dir/depend
 	$(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12mf_output_params.dir/build.make test/CMakeFiles/test_y12mf_output_params.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=33,34 "Built target test_y12mf_output_params"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=27,28 "Built target test_y12mf_output_params"
 .PHONY : test/CMakeFiles/test_y12mf_output_params.dir/all
 
 # Build rule for subdir invocation for target.
@@ -588,7 +483,7 @@ test_y12mf_output_params: test/CMakeFiles/test_y12mf_output_params.dir/rule
 # codegen rule for target.
 test/CMakeFiles/test_y12mf_output_params.dir/codegen:
 	$(MAKE) $(MAKESILENT) -f test/CMakeFiles/test_y12mf_output_params.dir/build.make test/CMakeFiles/test_y12mf_output_params.dir/codegen
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=33,34 "Finished codegen for target test_y12mf_output_params"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=27,28 "Finished codegen for target test_y12mf_output_params"
 .PHONY : test/CMakeFiles/test_y12mf_output_params.dir/codegen
 
 # clean rule for target.
@@ -603,7 +498,7 @@ test/CMakeFiles/test_y12mf_output_params.dir/clean:
 test/CMakeFiles/y12m_solve.dir/all: CMakeFiles/y12m_legacy.dir/all
 	$(MAKE) $(MAKESILENT) -f test/CMakeFiles/y12m_solve.dir/build.make test/CMakeFiles/y12m_solve.dir/depend
 	$(MAKE) $(MAKESILENT) -f test/CMakeFiles/y12m_solve.dir/build.make test/CMakeFiles/y12m_solve.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=55,56 "Built target y12m_solve"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=49,50 "Built target y12m_solve"
 .PHONY : test/CMakeFiles/y12m_solve.dir/all
 
 # Build rule for subdir invocation for target.
@@ -620,7 +515,7 @@ y12m_solve: test/CMakeFiles/y12m_solve.dir/rule
 # codegen rule for target.
 test/CMakeFiles/y12m_solve.dir/codegen:
 	$(MAKE) $(MAKESILENT) -f test/CMakeFiles/y12m_solve.dir/build.make test/CMakeFiles/y12m_solve.dir/codegen
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=55,56 "Finished codegen for target y12m_solve"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=49,50 "Finished codegen for target y12m_solve"
 .PHONY : test/CMakeFiles/y12m_solve.dir/codegen
 
 # clean rule for target.
@@ -699,7 +594,7 @@ examples/CMakeFiles/test2.dir/clean:
 examples/CMakeFiles/y12m_mgen.dir/all: CMakeFiles/y12m_legacy.dir/all
 	$(MAKE) $(MAKESILENT) -f examples/CMakeFiles/y12m_mgen.dir/build.make examples/CMakeFiles/y12m_mgen.dir/depend
 	$(MAKE) $(MAKESILENT) -f examples/CMakeFiles/y12m_mgen.dir/build.make examples/CMakeFiles/y12m_mgen.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=54 "Built target y12m_mgen"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=48 "Built target y12m_mgen"
 .PHONY : examples/CMakeFiles/y12m_mgen.dir/all
 
 # Build rule for subdir invocation for target.
@@ -716,7 +611,7 @@ y12m_mgen: examples/CMakeFiles/y12m_mgen.dir/rule
 # codegen rule for target.
 examples/CMakeFiles/y12m_mgen.dir/codegen:
 	$(MAKE) $(MAKESILENT) -f examples/CMakeFiles/y12m_mgen.dir/build.make examples/CMakeFiles/y12m_mgen.dir/codegen
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=54 "Finished codegen for target y12m_mgen"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=48 "Finished codegen for target y12m_mgen"
 .PHONY : examples/CMakeFiles/y12m_mgen.dir/codegen
 
 # clean rule for target.
@@ -728,8 +623,8 @@ examples/CMakeFiles/y12m_mgen.dir/clean:
 # Target rules for target examples/CMakeFiles/maine.dir
 
 # All Build rule for target.
-examples/CMakeFiles/maine.dir/all: CMakeFiles/y12m_legacy.dir/all
 examples/CMakeFiles/maine.dir/all: examples/CMakeFiles/y12m_mgen.dir/all
+examples/CMakeFiles/maine.dir/all: CMakeFiles/y12m_legacy.dir/all
 	$(MAKE) $(MAKESILENT) -f examples/CMakeFiles/maine.dir/build.make examples/CMakeFiles/maine.dir/depend
 	$(MAKE) $(MAKESILENT) -f examples/CMakeFiles/maine.dir/build.make examples/CMakeFiles/maine.dir/build
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=3,4 "Built target maine"
@@ -761,8 +656,8 @@ examples/CMakeFiles/maine.dir/clean:
 # Target rules for target examples/CMakeFiles/maind.dir
 
 # All Build rule for target.
-examples/CMakeFiles/maind.dir/all: CMakeFiles/y12m_legacy.dir/all
 examples/CMakeFiles/maind.dir/all: examples/CMakeFiles/y12m_mgen.dir/all
+examples/CMakeFiles/maind.dir/all: CMakeFiles/y12m_legacy.dir/all
 	$(MAKE) $(MAKESILENT) -f examples/CMakeFiles/maind.dir/build.make examples/CMakeFiles/maind.dir/depend
 	$(MAKE) $(MAKESILENT) -f examples/CMakeFiles/maind.dir/build.make examples/CMakeFiles/maind.dir/build
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=1,2 "Built target maind"
@@ -794,8 +689,8 @@ examples/CMakeFiles/maind.dir/clean:
 # Target rules for target examples/CMakeFiles/mainf.dir
 
 # All Build rule for target.
-examples/CMakeFiles/mainf.dir/all: CMakeFiles/y12m_legacy.dir/all
 examples/CMakeFiles/mainf.dir/all: examples/CMakeFiles/y12m_mgen.dir/all
+examples/CMakeFiles/mainf.dir/all: CMakeFiles/y12m_legacy.dir/all
 	$(MAKE) $(MAKESILENT) -f examples/CMakeFiles/mainf.dir/build.make examples/CMakeFiles/mainf.dir/depend
 	$(MAKE) $(MAKESILENT) -f examples/CMakeFiles/mainf.dir/build.make examples/CMakeFiles/mainf.dir/build
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=5,6 "Built target mainf"
@@ -827,8 +722,8 @@ examples/CMakeFiles/mainf.dir/clean:
 # Target rules for target examples/CMakeFiles/mainf2.dir
 
 # All Build rule for target.
-examples/CMakeFiles/mainf2.dir/all: CMakeFiles/y12m_legacy.dir/all
 examples/CMakeFiles/mainf2.dir/all: examples/CMakeFiles/y12m_mgen.dir/all
+examples/CMakeFiles/mainf2.dir/all: CMakeFiles/y12m_legacy.dir/all
 	$(MAKE) $(MAKESILENT) -f examples/CMakeFiles/mainf2.dir/build.make examples/CMakeFiles/mainf2.dir/depend
 	$(MAKE) $(MAKESILENT) -f examples/CMakeFiles/mainf2.dir/build.make examples/CMakeFiles/mainf2.dir/build
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=7,8 "Built target mainf2"
@@ -860,8 +755,8 @@ examples/CMakeFiles/mainf2.dir/clean:
 # Target rules for target examples/CMakeFiles/test_matrix_generators.dir
 
 # All Build rule for target.
-examples/CMakeFiles/test_matrix_generators.dir/all: CMakeFiles/y12m_legacy.dir/all
 examples/CMakeFiles/test_matrix_generators.dir/all: examples/CMakeFiles/y12m_mgen.dir/all
+examples/CMakeFiles/test_matrix_generators.dir/all: CMakeFiles/y12m_legacy.dir/all
 	$(MAKE) $(MAKESILENT) -f examples/CMakeFiles/test_matrix_generators.dir/build.make examples/CMakeFiles/test_matrix_generators.dir/depend
 	$(MAKE) $(MAKESILENT) -f examples/CMakeFiles/test_matrix_generators.dir/build.make examples/CMakeFiles/test_matrix_generators.dir/build
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/runner/work/y12m/y12m/build/CMakeFiles --progress-num=13,14 "Built target test_matrix_generators"
