@@ -61,7 +61,7 @@ contains
    !>
    !> Pattern (square, m = n):
    !>   a(i,i)                               = 1      (diagonal)
-   !>   a(i, (c+i+j-2 mod n)+1) = (-1)^j*j*i         (j = 1..r-1)
+   !>   a(i, mod(c+i+j-2, n)+1) = (-1)^j*j*i          (j = 1..r-1)
    !>   a(1..10, n-9..n)        = alpha * col          (upper-right triangle)
    !>   a(n-9..n, 1..10)        = (1/alpha) * values   (lower-left triangle)
    !>
@@ -71,7 +71,8 @@ contains
       integer,  intent(in) :: n, c, r
       real(dp), intent(in) :: alpha
 
-      integer :: i, j, j1, rr1, rr2, rr3, nz, index1
+      integer  :: i, j, j1, rr1, rr2, rr3, nz, index1
+      real(dp) :: alpha_inv
 
       self%n     = n
       self%r     = r
@@ -134,9 +135,10 @@ contains
       ! Dense triangular block in the lower-left corner (rows n-9..n, 55 entries)
       rr1 = 1
       rr2 = nz
+      alpha_inv = 1.0_dp / alpha
       do
          do i = 1, rr1
-            self%a(rr2 + i)   = (1.0_dp / alpha) * real(rr1 + 1 - i, dp)
+            self%a(rr2 + i)   = alpha_inv * real(rr1 + 1 - i, dp)
             self%snr(rr2 + i) = i
             self%rnr(rr2 + i) = n - 10 + rr1
          end do
@@ -338,7 +340,7 @@ contains
          select case (trim(arg))
          case ('--help', '-h')
             call print_help()
-            stop
+            stop 0
 
          case ('-n')
             i = i + 1
