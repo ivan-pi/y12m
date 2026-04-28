@@ -10,6 +10,7 @@ foreach(tname
     test_y12mb_mc_md_sp
     test_y12mb_mc_md_dp
     test_y12mf_sp
+    test_y12mf_errors
     test_y12mg_mh)
 
   add_executable(${tname} ${tname}.f90)
