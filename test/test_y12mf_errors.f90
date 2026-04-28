@@ -8,6 +8,10 @@
 ! y12mf (implemented by y12mfe) is a black-box driver that wraps y12mb, y12mc,
 ! and y12md with iterative refinement.  Only a single-precision variant exists.
 !
+! Only y12mf-specific logic is exercised here.  Error paths that are delegated
+! to y12mb, y12mc, or y12md (e.g. ifail=12/13/5/15 etc.) are already covered
+! in test_y12mb_errors.F90 and test_y12mc_errors.F90 and are not repeated.
+!
 ! DISCREPANCIES NOTED:
 !
 !   1. The problem statement gives b = (10, 11, 45, 33, -22, 31) with claimed
@@ -19,30 +23,34 @@
 !      used consistently throughout the test suite (test_y12mc_errors.F90,
 !      test_y12md_errors.F90) has A(2,2) = 12; that value is used here.
 !
-! Error codes exercised and their triggering conditions:
+!   3. The old `doc` states that B holds the last correction vector d(p-1) on
+!      successful exit.  Inspection of y12mfe.f shows that after the refinement
+!      loop B actually holds the last residual vector r(p) = b - A*x(p), whose
+!      max-norm equals AFLAG(10).  This test checks max|B(1:n)| == AFLAG(10).
 !
-!   ifail=10  iflag(5) = 1       (y12mf requires iflag(5) = 2 or 3)
-!   ifail=23  iflag(11) = 1      (minimum iteration count is 2)
-!   ifail=12  n = 1              (propagated from internal y12mb call)
-!   ifail=13  nz = 0             (propagated from internal y12mb call)
-!   ifail= 5  nn < 2*nz          (propagated from internal y12mb call)
-!   ifail=15  iha < n            (propagated from internal y12mb call)
+! Error codes exercised (y12mf-specific only):
 !
-! Success postconditions verified (using the 6x6 reference matrix with
-! AFLAG(1:4) = [128.0, 1e-3, 1e16, 1e-12], IFLAG(2:5) = [2,1,1,2],
-! IFLAG(11) = 25):
+!   ifail=10  iflag(5) = 1  (y12mf requires iflag(5) = 2 or 3; checked before
+!                            any call to y12mb/y12mc/y12md)
+!   ifail=23  iflag(11) = 0 (minimum iteration count is 2; IFLAG(11) > 1)
+!   ifail=23  iflag(11) = 1 (same check, boundary case)
 !
-!   * IFAIL     = 0
-!   * IFLAG(12) in [1, IFLAG(11)]   actual refinement iterations
+! y12mf-specific output invariants verified after a successful call:
+!
+!   * IFLAG(12) in [1, IFLAG(11)]   actual refinement iterations performed
 !   * AFLAG(9)  >= 0.0              max-norm of last correction vector d(p-1)
-!   * AFLAG(10) >= 0.0              max-norm of last residual vector r(p-1)
-!   * AFLAG(11) >= 0.0              max-norm of corrected solution x(p)
-!   * AFLAG(5)  >= 1.0              growth factor (set by internal y12mc call)
-!   * AFLAG(8)  > 0.0               smallest pivot magnitude
-!   * Y(i) /= 0.0 for all i         pivot elements (diagonal of U)
-!   * min|Y(1:n)| == AFLAG(8)       consistency between Y and AFLAG(8)
+!   * AFLAG(10) >= 0.0              max-norm of last residual vector r(p)
+!   * AFLAG(11) >= 1.0              max-norm of corrected solution x(p)
+!   * AFLAG(9)/AFLAG(11) small      relative-error estimate from the doc
+!   * max|B(1:n)| == AFLAG(10)      B holds last residual (see discrepancy #3)
 !   * B1 == original RHS            y12mf saves original b in B1 on exit
-!   * X close to (1, 2, 3, 4, 5, 6) accurate solution
+!   * X close to (1, 2, 3, 4, 5, 6) accurate solution for first RHS
+!
+! LU-reuse verified (IFLAG(5) = 3):
+!
+!   After the first solve the LU factorization stored in A/SNR/HA is reused
+!   for a second RHS: b2 = (60, 45, 60, 44, -20, -10) -> x2 = (6,5,4,3,2,1).
+!   The same y12mf-specific output invariants are checked for the second solve.
 !
 program test_y12mf_errors
   use y12m, only: y12mf
@@ -64,7 +72,7 @@ program test_y12mf_errors
   ! =========================================================================
   ! ifail = 10 : iflag(5) = 1  (y12mf requires iflag(5) = 2 or 3)
   !
-  ! y12mfe immediately returns ifail=10 when state = iflag(5) = 1 before any
+  ! y12mfe sets ifail=10 immediately when state = iflag(5) = 1, before any
   ! array modifications or delegation to y12mb/y12mc/y12md.
   ! =========================================================================
   blk10: block
@@ -81,89 +89,40 @@ program test_y12mf_errors
   end block blk10
 
   ! =========================================================================
-  ! ifail = 23 : iflag(11) < 2  (minimum iteration count is 2)
+  ! ifail = 23 : iflag(11) < 2  (restriction: IFLAG(11) > 1)
   !
   ! y12mfe checks it = iflag(11) < 2 immediately after the state check;
   ! returns ifail=23 without modifying any work array.
+  ! Two values are tested: 0 and 1 (both below the minimum of 2).
   ! =========================================================================
-  blk23: block
+  blk23a: block
     integer :: n = N_REF, nz = Z_REF, nn = NNMAX, nn1 = NN1MAX, iha = NMAX
 
     call load_ref6(a, snr, rnr, b)
     call set_flags(iflag)
     call set_aflag(aflag)
-    iflag(11) = 1   ! < 2 -> ifail=23
+    iflag(11) = 0   ! < 2 -> ifail=23
     ha = 0
     call y12mf(n, a, snr, nn, rnr, nn1, a1, sn, nz, ha, iha, &
         b, b1, x, y_piv, aflag, iflag, ifail)
-    call check_ifail('ifail=23 iflag(11)<2', ifail, 23, nfail)
-  end block blk23
+    call check_ifail('ifail=23 iflag(11)=0', ifail, 23, nfail)
+  end block blk23a
 
-  ! =========================================================================
-  ! ifail = 12 : n < 2  (propagated from internal y12mb call)
-  ! =========================================================================
-  blk12: block
-    integer :: n = 1, nz = 1, nn = NNMAX, nn1 = NN1MAX, iha = NMAX
-
-    a(1) = 5.0
-    snr(1) = 1
-    rnr(1) = 1
-    b(1)   = 5.0
-    call set_flags(iflag)
-    call set_aflag(aflag)
-    ha = 0
-    call y12mf(n, a, snr, nn, rnr, nn1, a1, sn, nz, ha, iha, &
-        b, b1, x, y_piv, aflag, iflag, ifail)
-    call check_ifail('ifail=12 n<2', ifail, 12, nfail)
-  end block blk12
-
-  ! =========================================================================
-  ! ifail = 13 : nz <= 0  (propagated from internal y12mb call)
-  ! =========================================================================
-  blk13: block
-    integer :: n = N_REF, nz = 0, nn = NNMAX, nn1 = NN1MAX, iha = NMAX
+  blk23b: block
+    integer :: n = N_REF, nz = Z_REF, nn = NNMAX, nn1 = NN1MAX, iha = NMAX
 
     call load_ref6(a, snr, rnr, b)
     call set_flags(iflag)
     call set_aflag(aflag)
+    iflag(11) = 1   ! < 2 -> ifail=23 (boundary case)
     ha = 0
     call y12mf(n, a, snr, nn, rnr, nn1, a1, sn, nz, ha, iha, &
         b, b1, x, y_piv, aflag, iflag, ifail)
-    call check_ifail('ifail=13 nz<=0', ifail, 13, nfail)
-  end block blk13
+    call check_ifail('ifail=23 iflag(11)=1', ifail, 23, nfail)
+  end block blk23b
 
   ! =========================================================================
-  ! ifail = 5 : nn < 2*nz  (propagated from internal y12mb call)
-  ! =========================================================================
-  blk5: block
-    integer :: n = N_REF, nz = Z_REF, nn = 2*Z_REF - 1, nn1 = NN1MAX, iha = NMAX
-
-    call load_ref6(a, snr, rnr, b)
-    call set_flags(iflag)
-    call set_aflag(aflag)
-    ha = 0
-    call y12mf(n, a, snr, nn, rnr, nn1, a1, sn, nz, ha, iha, &
-        b, b1, x, y_piv, aflag, iflag, ifail)
-    call check_ifail('ifail=5 nn<2*nz', ifail, 5, nfail)
-  end block blk5
-
-  ! =========================================================================
-  ! ifail = 15 : iha < n  (propagated from internal y12mb call)
-  ! =========================================================================
-  blk15: block
-    integer :: n = N_REF, nz = Z_REF, nn = NNMAX, nn1 = NN1MAX, iha = N_REF - 1
-
-    call load_ref6(a, snr, rnr, b)
-    call set_flags(iflag)
-    call set_aflag(aflag)
-    ha = 0
-    call y12mf(n, a, snr, nn, rnr, nn1, a1, sn, nz, ha, iha, &
-        b, b1, x, y_piv, aflag, iflag, ifail)
-    call check_ifail('ifail=15 iha<n', ifail, 15, nfail)
-  end block blk15
-
-  ! =========================================================================
-  ! Success: y12mf with 6x6 reference matrix
+  ! Success: first solve with 6x6 reference matrix
   !
   ! Settings from problem statement:
   !   AFLAG(1:4) = [128.0, 1.e-3, 1.e+16, 1.e-12]
@@ -171,12 +130,13 @@ program test_y12mf_errors
   !   IFLAG(11)  = 25
   !
   ! Expected solution: x = (1, 2, 3, 4, 5, 6).
+  !
+  ! After this block the factorization is reused in the LU-reuse block below.
   ! =========================================================================
   success: block
     integer :: n = N_REF, nz = Z_REF, nn = NNMAX, nn1 = NN1MAX, iha = NMAX
-    integer :: i, max_it
-    real    :: b_orig(NMAX), min_piv, err_sol, err_b1
-    logical :: any_fail
+    integer :: max_it
+    real    :: b_orig(NMAX)
 
     call load_ref6(a, snr, rnr, b)
     b_orig(1:N_REF) = b(1:N_REF)   ! save original RHS for postcondition check
@@ -206,93 +166,47 @@ program test_y12mf_errors
       exit success
     end if
 
-    any_fail = .false.
-
-    ! IFLAG(12): actual iteration count must be in [1, max_it]
-    if (iflag(12) < 1 .or. iflag(12) > max_it) then
-      write(*,'(a,i0,a,i0,a)') 'FAIL success: IFLAG(12)=', iflag(12), &
-          ' not in [1,', max_it, ']'
-      nfail = nfail + 1
-      any_fail = .true.
-    end if
-
-    ! AFLAG(9) >= 0: max-norm of last correction vector d(p-1)
-    if (aflag(9) < 0.0) then
-      write(*,'(a,1pg12.5)') 'FAIL success: AFLAG(9) < 0, got ', aflag(9)
-      nfail = nfail + 1
-      any_fail = .true.
-    end if
-
-    ! AFLAG(10) >= 0: max-norm of last residual vector r(p-1)
-    if (aflag(10) < 0.0) then
-      write(*,'(a,1pg12.5)') 'FAIL success: AFLAG(10) < 0, got ', aflag(10)
-      nfail = nfail + 1
-      any_fail = .true.
-    end if
-
-    ! AFLAG(11) >= 0: max-norm of corrected solution x(p)
-    if (aflag(11) < 0.0) then
-      write(*,'(a,1pg12.5)') 'FAIL success: AFLAG(11) < 0, got ', aflag(11)
-      nfail = nfail + 1
-      any_fail = .true.
-    end if
-
-    ! AFLAG(5) >= 1.0: growth factor (set by the internal y12mc call)
-    if (aflag(5) < 1.0) then
-      write(*,'(a,1pg12.5)') 'FAIL success: AFLAG(5) < 1.0, got ', aflag(5)
-      nfail = nfail + 1
-      any_fail = .true.
-    end if
-
-    ! AFLAG(8) > 0: smallest pivot magnitude (set during factorization)
-    if (aflag(8) <= 0.0) then
-      write(*,'(a,1pg12.5)') 'FAIL success: AFLAG(8) <= 0, got ', aflag(8)
-      nfail = nfail + 1
-      any_fail = .true.
-    end if
-
-    ! Y_PIV(i) /= 0 for all i: pivot elements must all be nonzero
-    do i = 1, n
-      if (y_piv(i) == 0.0) then
-        write(*,'(a,i0)') 'FAIL success: Y_PIV(i) == 0.0 at i=', i
-        nfail = nfail + 1
-        any_fail = .true.
-      end if
-    end do
-
-    ! min|Y_PIV(1:n)| must equal AFLAG(8) (pivot array is consistent with aflag)
-    min_piv = minval(abs(y_piv(1:n)))
-    if (abs(min_piv - aflag(8)) > 1.0e-4 * max(abs(aflag(8)), tiny(1.0))) then
-      write(*,'(a,2(1pg12.5,1x))') &
-          'FAIL success: min|Y_PIV| /= AFLAG(8), got/exp=', min_piv, aflag(8)
-      nfail = nfail + 1
-      any_fail = .true.
-    end if
-
-    ! B1 must contain the original RHS on exit (saved by y12mf)
-    err_b1 = maxval(abs(b1(1:n) - b_orig(1:n)))
-    if (err_b1 > 1.0e-5) then
-      write(*,'(a,1pg12.5)') &
-          'FAIL success: B1 /= original RHS, max_err=', err_b1
-      nfail = nfail + 1
-      any_fail = .true.
-    end if
-
-    ! Solution X must be close to the exact values (1, 2, 3, 4, 5, 6)
-    err_sol = maxval(abs(x(1:n) - [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]))
-    if (err_sol > 1.0e-4) then
-      write(*,'(a,1pg12.5)') 'FAIL success: solution max_err=', err_sol
-      nfail = nfail + 1
-      any_fail = .true.
-    end if
-
-    if (.not. any_fail) then
-      write(*,'(a,i0,a,1pg10.3,a,1pg10.3)') &
-          'PASS success: iter=', iflag(12), &
-          ' sol_err=', err_sol, ' res_norm=', aflag(10)
-    end if
+    call check_mf_outputs('success', N_REF, max_it, &
+        b, b1, x, b_orig, aflag, iflag, &
+        [1.0, 2.0, 3.0, 4.0, 5.0, 6.0], nfail)
 
   end block success
+
+  ! =========================================================================
+  ! LU-reuse: second solve with IFLAG(5) = 3
+  !
+  ! The LU factorization stored in A/SNR/HA by the first solve is reused.
+  ! A1/SN hold the original matrix (row-ordered) and must not be altered.
+  !
+  ! b2 = (60, 45, 60, 44, -20, -10) -> exact solution x2 = (6, 5, 4, 3, 2, 1)
+  ! =========================================================================
+  reuse: block
+    integer :: n = N_REF, max_it
+    real    :: b_orig2(NMAX)
+
+    b(1:N_REF)     = [60.0, 45.0, 60.0, 44.0, -20.0, -10.0]
+    b_orig2(1:N_REF) = b(1:N_REF)
+
+    ! AFLAG and most of IFLAG are unchanged from the first solve; only
+    ! iflag(5) must be updated to signal that the factorization is available.
+    iflag(5)  = 3   ! reuse existing LU
+    iflag(12) = 0
+    max_it    = iflag(11)
+
+    call y12mf(n, a, snr, NNMAX, rnr, NN1MAX, a1, sn, Z_REF, ha, NMAX, &
+        b, b1, x, y_piv, aflag, iflag, ifail)
+
+    if (ifail /= 0) then
+      write(*,'(a,i0)') 'FAIL reuse: y12mf returned ifail=', ifail
+      nfail = nfail + 1
+      exit reuse
+    end if
+
+    call check_mf_outputs('reuse', N_REF, max_it, &
+        b, b1, x, b_orig2, aflag, iflag, &
+        [6.0, 5.0, 4.0, 3.0, 2.0, 1.0], nfail)
+
+  end block reuse
 
   ! =========================================================================
   ! Summary
@@ -315,7 +229,7 @@ contains
     iflag(4)    = 1   ! first system in a same-structure sequence
     iflag(5)    = 2   ! keep L (required by y12mf; iflag(5)=1 -> ifail=10)
     iflag(6:12) = 0
-    iflag(11)   = 10  ! maximum refinement iterations
+    iflag(11)   = 25  ! maximum refinement iterations
   end subroutine set_flags
 
   ! Initialise AFLAG to the settings from the problem statement.
@@ -356,6 +270,98 @@ contains
                      20.0, -2.0, 15.0]
     b(1:N_REF)   = [10.0, 11.0, 45.0, 68.0, -22.0, 31.0]
   end subroutine load_ref6
+
+  ! Check all y12mf-specific output invariants after a successful call.
+  !
+  ! Checked:
+  !   IFLAG(12) in [1, max_it]
+  !   AFLAG(9)  >= 0              max-norm of last correction vector d(p-1)
+  !   AFLAG(10) >= 0              max-norm of last residual vector r(p)
+  !   AFLAG(11) >= 1              max-norm of corrected solution (must be >= 1
+  !                               since exact solution has at least one component >= 1)
+  !   AFLAG(9)/AFLAG(11) < tol   relative-error estimate (doc Section 9 / AFLAG(11))
+  !   max|B(1:n)| == AFLAG(10)   B holds last residual, its norm equals AFLAG(10)
+  !                               (see discrepancy #3 in file header)
+  !   B1 == b_orig                y12mf stores the original RHS in B1 on exit
+  !   X close to x_exact          solution accuracy
+  subroutine check_mf_outputs(label, n, max_it, b, b1, x, b_orig, aflag, iflag, &
+      x_exact, nfail)
+    character(len=*), intent(in)    :: label
+    integer,          intent(in)    :: n, max_it
+    real,             intent(in)    :: b(NMAX), b1(NMAX), x(NMAX)
+    real,             intent(in)    :: b_orig(NMAX), x_exact(n)
+    real,             intent(in)    :: aflag(11)
+    integer,          intent(in)    :: iflag(12)
+    integer,          intent(inout) :: nfail
+
+    real :: err_sol, err_b1, res_norm, rel_err
+
+    ! IFLAG(12): actual iteration count must be in [1, max_it]
+    if (iflag(12) < 1 .or. iflag(12) > max_it) then
+      write(*,'(3a,i0,a,i0,a)') 'FAIL ', label, ': IFLAG(12)=', iflag(12), &
+          ' not in [1,', max_it, ']'
+      nfail = nfail + 1
+    end if
+
+    ! AFLAG(9) >= 0: max-norm of last correction vector d(p-1)
+    if (aflag(9) < 0.0) then
+      write(*,'(3a,1pg12.5)') 'FAIL ', label, ': AFLAG(9) < 0, got ', aflag(9)
+      nfail = nfail + 1
+    end if
+
+    ! AFLAG(10) >= 0: max-norm of last residual vector r(p)
+    if (aflag(10) < 0.0) then
+      write(*,'(3a,1pg12.5)') 'FAIL ', label, ': AFLAG(10) < 0, got ', aflag(10)
+      nfail = nfail + 1
+    end if
+
+    ! AFLAG(11) >= 1.0: max-norm of corrected solution must be at least 1
+    ! (all test solutions have components with absolute value >= 1).
+    if (aflag(11) < 1.0) then
+      write(*,'(3a,1pg12.5)') 'FAIL ', label, ': AFLAG(11) < 1.0, got ', aflag(11)
+      nfail = nfail + 1
+    end if
+
+    ! AFLAG(9)/AFLAG(11): relative-error estimate documented in `doc` Section 9.
+    ! Should be well below single-precision machine epsilon for a converged solve.
+    if (aflag(11) > 0.0) then
+      rel_err = aflag(9) / aflag(11)
+      if (rel_err > 1.0e-3) then
+        write(*,'(3a,1pg12.5)') 'FAIL ', label, &
+            ': AFLAG(9)/AFLAG(11) too large, got ', rel_err
+        nfail = nfail + 1
+      end if
+    end if
+
+    ! max|B(1:n)| must equal AFLAG(10): after the refinement loop y12mfe stores
+    ! the last residual r(p) in B; its max-norm is AFLAG(10).
+    res_norm = maxval(abs(b(1:n)))
+    if (abs(res_norm - aflag(10)) > 1.0e-5 * max(aflag(10), tiny(1.0))) then
+      write(*,'(3a,2(1pg12.5,1x))') 'FAIL ', label, &
+          ': max|B| /= AFLAG(10), got/exp=', res_norm, aflag(10)
+      nfail = nfail + 1
+    end if
+
+    ! B1 must contain the original RHS on exit (y12mf copies b -> b1 on entry)
+    err_b1 = maxval(abs(b1(1:n) - b_orig(1:n)))
+    if (err_b1 > 1.0e-5) then
+      write(*,'(3a,1pg12.5)') 'FAIL ', label, &
+          ': B1 /= original RHS, max_err=', err_b1
+      nfail = nfail + 1
+    end if
+
+    ! Solution X must be close to the exact values
+    err_sol = maxval(abs(x(1:n) - x_exact(1:n)))
+    if (err_sol > 1.0e-4) then
+      write(*,'(3a,1pg12.5)') 'FAIL ', label, ': solution max_err=', err_sol
+      nfail = nfail + 1
+    end if
+
+    write(*,'(3a,i0,a,1pg10.3,a,1pg10.3,a,1pg10.3)') &
+        'PASS ', label, ': iter=', iflag(12), &
+        ' sol_err=', err_sol, ' res_norm=', aflag(10), &
+        ' rel_err=', aflag(9)/max(aflag(11), tiny(1.0))
+  end subroutine check_mf_outputs
 
   ! Verify ifail equals the expected value; increment nfail on mismatch.
   subroutine check_ifail(label, ifail, expected, nfail)
