@@ -37,7 +37,7 @@ program test_y12ma_y12mf_bench_sp
   !   Known solution: x = [1, 2, 3, 4, 5].
   ! -----------------------------------------------------------------------
   call run_test('umfpack_5x5', &
-      n    = 5, &
+      n    = 5, nz = 12, &
       a0   = [2., 3., 3., -1., 4., 4., -3., 1., 2., 2., 6., 1.], &
       rnr0 = [1, 2, 1, 3, 5, 2, 3, 4, 5, 3, 2, 5], &
       snr0 = [1, 1, 2, 2, 2, 3, 3, 3, 3, 4, 5, 5], &
@@ -50,7 +50,7 @@ program test_y12ma_y12mf_bench_sp
   !   Known solution: x = [1, 1, 1, 1].
   ! -----------------------------------------------------------------------
   call run_test('harwell_boeing_4x4', &
-      n    = 4, &
+      n    = 4, nz = 10, &
       a0   = [1., 4., 6., 7., 8., 9., 11., 12., 14., 16.], &
       rnr0 = [1, 1, 2, 2, 2, 3, 3, 3, 4, 4], &
       snr0 = [1, 4, 2, 3, 4, 1, 3, 4, 2, 4], &
@@ -64,7 +64,7 @@ program test_y12ma_y12mf_bench_sp
   !   b = A * [1,...,1] = row sums, so x_expected = [1,...,1].
   ! -----------------------------------------------------------------------
   call run_test('pardiso_8x8', &
-      n    = 8, &
+      n    = 8, nz = 20, &
       a0   = [ 7.,  1.,  2.,  7., &
               -4.,  8.,  2., &
                1.,  5., &
@@ -86,7 +86,7 @@ program test_y12ma_y12mf_bench_sp
   !   b = A * [1,...,1] = row sums, so x_expected = [1,...,1].
   ! -----------------------------------------------------------------------
   call run_test('templates_6x6', &
-      n    = 6, &
+      n    = 6, nz = 19, &
       a0   = [10., -2., &
                3.,  9.,  3., &
                7.,  8.,  7., &
@@ -110,17 +110,17 @@ contains
   ! Run both y12ma (direct) and y12mf (iterative refinement) on the matrix
   ! described by the COO triplet (a0, rnr0, snr0) with right-hand side b0.
   ! Solutions are compared against xexp; failures increment nfail.
-  subroutine run_test(label, n, a0, rnr0, snr0, b0, xexp, nfail)
+  subroutine run_test(label, n, nz, a0, rnr0, snr0, b0, xexp, nfail)
     character(len=*), intent(in)    :: label
-    integer,          intent(in)    :: n
-    real,             intent(in)    :: a0(:), b0(n), xexp(n)
-    integer,          intent(in)    :: rnr0(:), snr0(:)
+    integer,          intent(in)    :: n, nz
+    real,             intent(in)    :: a0(nz), b0(n), xexp(n)
+    integer,          intent(in)    :: rnr0(nz), snr0(nz)
     integer,          intent(inout) :: nfail
 
     integer, parameter :: NNP  = 200
     integer, parameter :: NN1P = 200
 
-    integer :: nz, i, ifail
+    integer :: i, ifail
 
     ! y12ma workspace (11-column ha, 8-element aflag, 10-element iflag)
     real    :: a_ma(NNP), b_ma(n), pivot_ma(n), aflag_ma(8)
@@ -130,11 +130,9 @@ contains
     ! a1_mf and sn_mf preserve the original matrix values and column indices
     ! so that y12mf can compute residuals during iterative refinement.
     real    :: a_mf(NNP), b_mf(n), b1_mf(n), x_mf(n), y_mf(n), aflag_mf(11)
-    real    :: a1_mf(size(a0))
+    real    :: a1_mf(nz)
     integer :: snr_mf(NNP), rnr_mf(NN1P), ha_mf(n, 13), iflag_mf(12)
-    integer :: sn_mf(size(a0))
-
-    nz = size(a0)
+    integer :: sn_mf(nz)
 
     ! ---- y12ma: direct solve ----
     ! y12ma sets AFLAG(1-4) and IFLAG(2-5) internally; only IFLAG(1) matters.
