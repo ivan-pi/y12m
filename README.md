@@ -1,46 +1,145 @@
 # y12m
 
-Solution of Large and Sparse Systems of Linear Algebraic Equations
+Sparse direct solver for systems of linear equations **Ax = b**.  
+Sequential, in-core LU factorization with partial pivoting and Markowitz
+reordering.
 
-**Original version at Netlib:** http://www.netlib.org/y12m/
+> **Disclaimer:** This is a modified version of the Y12M library originally
+> distributed through Netlib. The original source and documentation are
+> available at <http://www.netlib.org/y12m/>.  All algorithmic credit belongs
+> to the original authors.
 
 **Book:**
 
-> Zlatev, Z., Wasniewski, J., & Schaumburg, K. (1981). Y12M: solution of large and sparse systems of linear algebraic equations (Vol. 121). Berlin, Heidelberg, New York: Springer. https://doi.org/10.1007/3-540-10874-2
+> Zlatev, Z., Wasniewski, J., & Schaumburg, K. (1981). *Y12M: Solution of
+> Large and Sparse Systems of Linear Algebraic Equations*, Lecture Notes in
+> Computer Science, Vol. 121. Springer, Berlin.
+> <https://doi.org/10.1007/3-540-10874-2>
 
-**Home page of author Zahari Zlatev:** https://www.dmu.dk/atmosphericenvironment/staff/zlatev.htm
+**Author home page:** <https://www.dmu.dk/atmosphericenvironment/staff/zlatev.htm>
 
-## Calling Sequence
+---
 
-The Y12M package provides subroutines at two levels. The `y12m` Fortran module provides **generic interfaces** (e.g., `y12ma`, `y12mb`) that automatically dispatch to the single-precision (`E`) or double-precision (`F`) variant depending on the type of the actual arguments. The individual precision-specific external procedures (e.g., `y12mbe` / `y12mbf`) can also be called directly by linking the library, without using the module.
+## When to use Y12M
+
+### Advantages
+
+- **Simple and self-contained.** Pure Fortran, no external dependencies, easy
+  to embed in existing projects.
+- **Robust pivoting.** Combines Markowitz minimum-degree reordering with
+  threshold pivoting; reliable on the difficult matrices that arise in stiff
+  ODE integration and atmospheric chemistry.
+- **Battle-tested.** Designed in the early 1980s and exercised heavily in
+  large-scale scientific codes over several decades.
+- **Multiple-RHS and structural reuse.** The lower-level API (`Y12MB` /
+  `Y12MC` / `Y12MD`) lets you reuse an LU factorization or a sparsity
+  ordering across multiple solves (see [docs/multiple_rhs.md](docs/multiple_rhs.md)).
+- **Iterative refinement.** `Y12MF` provides built-in iterative refinement for
+  extra accuracy.
+
+### Limitations
+
+- **32-bit integer indexing.** Internal integer arrays use default `INTEGER`
+  (32-bit), so the practical limit is matrices of a few tens of thousands of
+  rows/columns.  Very large problems (n ≳ 46 000) may trigger integer overflow
+  in some internal Markowitz counters.
+- **Sequential only.** There is no shared-memory or distributed-memory
+  parallelism; a single thread is used throughout.
+- **Fortran 77–style API.** The calling convention requires pre-allocated
+  workspace arrays and integer flag vectors; it is more verbose than modern
+  solver interfaces.
+- **In-core only.** The entire sparse matrix and its factors must fit in RAM.
+
+### Alternatives worth considering
+
+| Library | Notes |
+|---------|-------|
+| [UMFPACK](https://people.engr.tamu.edu/davis/suitesparse.html) | Multifrontal LU; part of SuiteSparse. Widely used general-purpose choice. |
+| [SuperLU](https://portal.nersc.gov/project/sparse/superlu/) | Supernodal LU; sequential and distributed (SuperLU_DIST) variants available. |
+| [Eigen `SparseLU`](https://eigen.tuxfamily.org) | Header-only C++ with a modern API; good for moderate-size problems. |
+| [MUMPS](https://mumps-solver.org) | Multifrontal, supports MPI; excellent for very large distributed problems. |
+| [MKL PARDISO / DSS](https://www.intel.com/content/www/us/en/docs/onemkl/developer-reference-fortran/current/pardiso.html) | High-performance threaded solver bundled with Intel oneAPI MKL. |
+| [Panua PARDISO](https://panua.ch/pardiso/) | Commercial successor to the original Basel PARDISO; supports shared-memory parallelism. |
+| [Apple Accelerate Sparse](https://developer.apple.com/documentation/accelerate/sparse_solvers) | Native sparse direct solvers on macOS/iOS via the Accelerate framework. |
+
+---
+
+## Building with CMake
+
+```sh
+git clone https://github.com/ivan-pi/y12m.git
+cd y12m
+mkdir build && cd build
+cmake ..          # add -DBUILD_EXAMPLES=OFF to skip examples
+make
+ctest             # run the test suite
+```
+
+The build produces a static library `liby12m_legacy` and, optionally, the
+example programs.  The `y12m` Fortran module (`.mod` file) is placed in
+`build/include/`.
+
+To install to a custom prefix:
+
+```sh
+cmake .. -DCMAKE_INSTALL_PREFIX=/path/to/install
+make install
+```
+
+---
+
+## API overview
+
+The `y12m` Fortran module exposes **generic interfaces** (`y12ma`, `y12mb`, …)
+that dispatch automatically to the single-precision (`E`) or double-precision
+(`F`) variant based on the type of the actual arguments.  The
+precision-specific external procedures (`y12mbe` / `y12mbf`, etc.) can also be
+called directly without the module.
 
 ### High-level drivers
 
 | Subroutine | Purpose |
 |------------|---------|
-| `Y12MA` | Black-box driver for a single system with a single right-hand side. Calls `Y12MB`, `Y12MC`, and `Y12MD` internally. |
-| `Y12MF` | Factorizes and solves a system in one call with iterative refinement to improve accuracy. |
+| `Y12MA` | Black-box driver: single matrix, single RHS. Calls `Y12MB` + `Y12MC` + `Y12MD` internally. |
+| `Y12MF` | Factorize and solve with iterative refinement in one call. |
 
 ### Lower-level subroutines
 
-For finer control—solving the same system for multiple right-hand sides, reusing an existing LU factorization, or processing a sequence of matrices that share the same sparsity structure—the lower-level subroutines should be called directly (see also [docs/multiple_rhs.md](docs/multiple_rhs.md)):
-
 | Subroutine | Purpose |
 |------------|---------|
-| `Y12MB` | Prepares and reorders the matrix for factorization. |
-| `Y12MC` | Computes the LU factorization of the matrix. |
-| `Y12MD` | Solves the system using the LU factorization. |
-| `Y12MG` | Computes the reciprocal of the condition number. *(optional)* |
-| `Y12MH` | Computes the one-norm of matrix A. *(optional)* |
+| `Y12MB` | Reorder and prepare the matrix for factorization. |
+| `Y12MC` | Compute the LU factorization. |
+| `Y12MD` | Solve using an existing LU factorization. |
+| `Y12MG` | Estimate the reciprocal condition number. *(optional)* |
+| `Y12MH` | Compute the one-norm of **A**. *(optional, must precede `Y12MC`)* |
 
 ### Calling order
 
 <p align="center">
-	<img src="callseq.png" width="30%" alt="Y12M calling sequence diagram">
+   <img src="callseq.png" width="30%" alt="Y12M calling sequence diagram">
 </p>
 
-The two optional subroutines have positional constraints:
+For detailed usage scenarios (multiple RHS, structure reuse, condition
+estimation) see [docs/multiple_rhs.md](docs/multiple_rhs.md) and the full
+[API reference](docs/API.md).
 
-- **`Y12MH`** must be called **before `Y12MC`**, because the LU factorization overwrites the matrix values stored in array `A`.
-- **`Y12MG`** must be called **after `Y12MC`**, while the LU factorization is still intact. It takes the one-norm computed by `Y12MH` as an input argument.
+---
+
+## Citation
+
+If you use Y12M in published work, please cite the accompanying book:
+
+```bibtex
+@book{zlatev1981y12m,
+  author    = {Zlatev, Zahari and Wasniewski, Jerzy and Schaumburg, Kjeld},
+  title     = {{Y12M}: Solution of Large and Sparse Systems of Linear
+               Algebraic Equations},
+  series    = {Lecture Notes in Computer Science},
+  volume    = {121},
+  publisher = {Springer},
+  address   = {Berlin, Heidelberg, New York},
+  year      = {1981},
+  doi       = {10.1007/3-540-10874-2}
+}
+```
 
