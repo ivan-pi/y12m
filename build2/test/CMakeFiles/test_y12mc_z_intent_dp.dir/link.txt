@@ -1,1 +1,0 @@
-/usr/bin/f95 -Wl,--dependency-file=CMakeFiles/test_y12mc_z_intent_dp.dir/link.d CMakeFiles/test_y12mc_z_intent_dp.dir/test_y12mc_z_intent.F90.o -o test_y12mc_z_intent_dp  ../liby12m_legacy.a

@@ -1,1 +1,0 @@
-/usr/bin/f95 -Wl,--dependency-file=CMakeFiles/poisson_9pt.dir/link.d CMakeFiles/poisson_9pt.dir/poisson_9pt.f90.o -o poisson_9pt  ../liby12m_legacy.a

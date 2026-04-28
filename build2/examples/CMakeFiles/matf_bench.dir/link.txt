@@ -1,1 +1,0 @@
-/usr/bin/f95 -Wl,--dependency-file=CMakeFiles/matf_bench.dir/link.d CMakeFiles/matf_bench.dir/matf_bench.f90.o -o matf_bench  ../liby12m_legacy.a

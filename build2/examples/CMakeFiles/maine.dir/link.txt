@@ -1,1 +1,0 @@
-/usr/bin/f95 -Wl,--dependency-file=CMakeFiles/maine.dir/link.d CMakeFiles/maine.dir/maine.f.o CMakeFiles/y12m_mgen.dir/y12m_example_util.f90.o -o maine  ../liby12m_legacy.a ../liby12m_legacy.a

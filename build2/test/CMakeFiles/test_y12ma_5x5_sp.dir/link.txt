@@ -1,1 +1,0 @@
-/usr/bin/f95 -Wl,--dependency-file=CMakeFiles/test_y12ma_5x5_sp.dir/link.d CMakeFiles/test_y12ma_5x5_sp.dir/test_y12ma_5x5.F90.o -o test_y12ma_5x5_sp  ../liby12m_legacy.a
