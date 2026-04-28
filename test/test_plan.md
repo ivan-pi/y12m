@@ -22,8 +22,8 @@ package and lists tests worth adding in the future.
 | `test_y12mf_sp.f90` | y12mf | SP | tridiagonal n=3,5,7,10 |
 | `test_y12mf_errors.f90` | y12mf | SP | 6×6 reference; error/output invariants; LU-reuse |
 | `test_y12mg_mh.f90` | y12mg + y12mh | SP + DP | tridiagonal |
-| `y12m_solve.f90` | y12ma | SP + DP | Matrix Market files mat0–mat5 |
-| `y12m_mm.f90` | y12ma | SP + DP | arbitrary Matrix Market (optional) |
+| `y12m_solve.f90` | y12ma | SP + DP | Netlib SPARSE format files mat0–mat5 |
+| `y12m_mm.f90` | y12ma | SP + DP | arbitrary Matrix Market format (optional) |
 | `test_y12ma_y12mf_bench_sp.f90` | y12ma + y12mf | SP | UMFPACK 5×5, HB 4×4, Pardiso 8×8, Templates 6×6 |
 
 ---
@@ -81,6 +81,17 @@ There is no test that solves the same problem in single and double precision
 and verifies that the DP solution is significantly more accurate (e.g., using
 an ill-conditioned matrix where SP gives a large error but DP does not).
 
+### 2.9 Disconnected examples and test suite
+
+The `examples/` directory contains drivers (`maind.f`, `maine.f`, `mainf.f`,
+`mainf2.f`) and a unit test (`test_matrix_generators.f90`) for the
+class D, E and F sparse matrix generators.  These generators can produce
+parameterised matrices of varying size and density.  They are registered as
+CTest tests but are separate from the main `test/` suite.  Bringing the
+class-D/E/F generators into the test suite would let the automated tests
+cover a much wider range of matrix structures and sizes without duplicating
+test infrastructure.
+
 ---
 
 ## 3. Suggested future tests
@@ -131,12 +142,16 @@ Call y12mh and y12mg on the UMFPACK 5×5 and the Pardiso 8×8 matrices.
 Verify that 1-norm values match hand-computed column sums, and that RCOND
 is positive and consistent with a well-conditioned matrix.
 
-### SP-9  Matrix Market regression suite
-Read all `.mtx` files from the `test/data/` directory with `y12m_solve`,
-compare the computed residuals against stored tolerances, and add at least
-one non-square or structurally symmetric matrix to the suite.
+### SP-9  `y12m_solve` regression suite with stored tolerances
+The `test/data/` directory contains five sparse systems in the Netlib SPARSE
+text format (files `mat0`–`mat5`).  Extend the `y12m_solve` driver to record
+expected residual norms alongside each data file and fail if the computed
+residual exceeds those stored tolerances.  Add at least one additional
+problem to broaden structural coverage.
 
-### SP-10  FPM build test
-Run `fpm test` to verify that the `fpm.toml` package description is
-up-to-date and that all example programs compile and execute correctly
-under the FPM build system.
+### SP-10  Integrate class D/E/F matrix generators into the test suite
+Move the class D, E and F matrix generators from `examples/` into the shared
+test infrastructure so that `y12ma`, `y12mb + y12mc + y12md`, and `y12mf`
+are all automatically exercised on parameterised matrices of varying size and
+density.  This would significantly increase structural diversity without
+adding hand-crafted matrices.

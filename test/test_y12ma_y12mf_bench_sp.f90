@@ -4,7 +4,7 @@
 ! test_y12ma_y12mf_bench_sp.f90
 !
 ! Compare single-precision Y12MA (direct solve) and Y12MF (iterative
-! refinement) on four benchmark matrices taken from the literature.
+! refinement) on four small example matrices taken from the literature.
 ! All matrices are stored in COO (triplet) format used by y12m:
 !   rnr(k) = row index of entry k
 !   snr(k) = column index of entry k
