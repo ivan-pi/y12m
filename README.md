@@ -16,7 +16,19 @@ reordering.
 > Computer Science, Vol. 121. Springer, Berlin.
 > <https://doi.org/10.1007/3-540-10874-2>
 
-**Author home page:** <https://www.dmu.dk/atmosphericenvironment/staff/zlatev.htm>
+**Home page of original author Zahari Zlatev:** <https://www.dmu.dk/atmosphericenvironment/staff/zlatev.htm>
+
+---
+
+## Contents
+
+- [When to use Y12M](#when-to-use-y12m)
+  - [Advantages](#advantages)
+  - [Limitations](#limitations)
+  - [Alternatives worth considering](#alternatives-worth-considering)
+- [Building with CMake](#building-with-cmake)
+- [API overview](#api-overview)
+- [Citation](#citation)
 
 ---
 
@@ -29,8 +41,9 @@ reordering.
 - **Robust pivoting.** Combines Markowitz minimum-degree reordering with
   threshold pivoting; reliable on the difficult matrices that arise in stiff
   ODE integration and atmospheric chemistry.
-- **Battle-tested.** Designed in the early 1980s and exercised heavily in
-  large-scale scientific codes over several decades.
+- **Developed for production use.** Designed in the early 1980s by the
+  original authors specifically for large-scale stiff ODE integrators and
+  atmospheric chemistry models.
 - **Multiple-RHS and structural reuse.** The lower-level API (`Y12MB` /
   `Y12MC` / `Y12MD`) lets you reuse an LU factorization or a sparsity
   ordering across multiple solves (see [docs/multiple_rhs.md](docs/multiple_rhs.md)).
@@ -48,9 +61,12 @@ reordering.
 - **Fortran 77–style API.** The calling convention requires pre-allocated
   workspace arrays and integer flag vectors; it is more verbose than modern
   solver interfaces.
-- **In-core only.** The entire sparse matrix and its factors must fit in RAM.
 
 ### Alternatives worth considering
+
+A broader list of available sparse direct solvers is maintained by the SuperLU
+team at LBNL:
+<https://portal.nersc.gov/project/sparse/superlu/#Related>
 
 | Library | Notes |
 |---------|-------|
@@ -67,24 +83,15 @@ reordering.
 ## Building with CMake
 
 ```sh
-git clone https://github.com/ivan-pi/y12m.git
-cd y12m
-mkdir build && cd build
-cmake ..          # add -DBUILD_EXAMPLES=OFF to skip examples
-make
-ctest             # run the test suite
+git clone https://github.com/ivan-pi/y12m.git && cd y12m
+cmake -B build -DCMAKE_Fortran_COMPILER=gfortran
+cmake --build build
+ctest --test-dir build          # run the test suite
 ```
 
 The build produces a static library `liby12m_legacy` and, optionally, the
 example programs.  The `y12m` Fortran module (`.mod` file) is placed in
 `build/include/`.
-
-To install to a custom prefix:
-
-```sh
-cmake .. -DCMAKE_INSTALL_PREFIX=/path/to/install
-make install
-```
 
 ---
 
