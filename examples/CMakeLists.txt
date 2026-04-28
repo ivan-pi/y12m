@@ -68,6 +68,17 @@ add_test(NAME timings_de_e
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
 )
 
+# Double-precision timing driver for class F2 matrices
+add_executable(matf_bench matf_bench.f90)
+target_compile_options(matf_bench PRIVATE ${TEST_COMPILE_FLAGS})
+target_link_libraries(matf_bench PRIVATE y12m_legacy)
+
+# Smoke test: small F2 matrix (n=50, c=15, r=3)
+add_test(NAME matf_bench
+    COMMAND matf_bench -n 50 -c 15 -r 3
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+)
+
 # 9-point isotropic Poisson/Laplace example
 add_executable(poisson_9pt poisson_9pt.f90)
 target_compile_options(poisson_9pt PRIVATE ${TEST_COMPILE_FLAGS})

@@ -1,0 +1,3 @@
+# The fortran modules provided by this target.
+provides
+ coo_matrix_mod.mod
