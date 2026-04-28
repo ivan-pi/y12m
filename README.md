@@ -64,9 +64,9 @@ reordering.
 
 ### Alternatives worth considering
 
-A broader list of available sparse direct solvers is maintained by the SuperLU
-team at LBNL:
-<https://portal.nersc.gov/project/sparse/superlu/#Related>
+For a broader survey see:
+[*Direct Solvers for Sparse Matrices*](https://portal.nersc.gov/project/sparse/superlu/SparseDirectSurvey.pdf),
+X. Li, April 2022.
 
 | Library | Notes |
 |---------|-------|
