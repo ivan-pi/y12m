@@ -528,7 +528,7 @@ computation was stopped at the point of detection.
 |---------|-----------------|
 | 1 | `Y12MD` was called without a preceding `Y12MC` call for the current system (including the first system in a same-coefficient-matrix sequence Ax₁=b₁, Ax₂=b₂, …).  Set `iflag(1) ≥ 0` before the first call to any routine in the package to ensure reliable detection. |
 | 2 | `Y12MC` was called without a preceding `Y12MB` call.  As with `ifail = 1`, set `iflag(1) ≥ 0` before the first package call. |
-| 3 | A pivot $|a_{ii}|$ < `aflag(4)` × `aflag(6)` was selected.  With a sufficiently small `aflag(4)` this indicates numerical singularity of the coefficient matrix. |
+| 3 | A pivot $`|a_{ii}|`$ < `aflag(4)` × `aflag(6)` was selected.  With a sufficiently small `aflag(4)` this indicates numerical singularity of the coefficient matrix. |
 | 4 | The growth factor `aflag(5)` exceeded the threshold `aflag(3)`.  With a sufficiently large `aflag(3)` this indicates that matrix elements grow so rapidly during factorization that continuing is not justified.  A smaller stability factor `aflag(1)` may give better results. |
 | 5 | The length `nn` of arrays `a` and `snr` is too small.  Increase `nn` (and possibly `nn1`). |
 | 6 | The length `nn1` of array `rnr` is too small.  Increase `nn1` (and possibly `nn`). |
