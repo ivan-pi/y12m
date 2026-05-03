@@ -524,34 +524,122 @@ Additional entries used only by Y12MF:
 `IFAIL = 0` on exit means success.  A positive value indicates an error; the
 computation was stopped at the point of detection.
 
-| `ifail` | Cause |
-|---------|-------|
-| 1 | Matrix not factorized: Y12MD called without a preceding Y12MC for the current system.  Ensure `iflag(1) ≥ 0` before the first package call. |
-| 2 | Matrix not ordered: Y12MC called without a preceding Y12MB. |
-| 3 | Pivot `\|a(i,i)\| < aflag(4)*aflag(6)` selected — likely numerical singularity. |
-| 4 | Growth factor `aflag(5) > aflag(3)` — computation stopped to prevent overflow.  Try a smaller stability factor `aflag(1)`. |
-| 5 | `nn` (length of `a` and `snr`) is insufficient.  Increase `nn` (and possibly `nn1`). |
-| 6 | `nn1` (length of `rnr`) is insufficient.  Increase `nn1` (and possibly `nn`). |
-| 7 | A row has no non-zeros in its active part during factorization.  Likely numerical singularity when `aflag(2)` is small. |
-| 8 | A column has no non-zeros in its active part during factorization.  Same interpretation as `ifail = 7`. |
-| 9 | Pivot element missing.  Occurs with `aflag(2) > 0` and `iflag(4) = 2`, or with special pivoting (`iflag(3) = 0` or `2`).  Decrease the drop-tolerance or refactorize. |
-| 10 | Y12MF called with `iflag(5) = 1`.  Use `iflag(5) = 2` instead. |
-| 11 | Two or more non-zeros occupy the same position (i, j).  Check input data. |
-| 12 | `n < 2`.  Check the value of `n`. |
-| 13 | `z ≤ 0` (or `nz ≤ 0` in Y12MF). |
-| 14 | `z < n` — the matrix is structurally singular (fewer non-zeros than equations). |
-| 15 | `iha < n` — increase the first dimension of `ha`. |
-| 16 | `iflag(4)` is not 0, 1, or 2. |
-| 17 | An all-zero row was found in **A** before factorization begins — structurally singular. |
-| 18 | An all-zero column was found in **A** before factorization begins — structurally singular. |
-| 19 | `iflag(2) < 1` — set to a positive integer (recommended: 3). |
-| 20 | `iflag(3)` is not 0, 1, or 2. |
-| 21 | `iflag(5)` is not 1, 2, or 3. |
-| 22 | Y12MB or Y12MC called with `iflag(5) = 3` — these subroutines require `iflag(5) = 1` or `2`. |
-| 23 | `iflag(11) < 2` (Y12MF only) — increase the maximum iteration count. |
-| 24 | A column index is outside [1, n]. |
-| 25 | A row index is outside [1, n]. |
-| 26 | Y12MG called with `iflag(5) = 1`, i.e., **L** was discarded.  Retain **L** by using `iflag(5) = 2`. |
+**`IFAIL = 1`**
+The coefficient matrix **A** is not factorized: `Y12MD` was called without a
+preceding call to `Y12MC` for the current system (or for the first system in a
+sequence Ax₁=b₁, Ax₂=b₂, …, Axₚ=bₚ sharing the same coefficient matrix).
+Reliable detection requires that `IFLAG(1) ≥ 0` is set before the first call
+to any subroutine in the package.
+
+**`IFAIL = 2`**
+The coefficient matrix **A** is not ordered: `Y12MC` was called without a
+preceding call to `Y12MB`.  As with `IFAIL = 1`, reliable detection requires
+`IFLAG(1) ≥ 0` before the first package call.
+
+**`IFAIL = 3`**
+A pivotal element |a\_ij| < `aflag(4)` × `aflag(6)` was selected.  When
+`aflag(4)` is sufficiently small, this indicates that the coefficient matrix
+is numerically singular.
+
+**`IFAIL = 4`**
+The growth factor `aflag(5)` exceeds the threshold `aflag(3)`.  When
+`aflag(3)` is sufficiently large, this indicates that matrix elements grow so
+rapidly during factorization that continuing is not justified.  Choosing a
+smaller stability factor `aflag(1)` may give better results.
+
+**`IFAIL = 5`**
+The length `nn` of arrays `a` and `snr` is insufficient.  Larger values of
+`nn` (and possibly `nn1`) should be used.
+
+**`IFAIL = 6`**
+The length `nn1` of array `rnr` is insufficient.  Larger values of `nn1`
+(and possibly `nn`) should be used.
+
+**`IFAIL = 7`**
+A row without non-zero elements in its active part was found during the
+factorization.  When the drop-tolerance `aflag(2)` is sufficiently small,
+this indicates that the matrix is numerically singular.  With a large value of
+`aflag(2)` singularity is not certain; a run with a smaller value of `aflag(2)`
+and/or a careful check of `aflag(8)` and `aflag(5)` is recommended.
+
+**`IFAIL = 8`**
+A column without non-zero elements in its active part was found during the
+factorization.  The interpretation and recommended actions are the same as for
+`IFAIL = 7`.
+
+**`IFAIL = 9`**
+A pivotal element is missing.  This can occur when `aflag(2) > 0` and
+`iflag(4) = 2` (i.e., a positive drop-tolerance is used when solving a
+subsequent system in a same-structure sequence).  Decrease the drop-tolerance
+and refactorize the coefficient matrix.  This error may also occur when a
+special pivotal strategy (`iflag(3) = 0` or `iflag(3) = 2`) is used and the
+matrix is not suitable for that strategy.
+
+**`IFAIL = 10`**
+`Y12MF` was called with `iflag(5) = 1` (requesting removal of the non-zero
+elements of the lower triangular matrix **L**).  Use `iflag(5) = 2` instead.
+
+**`IFAIL = 11`**
+The coefficient matrix **A** contains at least two elements at the same
+position (i, j).  The input data should be examined carefully.
+
+**`IFAIL = 12`**
+The number of equations `n < 2`.  Check the value of `n`.
+
+**`IFAIL = 13`**
+The number of non-zero elements is non-positive (`z ≤ 0`, or `nz ≤ 0` in
+Y12MF).  Check the value of the parameter `z` (renamed `nz` in `Y12MF`).
+
+**`IFAIL = 14`**
+The number of non-zero elements is less than the number of equations (`z < n`).
+If the parameter `z` (or `nz` in `Y12MF`) is correctly assigned, the
+coefficient matrix is structurally singular.
+
+**`IFAIL = 15`**
+The first dimension `iha` of array `ha` is less than `n`.  Set `iha ≥ n`.
+
+**`IFAIL = 16`**
+Parameter `iflag(4)` has an invalid value; it must be 0, 1, or 2.  See the
+description of `iflag(4)` for details.
+
+**`IFAIL = 17`**
+A row with no non-zero elements was found in the coefficient matrix **A**
+before Gaussian elimination begins.  The matrix is structurally singular.
+
+**`IFAIL = 18`**
+A column with no non-zero elements was found in the coefficient matrix **A**
+before Gaussian elimination begins.  The matrix is structurally singular.
+
+**`IFAIL = 19`**
+Parameter `iflag(2) < 1`.  The value of `iflag(2)` must be a positive integer
+(`iflag(2) = 3` is recommended).
+
+**`IFAIL = 20`**
+Parameter `iflag(3)` is out of range; it must be 0, 1, or 2.
+
+**`IFAIL = 21`**
+Parameter `iflag(5)` is out of range; it must be 1, 2, or 3.  Note: when
+`iflag(5) = 3`, neither `Y12MB` nor `Y12MC` should be called (see also
+`IFAIL = 22`).
+
+**`IFAIL = 22`**
+`Y12MC` was called with `iflag(5) = 3`.  `Y12MC` must be called with
+`iflag(5)` equal to 1 or 2.
+
+**`IFAIL = 23`**
+The number of allowed refinement iterations `iflag(11)` (Y12MF only) is less
+than 2.  Set `iflag(11) ≥ 2`.
+
+**`IFAIL = 24`**
+At least one element has a column index outside [1, n].
+
+**`IFAIL = 25`**
+At least one element has a row index outside [1, n].
+
+**`IFAIL = 26`**
+`Y12MG` was called when **L** has been discarded (i.e., `iflag(5) = 1` was
+used during factorization).  `Y12MG` requires **L** to be available; retain
+it by using `iflag(5) = 2`.
 
 ---
 
@@ -589,6 +677,15 @@ against the source files in `src/legacy/`.
    The original text reads "If `IFLAG((2) .ge. 0` then the pivotal search…"
    (mismatched parenthesis).  The intended condition is consistent with
    Y12MC's description: the search is performed when `iflag(3) ≥ 1`.
+
+8. **`IFAIL = 22` — Y12MB does not check `iflag(5) = 3`.**
+   The original documentation (and the problem description) states that both
+   Y12MB and Y12MC return `IFAIL = 22` when called with `iflag(5) = 3`.
+   However, in the source code only Y12MC (`y12mce.f`, `y12mcf.f`) performs
+   this check; Y12MB (`y12mbe.f`, `y12mbf.f`) contains no such guard.
+   Consequently, calling Y12MB with `iflag(5) = 3` will silently proceed
+   rather than return `IFAIL = 22`.  The description of `IFAIL = 22` in this
+   document reflects what the code actually does.
 
 ---
 
