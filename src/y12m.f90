@@ -20,6 +20,9 @@ module y12m
   ! Compute the matrix one-norm
   public :: y12mh
 
+  ! Error string
+  public :: y12m_get_error_msg
+
 
   !> Solve a sparse system of linear equations Ax=b by Gaussian elimination.
   !>
@@ -220,4 +223,62 @@ module y12m
     end subroutine
   end interface
 
-end module
+contains
+
+  subroutine y12m_get_error_msg(ifail, message, length)
+      implicit none
+
+      ! Arguments
+      integer, intent(in) :: ifail
+      character(len=*), intent(out) :: message
+      integer, intent(out), optional :: length
+
+      ! Local Table of Error Messages
+      character(len=256), dimension(25), parameter :: ERROR_TABLE = [ &
+          character(len=256) :: &
+          "The coefficient matrix A is not factorized. Call Y12MC before Y12MD, or ensure IFLAG(1) is 0 or greater.", &
+          "The coefficient matrix A is not ordered. Ensure Y12MB is called successfully before calling Y12MC.", &
+          "A numerically singular pivot element has been selected. Matrix is likely singular; try increasing AFLAG(4).", &
+          "Large growth factor detected. Elements grew too quickly; try using a smaller stability factor in AFLAG(1).", &
+          "Length NN of arrays A and SNR is insufficient. Increase the size of NN and NNt in the calling program.", &
+          "Length NN1 of array RNR is insufficient. Increase the size of NN1 and potentially NN.", &
+          "A row with zeroes only in its active part found. If drop-tolerance is small, try decreasing AFLAG(2).", &
+          "A column with zeroes only in its active part found. The matrix is likely singular. Check AFLAG(8) and AFLAG(5).", &
+          "A pivotal element is missing. Decrease drop-tolerance AFLAG(2) or check if the strategy matches the matrix.", &
+          "Invalid request to remove non-zeros of matrix L. Set IFLAG(5) to 2 instead of 1 before calling Y12MF.", &
+          "Duplicate elements found at the same position. Check input data for overlapping row and column indices.", &
+          "The number of equations is too small. N must be 2 or larger.", &
+          "The number of non-zero elements is zero or negative. Check the NZ or Z parameter in the input data.", &
+          "Number of non-zeros is smaller than the number of equations. The matrix is structurally singular.", &
+          "Array HA dimension IHA is too small. Ensure IHA is greater than or equal to N.", &
+          "Invalid IFLAG(4) value. Set this parameter to 0, 1, or 2.", &
+          "Row with zeroes only found before elimination. The matrix is structurally singular and cannot be solved.", &
+          "Column with zeroes only found before elimination. The matrix is structurally singular and cannot be solved.", &
+          "IFLAG(2) is too small. Set IFLAG(2) to a positive integer; 3 is the recommended value.", &
+          "IFLAG(3) is out of range. Valid options are 0, 1, or 2.", &
+          "IFLAG(5) is out of range. Valid options are 1, 2, or 3.", &
+          "Subroutines Y12MB and Y12MC require IFLAG(5) to be 1 or 2. Check setting before calling.", &
+          "Allowed iterations IFLAG(11) is too low. Set IFLAG(11) to 2 or higher.", &
+          "Column index error. Found an element with a column index outside the range 1 to N.", &
+          "Row index error. Found an element with a row index outside the range 1 to N." &
+      ]
+
+      select case(ifail)
+      case(0)
+        associate(errmsg => "Success: no error detected.")
+          if (present(length)) length = len(errmsg)
+          message = errmsg
+        end associate
+      case(1:25)
+        if (present(length)) length = len_trim(ERROR_TABLE(ifail))
+        message = ERROR_TABLE(ifail)
+      case default
+        associate(errmsg => "Unknown error code.")
+          if (present(length)) length = len(errmsg)
+          message = errmsg
+        end associate
+      end select
+
+  end subroutine
+
+end module y12m
