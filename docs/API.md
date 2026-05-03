@@ -537,7 +537,7 @@ preceding call to `Y12MB`.  As with `IFAIL = 1`, reliable detection requires
 `IFLAG(1) ≥ 0` before the first package call.
 
 **`IFAIL = 3`**
-A pivotal element |a\_ij| < `aflag(4)` × `aflag(6)` was selected.  When
+A pivotal element |a_ij| < `aflag(4)` × `aflag(6)` was selected.  When
 `aflag(4)` is sufficiently small, this indicates that the coefficient matrix
 is numerically singular.
 
