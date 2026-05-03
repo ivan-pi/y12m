@@ -240,7 +240,7 @@ contains
           "The coefficient matrix A is not ordered. Ensure Y12MB is called successfully before calling Y12MC.", &
           "A numerically singular pivot element has been selected. Matrix is likely singular; try increasing AFLAG(4).", &
           "Large growth factor detected. Elements grew too quickly; try using a smaller stability factor in AFLAG(1).", &
-          "Length NN of arrays A and SNR is insufficient. Increase the size of NN and NNt in the calling program.", &
+          "Length NN of arrays A and SNR is insufficient. Increase the size of NN and potentially NN1.", &
           "Length NN1 of array RNR is insufficient. Increase the size of NN1 and potentially NN.", &
           "A row with zeroes only in its active part found. If drop-tolerance is small, try decreasing AFLAG(2).", &
           "A column with zeroes only in its active part found. The matrix is likely singular. Check AFLAG(8) and AFLAG(5).", &
