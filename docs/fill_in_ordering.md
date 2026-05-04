@@ -49,14 +49,25 @@ the loop is safe to vectorize with a gather instruction.
 
 ### Step 3 — Permute the right-hand side
 
-The right-hand side vector must be permuted before the solve.  This is a
-scatter operation and **requires a temporary** array — an in-place scatter can
-overwrite values that are still needed:
+The right-hand side vector must be permuted to form **b' = P b**.  Because
+`perm` is a permutation (all values are distinct), the scatter writes go to
+distinct output locations and the loop is safe to vectorize with a scatter
+instruction.  A temporary is still required because `b_perm` and `b` may
+alias.  The scatter form is:
 
 ```fortran
 real :: b_perm(n)
 do i = 1, n
-    b_perm(perm(i)) = b(i)
+    b_perm(perm(i)) = b(i)   ! scatter: P b
+end do
+```
+
+An equivalent gather form, which is sometimes preferable for vectorization, is:
+
+```fortran
+real :: b_perm(n)
+do i = 1, n
+    b_perm(i) = b(iperm(i))  ! gather: P b using inverse permutation
 end do
 ```
 
@@ -116,7 +127,3 @@ error after applying a fill-reducing ordering should consider relaxing the
 threshold (lowering `AFLAG(1)`) or using a stability-aware ordering such as
 MC64 (from HSL) that combines sparsity and numerical considerations.
 
-### `Y12MC` and `Y12MD` require no changes
-
-Both routines operate entirely in the permuted index space.  `Y12MC` and
-`Y12MD` require no changes.
