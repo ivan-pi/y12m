@@ -110,3 +110,12 @@ add_test(NAME fem_anisotropic
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
 )
 
+# Darcy Flow near a stagnation point.
+add_executable(darcy_flow darcy_flow.f90)
+target_compile_options(darcy_flow PRIVATE ${TEST_COMPILE_FLAGS})
+target_link_libraries(darcy_flow PRIVATE y12m_legacy)
+
+add_test(NAME darcy_flow
+    COMMAND darcy_flow
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+)
