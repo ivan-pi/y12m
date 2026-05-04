@@ -90,9 +90,10 @@ function(add_pde_test NAME SOURCE)
              WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
 endfunction()
 
-# 9-point isotropic Poisson/Laplace example
+
 add_pde_test(poisson_9pt poisson_9pt.F90)
 add_pde_test(biharmonic_13pt biharmonic_13pt.f90)
 add_pde_test(conv_diff_cds conv_diff_cds.f90)
 add_pde_test(fem_anisotropic fem_anisotropic.f90)
 add_pde_test(darcy_flow darcy_flow.f90)
+add_pde_test(elasticity elasticity.f90)
