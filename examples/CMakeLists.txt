@@ -100,6 +100,16 @@ add_test(NAME biharmonic_13pt
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
 )
 
+# Convection-Diffusion example
+add_executable(conv_diff_cds conv_diff_cds.f90)
+target_compile_options(conv_diff_cds PRIVATE ${TEST_COMPILE_FLAGS})
+target_link_libraries(conv_diff_cds PRIVATE y12m_legacy)
+
+add_test(NAME conv_diff_cds
+    COMMAND conv_diff_cds
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+)
+
 # Anisotropic FEM example
 add_executable(fem_anisotropic fem_anisotropic.f90)
 target_compile_options(fem_anisotropic PRIVATE ${TEST_COMPILE_FLAGS})
