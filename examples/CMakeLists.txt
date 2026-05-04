@@ -100,3 +100,13 @@ add_test(NAME biharmonic_13pt
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
 )
 
+# Anisotropic FEM example
+add_executable(fem_anisotropic fem_anisotropic.f90)
+target_compile_options(fem_anisotropic PRIVATE ${TEST_COMPILE_FLAGS})
+target_link_libraries(fem_anisotropic PRIVATE y12m_legacy)
+
+add_test(NAME fem_anisotropic
+    COMMAND fem_anisotropic
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+)
+
