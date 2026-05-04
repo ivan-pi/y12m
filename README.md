@@ -61,6 +61,11 @@ reordering.
 - **Fortran 77–style API.** The calling convention requires pre-allocated
   workspace arrays and integer flag vectors; it is more verbose than modern
   solver interfaces.
+- **No fill-in reduction ordering.** There is no global, pre-factorization
+  fill-in reducing ordering (AMD, COLAMD, RCM, …).  `Y12MC` applies only a
+  greedy local Markowitz strategy during elimination.  Users can apply an
+  external permutation themselves before calling `Y12MB`; see
+  [docs/fill_in_ordering.md](docs/fill_in_ordering.md).
 
 ### Alternatives worth considering
 
