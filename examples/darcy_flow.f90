@@ -8,124 +8,82 @@
 !    \nabla \cdot q = 0
 !
 ! Discretization:
-!    Staggered MAC Grid (Equivalent to RT0-P0 Mixed FEM)
-!    Domain: [0, 1] x [0, 1]
-!    Origin (0,0) is a stagnation point.
+!    Staggered Marker-and-Cell (MAC) Grid (Equivalent to RT0-P0 Mixed FEM)
+!    Domain: [0, 1] x [0, 1] | Origin (0,0) is a stagnation point.
 !
-! Features:
-!    - Cell-by-cell interleaved DOF ordering to minimize LU fill-in bandwidth.
-!    - Explicit pressure anchoring to resolve the hydrostatic nullspace.
-!    - Direct enforcement of Pressure-Flux boundary relations.
-!
-! Solver: y12ma (double precision sparse direct).
+! Solver Architecture:
+!    - System: Indefinite saddle-point block system.
+!    - Ordering: Cell-by-cell interleaved DOFs to minimize LU bandwidth/fill-in.
+!    - Linear Algebra: y12ma (sparse direct LU decomposition).
 !
 ! ==============================================================================
-! Mixed Darcy Flow: MAC Staggered Grid Architecture
+! Implementation Logic & Numerical Scaling
 ! ==============================================================================
+! 1. Scaling & Symmetry:
+!    The system is scaled for numerical balance rather than pure symmetry.
+!    Momentum rows are O(h) and Continuity rows are O(1), resulting in a matrix
+!    of the form [hI, B^T; B, 0]. While this improves the condition number for
+!    direct solvers, it renders the global system non-symmetric.
 !
-! To satisfy the LBB (inf-sup) stability condition and prevent unphysical
-! pressure checkerboarding, this solver uses a staggered Marker-and-Cell (MAC)
-! grid. This is mathematically equivalent to RT0-P0 mixed finite elements.
+! 2. Nullspace & Pressure Pinning:
+!    The hydrostatic pressure nullspace is resolved by pinning cell (1,1).
+!    The divergence equation for this cell is replaced by the identity
+!    p(1,1) = p_exact. While this technically violates local mass conservation
+!    at one point, the global error remains O(h^2).
+!
+! 3. Strong Boundary Enforcement:
+!    Boundary pressure is enforced "strongly" within the momentum equations
+!    using a half-step one-sided gradient: u + (p_cell - p_ext)/(h/2) = 0.
+!    This avoids ghost-cell overhead but localizes an O(h^1) error at the
+!    boundary faces, which is characteristic of MAC/RT0 on Dirichlet domains.
+!
+! ==============================================================================
+! MAC Staggered Grid Architecture
+! ==============================================================================
+! To satisfy the LBB (inf-sup) stability condition and prevent checkerboarding,
+! variables are staggered. This is equivalent to Raviart-Thomas (RT0-P0) FEM.
 !
 ! Physical Shape of a Single Cell (i, j):
 !
-!         (v-velocity lives on TOP horizontal face)
-!                         v(i, j+1)
-!                      ------^------
-!                      |           |
-! (u-velocity on       |           |      (u-velocity on
-!  LEFT vertical -> u(i,j)  p(i,j) -> u(i+1, j)  RIGHT vertical face)
-!  face)               |  (center)  |
-!                      |           |
-!                      ------^------
-!                         v(i, j)
-!         (v-velocity lives on BOTTOM horizontal face)
-!
-! Degrees of Freedom (DOFs):
-!    - Pressure (p) is a cell-centered scalar.
-!    - Velocity (u, v) is a face-centered vector normal to the cell edges.
+!                    v-velocity (TOP face): v(i, j+1)
+!                             ------^------
+!                             |           |
+!      u-velocity (LEFT)  -> u(i,j)  p(i,j) -> u(i+1, j)  u-velocity (RIGHT)
+!                             |  (center)  |
+!                             ------^------
+!                    v-velocity (BOTTOM face): v(i, j)
 !
 ! Matrix Assembly (Interleaved):
-!    To prevent massive LU fill-in, the DOFs are numbered cell-by-cell.
-!    For a given cell (i,j), the storage order is:
-!      1. Left face U-velocity
-!      2. Bottom face V-velocity
-!      3. Cell center Pressure
-!    Right and Top boundaries of the global domain are appended at the end.
+! To minimize LU fill-in, DOFs are grouped by cell. For cell (i,j):
+!   1. U-velocity (Left Face)
+!   2. V-velocity (Bottom Face)
+!   3. Pressure   (Cell Center)
 !
-! ==============================================================================
-! Boundary Treatment & Pressure Anchoring
-! ==============================================================================
-! 1. Boundary Conditions:
-!    Pressure is imposed weakly at the boundaries through the momentum equations.
-!    For a boundary face (e.g., x=0), the gradient is approximated using a
-!    half-step: u + (p_cell - p_ext)/(h/2) = 0. This ensures a consistent flux
-!    injection without the "ghost cell" overhead.
-!
-! 2. Nullspace Resolution:
-!    A pure Darcy system with Neumann-like flux boundaries has a constant
-!    pressure nullspace. To ensure a unique solution and prevent solver
-!    instability, the first pressure DOF (1,1) is explicitly anchored to the
-!    exact solution value, replacing its divergence equation.
+! "Orphan" boundary faces (the absolute Right and Top edges) are appended to
+! the end of the global array to preserve the triplet structure of the interior.
 !
 ! ==============================================================================
 ! Exact Solution: Cubic Stagnation Flow
 ! ==============================================================================
-! This test case simulates incompressible potential flow near a stagnation point
-! (the origin). It uses a cubic polynomial for pressure, which yields a perfectly
-! smooth quadratic velocity field.
+! Simulates incompressible potential flow near a stagnation point (0,0).
 !
 ! Equations:
 !    p(x,y) = x^3 - 3xy^2
-!    u(x,y) = -dp/dx = -3x^2 + 3y^2
-!    v(x,y) = -dp/dy = 6xy
+!    u(x,y) = -3x^2 + 3y^2
+!    v(x,y) = 6xy
 !
-! Verification of Incompressibility (Mass Conservation):
-!    div(q) = du/dx + dv/dy = -6x + 6x = 0
-!
-! ==============================================================================
-! Verification & Convergence (RT0-P0 / MAC Grid)
-! ==============================================================================
-! To validate the RT0-P0 theory, errors are measured directly at the
-! native DOFs:
-!
-! 1. Velocity Error: Measured at face midpoints (primary DOFs).
-!    On uniform grids, this avoids interpolation errors and typically yields
-!    O(h^2) in the interior, dropping toward O(h^1) at the global boundaries
-!    due to the half-step gradient approximation.
-!
-! 2. Pressure Error: Measured at cell centers.
-!    Expected convergence is O(h^2) across the domain.
+! Verification:
+!    div(q) = du/dx + dv/dy = -6x + 6x = 0 (Exactly divergence-free).
 !
 ! ==============================================================================
-! Solver Methodology: Saddle-Point vs. Schur Complement
+! Convergence Metrics
 ! ==============================================================================
-! NOTE: This driver solves the fully coupled, indefinite saddle-point system:
-! [ M   B^T ] [ q ] = [ f ]
-! [ B    0  ] [ p ] = [ g ]
+! Errors are measured at primary DOF locations to verify RT0 theory:
 !
-! This is solved directly using y12ma. The system is scaled such that the
-! momentum diagonal is O(h) and the divergence/gradient blocks are O(1),
-! providing better numerical balance for the LU decomposition than h^2 scaling.
+! 1. Velocity (L_inf): Measured at face midpoints. Expected O(h^2) in the
+!    interior, dropping to O(h^1) globally due to boundary layer pollution.
 !
-! ==============================================================================
-! Indexing Strategy: The "Orphan" Boundary Faces
-! ==============================================================================
-! In a perfectly periodic domain (wrapping around like a torus), every cell
-! would have exactly one left (U) face, one bottom (V) face, and one center (P).
-! This would consume 3N^2 Degrees of Freedom (DOFs) in pure triplets.
-!
-! On a bounded square domain, we have "leftover" faces:
-!    - The absolute Right wall has N extra U-faces.
-!    - The absolute Top wall has N extra V-faces.
-! Total DOFs = 3N^2 (Interior Triplets) + 2N (Boundary Orphans).
-!
-! How this is handled without destroying the LU bandwidth:
-! 1. The first 3N^2 indices strictly interleave the interior/left/bottom
-!    triplets: (U, V, P) for cell 1, (U, V, P) for cell 2, etc.
-! 2. The 2N "orphan" boundary faces are appended to the very end. Because
-!    these faces only couple with their immediate neighbor, they generate
-!    negligible fill-in during the LU sweep.
+! 2. Pressure (L_inf): Measured at cell centers. Expected O(h^2).
 ! ==============================================================================
 
 module darcy_solver
