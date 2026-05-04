@@ -55,6 +55,7 @@
 !
 program test_y12mc_errors
   use y12m, only: y12mb, y12mc, y12md
+  use y12m_test_helpers, only: set_flags, set_aflag, check_ifail
   implicit none
 
 #ifdef TEST_SINGLE_PRECISION
@@ -546,27 +547,6 @@ program test_y12mc_errors
 
 contains
 
-  ! Initialise IFLAG to defaults for a fresh single-system solve.
-  subroutine set_flags(iflag)
-    integer, intent(out) :: iflag(10)
-    iflag(1)    = 0   ! state flag: y12mb will set to -1
-    iflag(2)    = 3   ! Markowitz search width
-    iflag(3)    = 1   ! general Markowitz pivoting
-    iflag(4)    = 0   ! no structure reuse
-    iflag(5)    = 1   ! discard L after factorization
-    iflag(6:10) = 0
-  end subroutine set_flags
-
-  ! Initialise AFLAG to sensible defaults (mirrors y12ma defaults).
-  subroutine set_aflag(aflag)
-    real(wp), intent(out) :: aflag(8)
-    aflag(1) = 16.0_wp       ! stability factor u
-    aflag(2) = 1.0e-12_wp    ! drop tolerance
-    aflag(3) = 1.0e+16_wp    ! growth threshold
-    aflag(4) = 1.0e-12_wp    ! singularity threshold
-    aflag(5:8) = 0.0_wp
-  end subroutine set_aflag
-
   ! Load a 3x3 diagonal matrix diag(11,22,33) into COO arrays and RHS.
   ! Used as the "setup" matrix for early-flag-check tests that only need a
   ! valid y12mb state; the matrix values are irrelevant for those tests.
@@ -596,17 +576,5 @@ contains
       nfail = nfail + 1
     end if
   end subroutine setup_y12mb
-
-  ! Verify ifail equals the expected value; increment nfail on mismatch.
-  subroutine check_ifail(label, ifail, expected, nfail)
-    character(len=*), intent(in) :: label
-    integer, intent(in)          :: ifail, expected
-    integer, intent(inout)       :: nfail
-    if (ifail /= expected) then
-      write(*,'(3a,i0,a,i0)') 'FAIL ', label, &
-          ' expected ifail=', expected, ' got ', ifail
-      nfail = nfail + 1
-    end if
-  end subroutine check_ifail
 
 end program test_y12mc_errors

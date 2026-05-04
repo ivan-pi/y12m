@@ -48,6 +48,8 @@
 !
 program test_y12md_errors
   use y12m, only: y12mb, y12mc, y12md
+  use y12m_test_helpers, only: set_flags, set_aflag, load_ref6, setup_ref6, &
+      check_ifail, check_solution
   implicit none
 
 #ifdef TEST_SINGLE_PRECISION
@@ -315,101 +317,5 @@ program test_y12md_errors
     stop 1
   end if
   write(*,'(a)') 'All test_y12md_errors tests PASSED'
-
-contains
-
-  ! Initialise IFLAG to defaults for a fresh single-system solve.
-  subroutine set_flags(iflag)
-    integer, intent(out) :: iflag(10)
-    iflag(1)    = 0   ! state flag: y12mb will set to -1, y12mc to -2
-    iflag(2)    = 3   ! Markowitz search width
-    iflag(3)    = 1   ! general Markowitz pivoting
-    iflag(4)    = 0   ! no structure reuse
-    iflag(5)    = 1   ! discard L after factorization
-    iflag(6:10) = 0
-  end subroutine set_flags
-
-  ! Initialise AFLAG to sensible defaults (mirrors y12ma defaults).
-  subroutine set_aflag(aflag)
-    real(dp), intent(out) :: aflag(8)
-    aflag(1) = 16.0_dp       ! stability factor
-    aflag(2) = 1.0e-12_dp    ! drop tolerance
-    aflag(3) = 1.0e+16_dp    ! growth threshold
-    aflag(4) = 1.0e-12_dp    ! singularity threshold
-    aflag(5:8) = 0.0_dp
-  end subroutine set_aflag
-
-  ! Load the 6x6 reference matrix (COO format, Z_REF=15) and b1 into the
-  ! working arrays.  The COO ordering is non-row-major to exercise y12mb's
-  ! reordering logic (same ordering as in test_y12mc_errors.F90).
-  !
-  ! Matrix (row-major view):
-  !   A =
-  !     10   0   0   0   0   0
-  !      0  12  -3  -1   0   0
-  !      0   0  15   0   0   0
-  !     -2   0   0  20  -2   0
-  !     -1   0   0  -5   1  -1
-  !     -1  -2   0   0   0   6
-  !
-  ! b1 = (10, 11, 45, 68, -22, 31)  ->  exact solution x = (1,2,3,4,5,6)
-  ! (b1(4) = 68, not 33 as in the problem statement; see discrepancy #1)
-  subroutine load_ref6(a, snr, rnr, b)
-    real(dp), intent(out) :: a(NNMAX), b(NMAX)
-    integer,  intent(out) :: snr(NNMAX), rnr(NN1MAX)
-    rnr(1:Z_REF) = [1, 6, 6, 6, 2, 2, 2, 4, 5, 5, 5, 5, 4, 4, 3]
-    snr(1:Z_REF) = [1, 6, 2, 1, 2, 3, 4, 1, 1, 6, 5, 4, 4, 5, 3]
-    a(1:Z_REF)   = [10.0_dp,  6.0_dp, -2.0_dp, -1.0_dp, &
-                    12.0_dp, -3.0_dp, -1.0_dp, -2.0_dp, &
-                    -1.0_dp, -1.0_dp,  1.0_dp, -5.0_dp, &
-                    20.0_dp, -2.0_dp, 15.0_dp]
-    b(1:N_REF) = [10.0_dp, 11.0_dp, 45.0_dp, 68.0_dp, -22.0_dp, 31.0_dp]
-  end subroutine load_ref6
-
-  ! Load the 6x6 reference matrix and call y12mb.  Records a failure in nfail
-  ! if y12mb returns non-zero ifail.  On return, the arrays are in the state
-  ! required for a y12mc call; iflag(5) = 1 (caller may override before y12mc).
-  subroutine setup_ref6(n, z, nn, nn1, iha, a, snr, rnr, b, ha, aflag, iflag, ifail, nfail)
-    integer,  intent(in)    :: n, z, nn, nn1, iha
-    real(dp), intent(inout) :: a(NNMAX), aflag(8), b(NMAX)
-    integer,  intent(inout) :: snr(NNMAX), rnr(NN1MAX), ha(NMAX,11), iflag(10)
-    integer,  intent(out)   :: ifail
-    integer,  intent(inout) :: nfail
-    call load_ref6(a, snr, rnr, b)
-    call set_flags(iflag)
-    call set_aflag(aflag)
-    ha = 0
-    call y12mb(n, z, a, snr, nn, rnr, nn1, ha, iha, aflag, iflag, ifail)
-    if (ifail /= 0) then
-      write(*,'(a,i0)') 'FAIL setup_ref6 y12mb: unexpected ifail=', ifail
-      nfail = nfail + 1
-    end if
-  end subroutine setup_ref6
-
-  ! Verify ifail equals the expected value; increment nfail on mismatch.
-  subroutine check_ifail(label, ifail, expected, nfail)
-    character(len=*), intent(in) :: label
-    integer, intent(in)          :: ifail, expected
-    integer, intent(inout)       :: nfail
-    if (ifail /= expected) then
-      write(*,'(3a,i0,a,i0)') 'FAIL ', label, &
-          ' expected ifail=', expected, ' got ', ifail
-      nfail = nfail + 1
-    end if
-  end subroutine check_ifail
-
-  ! Verify that max|x - expected| <= tol; increment nfail on failure.
-  subroutine check_solution(label, n, x, expected, tol, nfail)
-    character(len=*), intent(in) :: label
-    integer,          intent(in) :: n
-    real(dp),         intent(in) :: x(n), expected(n), tol
-    integer,          intent(inout) :: nfail
-    real(dp) :: err
-    err = maxval(abs(x(1:n) - expected(1:n)))
-    if (err > tol) then
-      write(*,'(3a,es12.5)') 'FAIL ', label, ': max|x-expected|=', err
-      nfail = nfail + 1
-    end if
-  end subroutine check_solution
 
 end program test_y12md_errors

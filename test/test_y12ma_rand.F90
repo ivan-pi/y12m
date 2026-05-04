@@ -19,6 +19,7 @@
 !
 program test_y12ma_rand
   use y12m
+  use y12m_test_helpers, only: sparse_gemv
   implicit none
 
 #ifdef TEST_SINGLE_PRECISION
@@ -101,7 +102,8 @@ program test_y12ma_rand
     end if
     x_sparse(1:N, irhs) = b(1:N)
     ! Residual: b_orig - A * x_sparse
-    call sparse_matmul(N, z, a0, snr0, rnr0, x_sparse(1:N, irhs), ax)
+    ax = 0.0_wp
+    call sparse_gemv(N, z, 1.0_wp, a0, rnr0, snr0, x_sparse(1:N, irhs), ax)
     resid = b0(1:N, irhs) - ax
     call check_resid('y12ma_rand sparse resid rhs', irhs, N, resid, tol, nfail)
   end do
@@ -128,19 +130,6 @@ program test_y12ma_rand
   write(*,'(a)') 'All test_y12ma_rand tests PASSED'
 
 contains
-
-  ! Compute y = A*x where A is given in triplet format (a, rnr, snr).
-  subroutine sparse_matmul(n, z, a, snr, rnr, x, y)
-    integer,   intent(in)  :: n, z
-    real(wp),  intent(in)  :: a(*), x(n)
-    integer,   intent(in)  :: snr(*), rnr(*)
-    real(wp),  intent(out) :: y(n)
-    integer :: k
-    y(1:n) = 0.0_wp
-    do k = 1, z
-      y(rnr(k)) = y(rnr(k)) + a(k) * x(snr(k))
-    end do
-  end subroutine sparse_matmul
 
   ! Build a random n-by-n diagonally-dominant sparse matrix in triplet format.
   ! Each off-diagonal entry (i,j) is included with probability 1/3,

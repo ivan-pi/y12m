@@ -25,6 +25,7 @@
 !
 program test_y12mc_z_intent
   use y12m
+  use y12m_test_helpers, only: build_tridiag
   implicit none
 
 #ifdef TEST_SINGLE_PRECISION
@@ -212,30 +213,5 @@ program test_y12mc_z_intent
     stop 1
   end if
   write(*,'(a)') 'All test_y12mc_z_intent tests PASSED'
-
-contains
-
-  ! n-by-n tridiagonal (diag=3, off-diag=-1), solution x=[1,...,1].
-  subroutine build_tridiag(n, nnmax, nn1max, z, a, snr, rnr, b)
-    integer,  intent(in)  :: n, nnmax, nn1max
-    integer,  intent(out) :: z
-    real(wp), intent(out) :: a(nnmax), b(n)
-    integer,  intent(out) :: snr(nnmax), rnr(nn1max)
-    integer :: i
-    z = 0
-    do i = 1, n
-      z = z + 1 ; rnr(z) = i ; snr(z) = i   ; a(z) =  3.0_wp
-    end do
-    do i = 2, n
-      z = z + 1 ; rnr(z) = i ; snr(z) = i-1 ; a(z) = -1.0_wp
-    end do
-    do i = 1, n-1
-      z = z + 1 ; rnr(z) = i ; snr(z) = i+1 ; a(z) = -1.0_wp
-    end do
-    b(1:n) = 0.0_wp
-    do i = 1, z
-      b(rnr(i)) = b(rnr(i)) + a(i)
-    end do
-  end subroutine build_tridiag
 
 end program test_y12mc_z_intent

@@ -35,6 +35,7 @@
 !
 program test_y12mb_errors
   use y12m, only: y12mb
+  use y12m_test_helpers, only: set_flags, check_ifail
   implicit none
 
 #ifdef TEST_SINGLE_PRECISION
@@ -286,32 +287,5 @@ program test_y12mb_errors
     stop 1
   end if
   write(*,'(a)') 'All test_y12mb_errors tests PASSED'
-
-contains
-
-  ! Initialise IFLAG to the default values for a fresh single-system solve.
-  ! AFLAG is not initialized here: y12mb ignores all of AFLAG on input and
-  ! only writes aflag(6) (max|A|) on exit.
-  subroutine set_flags(iflag)
-    integer, intent(out) :: iflag(10)
-    iflag(1) = 0    ! state flag: >= 0 required on first call; y12mb sets -1
-    iflag(2) = 3    ! Markowitz search width (scan up to 3 rows)
-    iflag(3) = 1    ! general Markowitz pivoting strategy
-    iflag(4) = 0    ! no structure reuse (fresh factorization)
-    iflag(5) = 1    ! discard L after factorization
-    iflag(6:10) = 0 ! output counters, cleared before each call
-  end subroutine set_flags
-
-  ! Verify ifail equals the expected error code; increment nfail on mismatch.
-  subroutine check_ifail(label, ifail, expected, nfail)
-    character(len=*), intent(in) :: label
-    integer, intent(in) :: ifail, expected
-    integer, intent(inout) :: nfail
-    if (ifail /= expected) then
-      write(*,'(3a,i0,a,i0)') 'FAIL ', label, &
-          ' expected ifail=', expected, ' got ', ifail
-      nfail = nfail + 1
-    end if
-  end subroutine check_ifail
 
 end program test_y12mb_errors
