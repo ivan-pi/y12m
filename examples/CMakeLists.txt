@@ -79,53 +79,20 @@ add_test(NAME matf_bench
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
 )
 
+# Simple function: Name of the executable and the exact source file
+function(add_pde_test NAME SOURCE)
+    add_executable(${NAME} ${SOURCE})
+    target_compile_options(${NAME} PRIVATE ${TEST_COMPILE_FLAGS})
+    target_link_libraries(${NAME} PRIVATE y12m_legacy)
+
+    add_test(NAME ${NAME}
+             COMMAND ${NAME}
+             WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
+endfunction()
+
 # 9-point isotropic Poisson/Laplace example
-add_executable(poisson_9pt poisson_9pt.F90)
-target_compile_options(poisson_9pt PRIVATE ${TEST_COMPILE_FLAGS})
-target_link_libraries(poisson_9pt PRIVATE y12m_legacy)
-
-add_test(NAME poisson_9pt
-    COMMAND poisson_9pt
-    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
-)
-
-
-# 13-point Biharmonic example
-add_executable(biharmonic_13pt biharmonic_13pt.f90)
-target_compile_options(biharmonic_13pt PRIVATE ${TEST_COMPILE_FLAGS})
-target_link_libraries(biharmonic_13pt PRIVATE y12m_legacy)
-
-add_test(NAME biharmonic_13pt
-    COMMAND biharmonic_13pt
-    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
-)
-
-# Convection-Diffusion example
-add_executable(conv_diff_cds conv_diff_cds.f90)
-target_compile_options(conv_diff_cds PRIVATE ${TEST_COMPILE_FLAGS})
-target_link_libraries(conv_diff_cds PRIVATE y12m_legacy)
-
-add_test(NAME conv_diff_cds
-    COMMAND conv_diff_cds
-    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
-)
-
-# Anisotropic FEM example
-add_executable(fem_anisotropic fem_anisotropic.f90)
-target_compile_options(fem_anisotropic PRIVATE ${TEST_COMPILE_FLAGS})
-target_link_libraries(fem_anisotropic PRIVATE y12m_legacy)
-
-add_test(NAME fem_anisotropic
-    COMMAND fem_anisotropic
-    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
-)
-
-# Darcy Flow near a stagnation point.
-add_executable(darcy_flow darcy_flow.f90)
-target_compile_options(darcy_flow PRIVATE ${TEST_COMPILE_FLAGS})
-target_link_libraries(darcy_flow PRIVATE y12m_legacy)
-
-add_test(NAME darcy_flow
-    COMMAND darcy_flow
-    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
-)
+add_pde_test(poisson_9pt poisson_9pt.F90)
+add_pde_test(biharmonic_13pt biharmonic_13pt.f90)
+add_pde_test(conv_diff_cds conv_diff_cds.f90)
+add_pde_test(fem_anisotropic fem_anisotropic.f90)
+add_pde_test(darcy_flow darcy_flow.f90)
