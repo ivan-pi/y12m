@@ -5,7 +5,7 @@ Y12M sparse linear-algebra library.  Drivers are grouped into three categories:
 
 * **Synthetic matrix tests** – parametric matrices from the original Zlatev
   benchmark suite (classes D, E and F2), plus timing drivers.
-* **Discretized PDE examples** – physically-motivated problems arising from
+* **Discretised PDE examples** – physically-motivated problems arising from
   finite-difference and finite-element discretisations of PDEs.
 * **Legacy drivers** – the original fixed-form Fortran 77 programs distributed
   with the Y12M package.
@@ -13,6 +13,21 @@ Y12M sparse linear-algebra library.  Drivers are grouped into three categories:
 A shared utility module `y12m_example_util.f90` provides the three matrix
 generators (`matrd1`, `matre1`, `matrf2`) and a wall-clock timing helper
 (`time`) used by several drivers.
+
+---
+
+## Contents
+
+- [API usage table](#api-usage-table)
+- [Synthetic matrix tests](#synthetic-matrix-tests)
+  - [`timings_de.f90`](#timings_def90)
+  - [`matf_bench.f90`](#matf_benchf90)
+- [Discretised PDE examples](#discretised-pde-examples)
+  - [`poisson_9pt.F90`](#poisson_9ptf90)
+  - [`biharmonic_13pt.f90`](#biharmonic_13ptf90)
+  - [`fem_anisotropic.f90`](#fem_anisotropicf90)
+  - [`darcy_flow.f90`](#darcy_flowf90)
+- [Legacy drivers](#legacy-drivers)
 
 ---
 
@@ -37,8 +52,8 @@ coverage grows.
 
 These drivers use the parametric sparse matrices introduced by Zlatev et al.
 to benchmark the solver across a wide range of problem sizes and fill levels.
-Each matrix class has an analytically known solution (all-ones vector), so the
-maximum component-wise error is a built-in correctness check.
+The right-hand side is constructed as the row sum of the matrix so that the
+exact solution is the all-ones vector, giving a built-in correctness check.
 
 > **Note:** Annotated sparsity-pattern images for classes D, E and F2 will be
 > added in a future update.
@@ -81,7 +96,7 @@ Usage: matf_bench [--help] [-n RANGE] [-c RANGE] [-r RANGE] [--alpha VALUE]
 
 ---
 
-## Discretized PDE examples
+## Discretised PDE examples
 
 These drivers build sparse linear systems arising from the discretisation of
 partial differential equations on structured grids, solve them with `y12ma`,
@@ -89,7 +104,7 @@ and verify the solution against an analytically known exact solution using
 the Method of Manufactured Solutions (MMS) or a Fourier-series reference.
 
 Convergence shell scripts (`*_convergence.sh`) perform a grid-refinement
-study and print the observed rate for each driver.
+study and save the solution data for plotting with gnuplot (`plot_poisson.gp`).
 
 ### `poisson_9pt.F90`
 
@@ -101,7 +116,7 @@ square with a parabolic Dirichlet boundary condition on the top edge:
   u(x,1) = 4x(1−x),   u = 0 on all other edges
 ```
 
-The discretisation uses the **9-point isotropic Mehrstellen stencil** (weight
+The discretisation uses the **9-point isotropic Laplacian stencil** (weight
 matrix `[1 4 1; 4 −20 4; 1 4 1] / (6h²)`).  The reference solution is a
 Fourier sine series (odd modes only).  Expected convergence order: 4th order
 in the mesh spacing h.
@@ -142,9 +157,7 @@ where K is a full 2×2 diffusion tensor.  Features:
 * 2×2 Gauss quadrature for exact stiffness integration.
 * 3×3 Gauss quadrature for highly accurate force integration.
 * Independent NX and NY grid dimensions (rectangular elements).
-* Comprehensive timing summary of assembly and solve phases.
-
-The exact solution is `u(x,y) = exp(x) sin(πy)`.
+* Exact solution: `u(x,y) = exp(x) sin(πy)`.
 
 ```
 Usage: fem_anisotropic [--help] [NX] [NY]
@@ -166,6 +179,11 @@ system has velocity and pressure degrees of freedom interleaved cell-by-cell
 to minimise LU fill-in.  The pressure nullspace is removed by pinning one cell
 to its exact value.  The exact solution is a potential-flow stagnation-point
 field.
+
+Note: MAC/RT0-P0 is not the optimal solver architecture for this class of
+mixed problem (a Schur-complement or block-preconditioned approach would be
+more efficient), but this driver is used as a proxy application to test Y12M
+on an indefinite saddle-point system with a challenging sparsity pattern.
 
 ```
 Usage: darcy_flow [--help] [N]
