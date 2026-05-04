@@ -61,28 +61,11 @@ reordering.
 - **Fortran 77–style API.** The calling convention requires pre-allocated
   workspace arrays and integer flag vectors; it is more verbose than modern
   solver interfaces.
-- **No fill-in reduction ordering.** `Y12MB` only builds the internal data
-  structures (compressed row/column lists and the Markowitz linked list); it
-  does **not** compute any global, pre-factorization fill-in reducing ordering
-  such as AMD, COLAMD, or RCM.  During factorization `Y12MC` applies a greedy
-  *local* Markowitz strategy that selects, at each step, the pivot minimising
-  the product `(nnz_in_row − 1) × (nnz_in_col − 1)`, but this is no substitute
-  for a global graph-based ordering.
-
-  **Workaround — permute yourself.**  Because Y12M accepts its input in
-  coordinate (COO) format (`SNR`/`RNR` index arrays), it is straightforward to
-  apply an external permutation before calling `Y12MB`:
-
-  1. Compute a fill-reducing permutation `perm(1:n)` with an external library
-     (e.g. [METIS](http://glaros.dtc.umn.edu/gkhome/metis/metis/overview),
-     [AMD](https://people.engr.tamu.edu/davis/suitesparse.html), or the
-     Reverse Cuthill–McKee routine in
-     [Sparsekit](https://people.sc.fsu.edu/~jburkardt/f_src/sparsekit/sparsekit.html)).
-  2. Renumber the stored indices:
-     `SNR(i) = perm(SNR(i))` and `RNR(i) = perm(RNR(i))` for `i = 1 … Z`.
-  3. Permute the right-hand side before the solve: `b_perm(perm(i)) = b(i)`.
-  4. After `Y12MD` returns, recover the original ordering:
-     `x(i) = x_perm(perm(i))`.
+- **No fill-in reduction ordering.** There is no global, pre-factorization
+  fill-in reducing ordering (AMD, COLAMD, RCM, …).  `Y12MC` applies only a
+  greedy local Markowitz strategy during elimination.  Users can apply an
+  external permutation themselves before calling `Y12MB`; see
+  [docs/fill_in_ordering.md](docs/fill_in_ordering.md).
 
 ### Alternatives worth considering
 
