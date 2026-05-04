@@ -113,31 +113,34 @@ contains
     end do
   end function u_exact
 #else
-  !> Exact solution via Fourier sine series (numerically stable)
+  !> Exact solution via Fourier sine series (Bulletproof)
   elemental function u_exact(x, y) result(u)
     real(dp), intent(in) :: x, y
     real(dp) :: u
     integer :: m
-    real(dp) :: rn, term, exp_pos, exp_neg, denom
-    real(dp), parameter :: tol = epsilon(1.0_dp)
+    real(dp) :: rn, term, exp_pos, exp_neg, denom, max_amplitude
+    real(dp), parameter :: tol = epsilon(u)
 
     u = 0.0_dp
 
-    ! Loop up to a very high number, but we will exit early
     do m = 1, 100000, 2
       rn = real(m, dp)
 
-      ! Numerically stable evaluation of sinh(n*pi*y) / sinh(n*pi)
-      ! Avoids the Inf / Inf overflow for large m
+      ! 1. Check the absolute mathematical upper bound of this mode
+      ! Since sinh(n*pi*y)/sinh(n*pi) <= 1 for y in [0,1],
+      ! the max amplitude is entirely defined by the coefficient.
+      max_amplitude = 32.0_dp / (rn * pi)**3
+
+      ! Exit ONLY when the absolute upper bound is below tolerance
+      if (max_amplitude < tol) exit
+
+      ! 2. Safely evaluate the localized term
       exp_pos = exp(rn * pi * (y - 1.0_dp))
       exp_neg = exp(-rn * pi * (y + 1.0_dp))
       denom   = 1.0_dp - exp(-2.0_dp * rn * pi)
 
-      term = (32.0_dp / (rn * pi)**3) * sin(rn * pi * x) * ((exp_pos - exp_neg) / denom)
+      term = max_amplitude * sin(rn * pi * x) * ((exp_pos - exp_neg) / denom)
       u = u + term
-
-      ! Break the loop once the added term is smaller than machine epsilon
-      if (abs(term) < tol) exit
     end do
   end function u_exact
 #endif
@@ -315,6 +318,8 @@ contains
     allocate(a(nn), pivot(ndof), b(ndof), snr(nn), rnr(nn1), ha(ndof, 11))
     allocate(a0(nz_max), b0(ndof), snr0(nz_max), rnr0(nz_max), residual(ndof))
     allocate(u_full(N, N), u_ex_full(N, N))
+    aflag = 0
+    iflag = 0
 
     call system_clock(count_rate=clock_rate)
 

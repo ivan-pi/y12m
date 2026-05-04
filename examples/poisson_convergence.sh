@@ -33,7 +33,7 @@ done
 
 # If no N values provided, default to a sensible logarithmic-ish list
 if [ -z "$N_VALUES" ]; then
-    N_VALUES="10 20 40 80 160 320"
+    N_VALUES="5 10 20 40 80 160 200"
 fi
 
 # --- Set Variables Based on Error Type ---
@@ -102,7 +102,7 @@ gnuplot <<- EOF
     f(x) = c * (x**p)
     
     # Provide initial guesses (p=2 is a safe starting point)
-    c = 1.0; p = 4.0
+    c = 1.0; p = 2.0
     
     # Perform the fit using column 2 (h) and column 3 (Error)
     fit f(x) '$DATA_FILE' using 2:3 via c, p
