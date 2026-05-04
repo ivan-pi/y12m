@@ -82,7 +82,7 @@ contains
   !> (diagonal = 4, off-diag = -1 for each interior neighbour).
   !> A has diagonal = 1 + 4*r and off-diagonal = -r.
   !> Entries are emitted in a fixed row-major order so that the
-  !> same (rnr, snr) pattern can be reused across Newton steps.
+  !> same (rnr, snr) pattern can be reused across time steps.
   subroutine assemble_matrix(N, r, a, rnr, snr, nz)
     integer, intent(in) :: N
     real(dp), intent(in) :: r

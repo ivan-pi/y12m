@@ -229,7 +229,8 @@ contains
     iflag = 0
     iflag(2) = 3        ! Markowitz search width
     iflag(3) = 1        ! use column interchanges
-    iflag(5) = 1        ! discard L (single RHS per Newton step)
+    iflag(5) = 1        ! discard L: each Newton step has a single RHS, so
+                        ! there is no need to retain L for later solves
     aflag(1) = 16.0_dp
     aflag(2) = 1.0e-12_dp
     aflag(3) = 1.0e+16_dp
