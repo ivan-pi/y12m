@@ -311,7 +311,7 @@ contains
     write(output_unit, '(/,a)') 'Timing summary (LU reuse advantage):'
     write(output_unit, '(a,g14.6,a)') '  Assembly + IC         : ', s_assemble, ' s'
     write(output_unit, '(a,g14.6,a)') '  LU factorization      : ', s_factor,   ' s  (done ONCE)'
-    write(output_unit, '(a,g14.6,a,i0,a)') &
+    write(output_unit, '(a,i0,a,g14.6,a)') &
         '  Time loop (', nsteps, ' solves) : ', s_steps, ' s'
     if (s_steps > 0.0_dp) then
       write(output_unit, '(a,g14.6,a)') &

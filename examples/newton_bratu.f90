@@ -79,7 +79,7 @@ contains
     real(dp), intent(out) :: F(:)
     real(dp), intent(out) :: fnorm
 
-    integer :: ndof_1d, i, j, k, kw, ke, ks, kn
+    integer :: ndof_1d, i, j, k
     real(dp) :: ku_k
 
     ndof_1d = N - 2
@@ -100,9 +100,6 @@ contains
         fnorm = max(fnorm, abs(F(k)))
       end do
     end do
-
-    ! Silence unused variable warnings for kw, ke, ks, kn
-    kw = 0; ke = 0; ks = 0; kn = 0
   end subroutine compute_residual
 
   !> Assemble the Jacobian J(u) = K - h2lam * diag(exp(u)) in COO format.
@@ -225,6 +222,14 @@ contains
     write(output_unit, '(/,a)') 'Newton iteration:'
     write(output_unit, '(a)') '  iter   ||F||_inf   t_y12mb(s)  t_y12mc(s)  t_y12md(s)'
 
+    ! Initialise flags and tolerances ONCE outside the Newton loop.
+    ! iflag(9) and iflag(10) are written by y12mc (iflag(4)=1) with the
+    ! row/column fill-in counts and MUST be preserved across Newton steps
+    ! so that y12mc (iflag(4)=2) can reuse them.
+    iflag = 0
+    iflag(2) = 3        ! Markowitz search width
+    iflag(3) = 1        ! use column interchanges
+    iflag(5) = 1        ! discard L (single RHS per Newton step)
     aflag(1) = 16.0_dp
     aflag(2) = 1.0e-12_dp
     aflag(3) = 1.0e+16_dp
@@ -256,11 +261,7 @@ contains
       ! store Markowitz ordering), IFLAG(4) = 2 on subsequent iterations
       ! (reuse stored ordering from HA).
       ! ---------------------------------------------------------------
-      iflag = 0
-      iflag(2) = 3
-      iflag(3) = 1
       iflag(4) = merge(1, 2, iter == 1)   ! 1: compute ordering; 2: reuse it
-      iflag(5) = 1                         ! discard L (single RHS per Newton step)
 
       call system_clock(t0)
       call y12mb(ndof, nz, a, snr, nn, rnr, nn1, ha, iha, aflag, iflag, ifail)

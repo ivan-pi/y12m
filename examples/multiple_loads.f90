@@ -323,7 +323,7 @@ contains
     write(output_unit, '(/,a)') 'Timing summary (LU reuse advantage):'
     write(output_unit, '(a,g14.6,a)') '  Assembly (K + all b_k) : ', s_assemble, ' s'
     write(output_unit, '(a,g14.6,a)') '  LU factorization       : ', s_factor,   ' s  (done ONCE)'
-    write(output_unit, '(a,g14.6,a,i0,a)') &
+    write(output_unit, '(a,i0,a,g14.6,a)') &
         '  All solves (', nrhs, ' calls)    : ', s_solve, ' s'
     if (s_solve > 0.0_dp) then
       write(output_unit, '(a,g14.6,a)') &
