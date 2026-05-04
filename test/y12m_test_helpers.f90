@@ -167,7 +167,7 @@ contains
     end do
     do i = 2, n
       z = z + 1 ; rnr(z) = i ; snr(z) = 1   ; a(z) = 1.0_sp
-      z = z + 1 ; rnr(z) = i ; snr(z) = i   ; a(z) = real(i + 1, sp)
+      z = z + 1 ; rnr(z) = i ; snr(z) = i   ; a(z) = real(i + 1, kind=sp)
     end do
     b(1:n) = 0.0_sp
     do i = 1, z
@@ -187,7 +187,7 @@ contains
     end do
     do i = 2, n
       z = z + 1 ; rnr(z) = i ; snr(z) = 1   ; a(z) = 1.0_dp
-      z = z + 1 ; rnr(z) = i ; snr(z) = i   ; a(z) = real(i + 1, dp)
+      z = z + 1 ; rnr(z) = i ; snr(z) = i   ; a(z) = real(i + 1, kind=dp)
     end do
     b(1:n) = 0.0_dp
     do i = 1, z
@@ -233,7 +233,7 @@ contains
     integer :: i
     z = 0
     do i = 1, n
-      z = z + 1 ; rnr(z) = i ; snr(z) = i ; a(z) = real(i + 2, sp)
+      z = z + 1 ; rnr(z) = i ; snr(z) = i ; a(z) = real(i + 2, kind=sp)
     end do
     b(1:n) = 0.0_sp
     do i = 1, z
