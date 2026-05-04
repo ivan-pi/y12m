@@ -39,6 +39,7 @@
 ! =============================================================================
 module y12m_mm_driver
   use y12m, only: y12ma
+  use y12m_test_helpers, only: sparse_gemv
   use, intrinsic :: iso_fortran_env, only: error_unit
   implicit none
   private
@@ -66,33 +67,6 @@ module y12m_mm_driver
   end type cli_opts
 
 contains
-
-  ! ---------------------------------------------------------------------------
-  !> Sparse COO matrix-vector product: y := y + alpha * A * x
-  !>
-  !> A is stored in coordinate format with nz entries.
-  !> No assumptions are made about ordering.
-  !>
-  !> @param[in]     m      Number of rows (length of y).
-  !> @param[in]     nz     Number of non-zero entries.
-  !> @param[in]     alpha  Scalar multiplier.
-  !> @param[in]     val    Non-zero values,   val(1:nz).
-  !> @param[in]     row    Row indices,        row(1:nz), 1-based.
-  !> @param[in]     col    Column indices,     col(1:nz), 1-based.
-  !> @param[in]     x      Input vector,       x(1:*).
-  !> @param[inout]  y      Accumulation vector, y(1:m).
-  subroutine sparse_gemv(m, nz, alpha, val, row, col, x, y)
-    integer,  intent(in)    :: m, nz
-    real(dp), intent(in)    :: alpha
-    real(dp), intent(in)    :: val(nz)
-    integer,  intent(in)    :: row(nz), col(nz)
-    real(dp), intent(in)    :: x(*)
-    real(dp), intent(inout) :: y(m)
-    integer :: k
-    do k = 1, nz
-      y(row(k)) = y(row(k)) + alpha * val(k) * x(col(k))
-    end do
-  end subroutine sparse_gemv
 
   ! ---------------------------------------------------------------------------
   !> Main driver: read, validate, solve, and report.

@@ -36,6 +36,7 @@
 !
 program y12m_solve
   use y12m
+  use y12m_test_helpers, only: sparse_gemv
   implicit none
 
   ! ---- Upper bound on non-zeros accepted from file ----
@@ -56,7 +57,7 @@ program y12m_solve
   ! ---- Scalars ----
   integer          :: n, z, nn, nn1, iha, ifail
   integer          :: inp_unit, out_unit, ios
-  integer          :: i, k, iarg, nargs
+  integer          :: i, iarg, nargs
   integer          :: row_i, col_i
   double precision :: val_d, res_1norm, res_2norm, elapsed
 
@@ -238,9 +239,7 @@ program y12m_solve
   ! ---- Compute residual r = b_orig - A_orig * x ----
   ! After y12ma returns, b(1:n) holds the solution x.
   resid(1:n) = b_orig(1:n)
-  do k = 1, z
-    resid(row_orig(k)) = resid(row_orig(k)) - a_orig(k) * b(col_orig(k))
-  end do
+  call sparse_gemv(n, z, -1.0d0, a_orig, row_orig, col_orig, b, resid(1:n))
 
   res_1norm = sum(abs(resid(1:n)))
   res_2norm = sqrt(sum(resid(1:n)**2))

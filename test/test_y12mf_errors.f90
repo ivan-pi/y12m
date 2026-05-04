@@ -54,6 +54,7 @@
 !
 program test_y12mf_errors
   use y12m, only: y12mf
+  use y12m_test_helpers, only: load_ref6, check_ifail
   implicit none
 
   integer, parameter :: NMAX   = 10
@@ -242,35 +243,6 @@ contains
     aflag(5:11) = 0.0
   end subroutine set_aflag
 
-  ! Load the 6x6 reference matrix (COO format, Z_REF=15 non-zeros) and the
-  ! corrected right-hand side into the working arrays.
-  !
-  ! The COO ordering is non-row-major to exercise y12mb's reordering logic
-  ! (same ordering as in test_y12mc_errors.F90 and test_y12md_errors.F90).
-  !
-  ! Matrix (row-major view):
-  !   A =
-  !     10   0   0   0   0   0
-  !      0  12  -3  -1   0   0
-  !      0   0  15   0   0   0
-  !     -2   0   0  20  -2   0
-  !     -1   0   0  -5   1  -1
-  !     -1  -2   0   0   0   6
-  !
-  ! b = (10, 11, 45, 68, -22, 31) -> exact solution x = (1, 2, 3, 4, 5, 6)
-  ! Note: b(4) = 68, not 33 as in the problem statement (see discrepancy #1).
-  subroutine load_ref6(a, snr, rnr, b)
-    real,    intent(out) :: a(NNMAX), b(NMAX)
-    integer, intent(out) :: snr(NNMAX), rnr(NN1MAX)
-    rnr(1:Z_REF) = [1, 6, 6, 6, 2, 2, 2, 4, 5, 5, 5, 5, 4, 4, 3]
-    snr(1:Z_REF) = [1, 6, 2, 1, 2, 3, 4, 1, 1, 6, 5, 4, 4, 5, 3]
-    a(1:Z_REF)   = [ 10.0,  6.0, -2.0, -1.0, &
-                     12.0, -3.0, -1.0, -2.0, &
-                     -1.0, -1.0,  1.0, -5.0, &
-                     20.0, -2.0, 15.0]
-    b(1:N_REF)   = [10.0, 11.0, 45.0, 68.0, -22.0, 31.0]
-  end subroutine load_ref6
-
   ! Check all y12mf-specific output invariants after a successful call.
   !
   ! Checked:
@@ -362,17 +334,5 @@ contains
         ' sol_err=', err_sol, ' res_norm=', aflag(10), &
         ' rel_err=', aflag(9)/max(aflag(11), tiny(1.0))
   end subroutine check_mf_outputs
-
-  ! Verify ifail equals the expected value; increment nfail on mismatch.
-  subroutine check_ifail(label, ifail, expected, nfail)
-    character(len=*), intent(in) :: label
-    integer, intent(in)          :: ifail, expected
-    integer, intent(inout)       :: nfail
-    if (ifail /= expected) then
-      write(*,'(3a,i0,a,i0)') 'FAIL ', label, &
-          ' expected ifail=', expected, ' got ', ifail
-      nfail = nfail + 1
-    end if
-  end subroutine check_ifail
 
 end program test_y12mf_errors

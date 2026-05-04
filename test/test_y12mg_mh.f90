@@ -26,6 +26,7 @@
 !
 program test_y12mg_mh
   use y12m
+  use y12m_test_helpers, only: build_tridiag, check_solution
   implicit none
 
   integer, parameter :: NMAX  = 12
@@ -53,7 +54,7 @@ program test_y12mg_mh
   ! 1-norm = max column sum = 5.
   ! =====================================================================
   n = 5
-  call build_tridiag_sp(n, NNP, NN1P, z, a_sp, snr_sp, rnr_sp, b_sp)
+  call build_tridiag(n, NNP, NN1P, z, a_sp, snr_sp, rnr_sp, b_sp)
   call y12mh(n, z, a_sp, snr_sp, work_sp, anorm_sp)
   if (abs(anorm_sp - 5.0) > 1.0e-5) then
     write(*,'(a,f10.5)') 'FAIL y12mhe n=5 expected anorm=5.0 got ', anorm_sp
@@ -82,7 +83,7 @@ program test_y12mg_mh
   ! IFLAG(5)=2 is required to preserve L factors for y12mg.
   ! =====================================================================
   n = 5
-  call build_tridiag_sp(n, NNP, NN1P, z, a_sp, snr_sp, rnr_sp, b_sp)
+  call build_tridiag(n, NNP, NN1P, z, a_sp, snr_sp, rnr_sp, b_sp)
   nn = NNP ; nn1 = NN1P ; iha = NMAX
 
   ! Compute 1-norm before factorization modifies a_sp.
@@ -122,7 +123,7 @@ program test_y12mg_mh
       else
 
         ! Verify the triangular solve before estimating the condition number.
-        call check_sp('y12mg_mh y12md n=5', n, b_sp, ifail, 1.0e-4, nfail)
+        call check_solution('y12mg_mh y12md n=5', n, b_sp, ifail, 1.0e-4, nfail)
 
         ! y12mg requires IFAIL=0 on entry.
         ifail = 0
@@ -150,7 +151,7 @@ program test_y12mg_mh
   ! IFLAG(5)=2 is required to preserve L factors for y12mg.
   ! =====================================================================
   n = 10
-  call build_tridiag_dp_full(n, NNP, NN1P, z, a_dp, snr_dp, rnr_dp, b_dp)
+  call build_tridiag(n, NNP, NN1P, z, a_dp, snr_dp, rnr_dp, b_dp)
   nn = NNP ; nn1 = NN1P ; iha = NMAX
 
   ! Compute 1-norm before factorization modifies a_dp.
@@ -190,7 +191,7 @@ program test_y12mg_mh
       else
 
         ! Verify the triangular solve before estimating the condition number.
-        call check_dp('y12mg_mh y12md n=10', n, b_dp, ifail, 1.0d-10, nfail)
+        call check_solution('y12mg_mh y12md n=10', n, b_dp, ifail, 1.0d-10, nfail)
 
         ! y12mg requires IFAIL=0 on entry.
         ifail = 0
@@ -220,29 +221,6 @@ program test_y12mg_mh
 
 contains
 
-  ! n-by-n tridiagonal (diag=3, off-diag=-1), single precision, x=[1,...,1].
-  subroutine build_tridiag_sp(n, nnmax, nn1max, z, a, snr, rnr, b)
-    integer, intent(in)  :: n, nnmax, nn1max
-    integer, intent(out) :: z
-    real,    intent(out) :: a(nnmax), b(n)
-    integer, intent(out) :: snr(nnmax), rnr(nn1max)
-    integer :: i
-    z = 0
-    do i = 1, n
-      z = z + 1 ; rnr(z) = i ; snr(z) = i   ; a(z) =  3.0
-    end do
-    do i = 2, n
-      z = z + 1 ; rnr(z) = i ; snr(z) = i-1 ; a(z) = -1.0
-    end do
-    do i = 1, n-1
-      z = z + 1 ; rnr(z) = i ; snr(z) = i+1 ; a(z) = -1.0
-    end do
-    b(1:n) = 0.0
-    do i = 1, z
-      b(rnr(i)) = b(rnr(i)) + a(i)
-    end do
-  end subroutine build_tridiag_sp
-
   ! n-by-n tridiagonal (diag=3, off-diag=-1), double precision.
   ! Only a and snr are filled; row numbers are not needed for y12mh.
   subroutine build_tridiag_dp(n, nnmax, z, a, snr)
@@ -262,71 +240,5 @@ contains
       z = z + 1 ; snr(z) = i+1 ; a(z) = -1.0d0
     end do
   end subroutine build_tridiag_dp
-
-  ! Check IFAIL=0 and max|b(1:n)-1|<tol; increment nfail on failure.
-  subroutine check_sp(label, n, b, ifail, tol, nfail)
-    character(len=*), intent(in)    :: label
-    integer,          intent(in)    :: n, ifail
-    real,             intent(in)    :: b(n), tol
-    integer,          intent(inout) :: nfail
-    real :: err
-    if (ifail /= 0) then
-      write(*,'(3a,i0)') 'FAIL ', label, ' ifail=', ifail
-      nfail = nfail + 1
-      return
-    end if
-    err = maxval(abs(b(1:n) - 1.0))
-    if (err > tol) then
-      write(*,'(3a,es10.3)') 'FAIL ', label, ' max_err=', err
-      nfail = nfail + 1
-    else
-      write(*,'(3a,es10.3)') 'PASS ', label, ' max_err=', err
-    end if
-  end subroutine check_sp
-
-  ! Check IFAIL=0 and max|b(1:n)-1|<tol; increment nfail on failure (double).
-  subroutine check_dp(label, n, b, ifail, tol, nfail)
-    character(len=*), intent(in)    :: label
-    integer,          intent(in)    :: n, ifail
-    double precision, intent(in)    :: b(n), tol
-    integer,          intent(inout) :: nfail
-    double precision :: err
-    if (ifail /= 0) then
-      write(*,'(3a,i0)') 'FAIL ', label, ' ifail=', ifail
-      nfail = nfail + 1
-      return
-    end if
-    err = maxval(abs(b(1:n) - 1.0d0))
-    if (err > tol) then
-      write(*,'(3a,es14.6)') 'FAIL ', label, ' max_err=', err
-      nfail = nfail + 1
-    else
-      write(*,'(3a,es14.6)') 'PASS ', label, ' max_err=', err
-    end if
-  end subroutine check_dp
-
-  ! n-by-n tridiagonal (diag=3, off-diag=-1), double precision, x=[1,...,1].
-  ! Full version with rnr and rhs b; analogous to build_tridiag_sp.
-  subroutine build_tridiag_dp_full(n, nnmax, nn1max, z, a, snr, rnr, b)
-    integer,          intent(in)  :: n, nnmax, nn1max
-    integer,          intent(out) :: z
-    double precision, intent(out) :: a(nnmax), b(n)
-    integer,          intent(out) :: snr(nnmax), rnr(nn1max)
-    integer :: i
-    z = 0
-    do i = 1, n
-      z = z + 1 ; rnr(z) = i ; snr(z) = i   ; a(z) =  3.0d0
-    end do
-    do i = 2, n
-      z = z + 1 ; rnr(z) = i ; snr(z) = i-1 ; a(z) = -1.0d0
-    end do
-    do i = 1, n-1
-      z = z + 1 ; rnr(z) = i ; snr(z) = i+1 ; a(z) = -1.0d0
-    end do
-    b(1:n) = 0.0d0
-    do i = 1, z
-      b(rnr(i)) = b(rnr(i)) + a(i)
-    end do
-  end subroutine build_tridiag_dp_full
 
 end program test_y12mg_mh
