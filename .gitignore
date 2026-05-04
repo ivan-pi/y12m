@@ -3,3 +3,7 @@ build/
 *.mod
 *.a
 build2/
+
+*.dat
+*.log
+*.png
