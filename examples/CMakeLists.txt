@@ -80,12 +80,23 @@ add_test(NAME matf_bench
 )
 
 # 9-point isotropic Poisson/Laplace example
-add_executable(poisson_9pt poisson_9pt.f90)
+add_executable(poisson_9pt poisson_9pt.F90)
 target_compile_options(poisson_9pt PRIVATE ${TEST_COMPILE_FLAGS})
 target_link_libraries(poisson_9pt PRIVATE y12m_legacy)
 
 add_test(NAME poisson_9pt
     COMMAND poisson_9pt
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+)
+
+
+# 13-point Biharmonic example
+add_executable(biharmonic_13pt biharmonic_13pt.f90)
+target_compile_options(biharmonic_13pt PRIVATE ${TEST_COMPILE_FLAGS})
+target_link_libraries(biharmonic_13pt PRIVATE y12m_legacy)
+
+add_test(NAME biharmonic_13pt
+    COMMAND biharmonic_13pt
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
 )
 
