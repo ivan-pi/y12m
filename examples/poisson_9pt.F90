@@ -99,6 +99,7 @@ contains
   !>   Therefore  a_n = g_n / sinh(n pi), giving
   !>
   !>     u(x,y) = sum_{n odd} [32/(n pi)^3] sin(n pi x) sinh(n pi y)/sinh(n pi)
+#if 0
   elemental function u_exact(x, y) result(u)
     real(dp), intent(in) :: x, y
     real(dp) :: u
@@ -111,6 +112,35 @@ contains
             * sin(rn * pi * x) * sinh(rn * pi * y) / sinh(rn * pi)
     end do
   end function u_exact
+#else
+  !> Exact solution via Fourier sine series (numerically stable)
+  elemental function u_exact(x, y) result(u)
+    real(dp), intent(in) :: x, y
+    real(dp) :: u
+    integer :: m
+    real(dp) :: rn, term, exp_pos, exp_neg, denom
+    real(dp), parameter :: tol = epsilon(1.0_dp)
+
+    u = 0.0_dp
+
+    ! Loop up to a very high number, but we will exit early
+    do m = 1, 100000, 2
+      rn = real(m, dp)
+
+      ! Numerically stable evaluation of sinh(n*pi*y) / sinh(n*pi)
+      ! Avoids the Inf / Inf overflow for large m
+      exp_pos = exp(rn * pi * (y - 1.0_dp))
+      exp_neg = exp(-rn * pi * (y + 1.0_dp))
+      denom   = 1.0_dp - exp(-2.0_dp * rn * pi)
+
+      term = (32.0_dp / (rn * pi)**3) * sin(rn * pi * x) * ((exp_pos - exp_neg) / denom)
+      u = u + term
+
+      ! Break the loop once the added term is smaller than machine epsilon
+      if (abs(term) < tol) exit
+    end do
+  end function u_exact
+#endif
 
   ! ---------------------------------------------------------------
   ! Sparse matrix-vector product: y <- y + alpha * A * x  (COO)
