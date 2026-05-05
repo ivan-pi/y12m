@@ -198,7 +198,7 @@ contains
 
     integer :: ni, nj, nk, ndof, nz_orig, nz, nn, nn1, iha, bandwidth
     real(dp) :: h, h2
-    real(dp), allocatable :: a(:), b(:), pivot(:)
+    real(dp), allocatable, target :: a(:), b(:), pivot(:)
     integer, allocatable :: snr(:), rnr(:), ha(:,:)
     real(dp) :: aflag(8)
     integer :: iflag(10), ifail
@@ -208,11 +208,11 @@ contains
     integer, allocatable :: snr0(:), rnr0(:)
     real(dp), allocatable :: residual(:)
 
-    integer :: i, j, k, idx
-    real(dp) :: x, y_c, z_c, u_num, u_ex_val
+    integer :: i, j, k
+    real(dp) :: x, y_c, z_c, u_ex_val
     real(dp) :: err_max, err_rms, res_inf, res_2
     integer :: t0, t1, clock_rate
-    integer :: t_assemble, t_solve, t_error
+    integer :: t_assemble, t_solve, t_error, t_total
 
     ni = N - 2
     nj = N - 2
@@ -280,22 +280,25 @@ contains
 
     err_max = 0.0_dp
     err_rms = 0.0_dp
-    do k = 2, N - 1
-      z_c = real(k - 1, dp) * h
-      do j = 2, N - 1
-        y_c = real(j - 1, dp) * h
-        do i = 2, N - 1
-          x   = real(i - 1, dp) * h
-          idx = (k - 2) * ni * nj + (j - 2) * ni + (i - 2) + 1
-          u_num    = b(idx)
-          u_ex_val = u_exact(x, y_c, z_c, kx, ky, kz)
-          err_max  = max(err_max, abs(u_num - u_ex_val))
-          err_rms  = err_rms + (u_num - u_ex_val)**2
+    block
+      real(dp), pointer :: b_3d(:,:,:) => null()
+      b_3d(2:N-1, 2:N-1, 2:N-1) => b(1:ndof)
+      do k = 2, N - 1
+        z_c = real(k - 1, dp) * h
+        do j = 2, N - 1
+          y_c = real(j - 1, dp) * h
+          do i = 2, N - 1
+            x        = real(i - 1, dp) * h
+            u_ex_val = u_exact(x, y_c, z_c, kx, ky, kz)
+            err_max  = max(err_max, abs(b_3d(i, j, k) - u_ex_val))
+            err_rms  = err_rms + (b_3d(i, j, k) - u_ex_val)**2
+          end do
         end do
       end do
-    end do
+    end block
     err_rms = sqrt(err_rms / real(ndof, dp))
 
+    ! b(1:ndof) holds the solution x (overwritten by y12ma upon return).
     ! Discrete residual  r = b0 - A0 * u_h
     residual = b0
     call coo_gemv(ndof, nz, -1.0_dp, a0, rnr0, snr0, b, residual)
@@ -330,14 +333,29 @@ contains
     ! ==================================================================
     ! Timing summary
     ! ==================================================================
+    t_total = t_assemble + t_solve + t_error
     write(output_unit, '(a)') ''
     write(output_unit, '(a)') 'Timing summary:'
-    write(output_unit, '(a,f10.6,a)') &
-        '  Assembly     : ', real(t_assemble, dp) / real(clock_rate, dp), ' s'
-    write(output_unit, '(a,f10.6,a)') &
-        '  Solve        : ', real(t_solve, dp) / real(clock_rate, dp), ' s'
-    write(output_unit, '(a,f10.6,a)') &
-        '  Error+resid  : ', real(t_error, dp) / real(clock_rate, dp), ' s'
+    if (t_total > 0) then
+      write(output_unit, '(a,g12.4,a,f5.1,a)') &
+          '  Assembly     : ', real(t_assemble, dp) / real(clock_rate, dp), &
+          ' s (', 100.0_dp * real(t_assemble, dp) / real(t_total, dp), '%)'
+      write(output_unit, '(a,g12.4,a,f5.1,a)') &
+          '  Solve        : ', real(t_solve, dp) / real(clock_rate, dp), &
+          ' s (', 100.0_dp * real(t_solve, dp) / real(t_total, dp), '%)'
+      write(output_unit, '(a,g12.4,a,f5.1,a)') &
+          '  Error+resid  : ', real(t_error, dp) / real(clock_rate, dp), &
+          ' s (', 100.0_dp * real(t_error, dp) / real(t_total, dp), '%)'
+    else
+      write(output_unit, '(a,g12.4,a)') &
+          '  Assembly     : ', real(t_assemble, dp) / real(clock_rate, dp), ' s'
+      write(output_unit, '(a,g12.4,a)') &
+          '  Solve        : ', real(t_solve, dp) / real(clock_rate, dp), ' s'
+      write(output_unit, '(a,g12.4,a)') &
+          '  Error+resid  : ', real(t_error, dp) / real(clock_rate, dp), ' s'
+    end if
+    write(output_unit, '(a,g12.4,a)') &
+        '  Total        : ', real(t_total, dp) / real(clock_rate, dp), ' s'
 
   end subroutine run
 
@@ -353,15 +371,11 @@ program poisson_3d
 
   integer :: N, kx, ky, kz, ios, iarg, nargs
   character(len=256) :: arg
-  integer, parameter :: default_n  = 12
-  integer, parameter :: default_kx = 1
-  integer, parameter :: default_ky = 1
-  integer, parameter :: default_kz = 1
 
-  N  = default_n
-  kx = default_kx
-  ky = default_ky
-  kz = default_kz
+  N  = 12
+  kx = 1
+  ky = 1
+  kz = 1
 
   nargs = command_argument_count()
 
