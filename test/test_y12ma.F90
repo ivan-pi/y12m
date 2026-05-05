@@ -50,6 +50,8 @@ program test_y12ma_dp
   nfail = 0
 
   ! --- n=1: verify expected error IFAIL=12 (N<2 not supported by package) ---
+  ! build_diag from y12m_test_helpers is sp-only; construct the 1x1 system
+  ! manually so this case works for both precisions.
   n = 1 ; z = 1
   a(1) = 1.0_wp ; snr(1) = 1 ; rnr(1) = 1 ; b(1) = 1.0_wp
   nn = NNP ; nn1 = NN1P ; iha = NMAX
