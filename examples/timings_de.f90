@@ -338,6 +338,7 @@ end module coo_matrix_mod
 
 program timings_de
    use coo_matrix_mod
+   use y12m_example_helpers, only: parse_range
    use, intrinsic :: iso_fortran_env, only: output_unit, error_unit, int64
    implicit none
 
@@ -526,73 +527,6 @@ contains
          i = i + 1
       end do
    end function parse_args
-
-   ! -----------------------------------------------------------------------
-   !> Parse a range string of the form:
-   !>   VALUE            -> vstart=VALUE, vend=VALUE, vstep=1
-   !>   BEGIN:END        -> vstart=BEGIN, vend=END,   vstep=1
-   !>   BEGIN:END:STEP   -> vstart=BEGIN, vend=END,   vstep=STEP
-   subroutine parse_range(str, vstart, vend, vstep)
-      character(len=*), intent(in)  :: str
-      integer, intent(out) :: vstart, vend, vstep
-
-      integer :: pos1, pos2, ios
-      character(len=64) :: part1, part2, part3
-
-      pos1 = index(str, ':')
-      if (pos1 == 0) then
-         ! Single value
-         read(str, *, iostat=ios) vstart
-         if (ios /= 0) then
-            write(error_unit, '(2a)') 'Error: cannot parse value: ', trim(str)
-            stop 1
-         end if
-         vend  = vstart
-         vstep = 1
-         return
-      end if
-
-      ! Look for the second colon in the substring after pos1
-      pos2 = index(str(pos1 + 1:), ':')
-
-      if (pos2 == 0) then
-         ! Two parts: BEGIN:END
-         part1 = str(1:pos1 - 1)
-         part2 = str(pos1 + 1:)
-         read(part1, *, iostat=ios) vstart
-         if (ios /= 0) then
-            write(error_unit, '(2a)') 'Error: cannot parse range start: ', trim(part1)
-            stop 1
-         end if
-         read(part2, *, iostat=ios) vend
-         if (ios /= 0) then
-            write(error_unit, '(2a)') 'Error: cannot parse range end: ', trim(part2)
-            stop 1
-         end if
-         vstep = 1
-      else
-         ! Three parts: BEGIN:END:STEP (pos2 is relative, make it absolute)
-         pos2 = pos2 + pos1
-         part1 = str(1:pos1 - 1)
-         part2 = str(pos1 + 1:pos2 - 1)
-         part3 = str(pos2 + 1:)
-         read(part1, *, iostat=ios) vstart
-         if (ios /= 0) then
-            write(error_unit, '(2a)') 'Error: cannot parse range start: ', trim(part1)
-            stop 1
-         end if
-         read(part2, *, iostat=ios) vend
-         if (ios /= 0) then
-            write(error_unit, '(2a)') 'Error: cannot parse range end: ', trim(part2)
-            stop 1
-         end if
-         read(part3, *, iostat=ios) vstep
-         if (ios /= 0) then
-            write(error_unit, '(2a)') 'Error: cannot parse range step: ', trim(part3)
-            stop 1
-         end if
-      end if
-   end subroutine parse_range
 
    ! -----------------------------------------------------------------------
    !> Print the help message and return.

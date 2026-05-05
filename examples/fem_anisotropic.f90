@@ -16,6 +16,7 @@
 ! Solver: y12ma (double precision sparse direct).
 
 module fem_solver
+  use y12m_example_helpers, only: rms_diff, write_field_output
   use, intrinsic :: iso_fortran_env, only: output_unit, error_unit
   implicit none
   private
@@ -44,15 +45,6 @@ contains
     real(dp) :: f
     f = -exp(x) * ( (kxx - kyy * pi**2)*sin(pi * y) + 2.0_dp * kxy * pi * cos(pi * y) )
   end function f_rhs
-
-  ! ---------------------------------------------------------------
-  ! Root-mean-square error
-  ! ---------------------------------------------------------------
-  function rms_diff(a, b) result(rms)
-    real(dp), intent(in) :: a(:), b(:)
-    real(dp) :: rms
-    rms = norm2(a - b) / sqrt(real(size(a), dp))
-  end function rms_diff
 
   ! ---------------------------------------------------------------
   ! Calculates the 4x4 element stiffness matrix Ke.
@@ -230,36 +222,6 @@ contains
   end function get_y
 
   ! ---------------------------------------------------------------
-  ! Write Output
-  ! ---------------------------------------------------------------
-  subroutine write_output(NX, NY, u_num, u_ex, filename, header, nhr)
-    integer, intent(in) :: NX, NY
-    real(dp), intent(in) :: u_num(NX, NY), u_ex(NX, NY)
-    character(len=*), intent(in) :: filename
-    integer, intent(in) :: nhr
-    character(len=70), intent(in) :: header(nhr)
-    character(len=*), parameter :: datafmt = '(4(1x,es14.6))'
-    real(dp) :: hx, hy
-    integer :: funit, i, j, ih
-
-    hx = 1.0_dp / real(NX - 1, dp)
-    hy = 1.0_dp / real(NY - 1, dp)
-
-    open(newunit=funit, file=filename, status='unknown', action='write')
-    do ih = 1, nhr
-      write(funit, '("# ",a)') trim(header(ih))
-    end do
-    write(funit, '(a)') '# Columns: x   y   u_numerical   u_exact'
-    do j = 1, NY
-      do i = 1, NX
-        write(funit, datafmt) real(i - 1, dp) * hx, real(j - 1, dp) * hy, u_num(i, j), u_ex(i, j)
-      end do
-      write(funit, *)
-    end do
-    close(funit)
-  end subroutine write_output
-
-  ! ---------------------------------------------------------------
   ! Main Driver
   ! ---------------------------------------------------------------
   subroutine run(NX, NY, outfile)
@@ -349,7 +311,7 @@ contains
       character(len=70) :: hdr(2)
       hdr(1) = 'FEM Q1 Anisotropic Diffusion on unit square'
       hdr(2) = 'MMS: u(x,y) = exp(x) * sin(pi * y)'
-      call write_output(NX, NY, u_full, u_ex_full, outfile, hdr, size(hdr))
+      call write_field_output(NX, NY, u_full, u_ex_full, outfile, hdr, size(hdr))
     end block
     call system_clock(t1); t_output = t1 - t0
 

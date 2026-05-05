@@ -24,6 +24,7 @@
 ! Module biharmonic_solver
 ! ==============================================================
 module biharmonic_solver
+  use y12m_example_helpers, only: rms_diff, write_field_output
   use, intrinsic :: iso_fortran_env, only: output_unit, error_unit
   implicit none
   private
@@ -93,15 +94,6 @@ contains
       y(ia(p)) = y(ia(p)) + alpha * a(p) * x(ja(p))
     end do
   end subroutine dp_coo_gemv
-
-  ! ---------------------------------------------------------------
-  ! Root-mean-square of element-wise difference of two 2-D arrays
-  ! ---------------------------------------------------------------
-  function rms_diff(a, b) result(rms)
-    real(dp), intent(in) :: a(:,:), b(:,:)
-    real(dp) :: rms
-    rms = norm2(a - b) / sqrt(real(size(a), dp))
-  end function rms_diff
 
   ! ---------------------------------------------------------------
   ! Assemble the stiffness matrix A in COO format.
@@ -208,36 +200,6 @@ contains
       end do
     end do
   end subroutine compute_rhs
-
-  ! ---------------------------------------------------------------
-  ! Write the solution to a gnuplot pm3d data file.
-  ! ---------------------------------------------------------------
-  subroutine write_output(N, u_num, u_ex, filename, header, nhr)
-    integer, intent(in) :: N
-    real(dp), intent(in) :: u_num(N, N), u_ex(N, N)
-    character(len=*), intent(in) :: filename
-    integer, intent(in) :: nhr
-    character(len=70), intent(in) :: header(nhr)
-    character(len=*), parameter :: datafmt = '(4(1x,es14.6))'
-    real(dp) :: h
-    integer :: funit, i, j, ih
-
-    h = 1.0_dp / real(N - 1, dp)
-    open(newunit=funit, file=filename, status='unknown', action='write')
-    do ih = 1, nhr
-      write(funit, '("# ",a)') trim(header(ih))
-    end do
-    write(funit, '(a)') '# Columns: x   y   u_numerical   u_exact'
-    write(funit, '(a)') '#'
-    do j = 1, N
-      do i = 1, N
-        write(funit, datafmt) real(i - 1, dp) * h, real(j - 1, dp) * h, &
-            u_num(i, j), u_ex(i, j)
-      end do
-      write(funit, *)
-    end do
-    close(funit)
-  end subroutine write_output
 
   ! ---------------------------------------------------------------
   ! Main Driver
@@ -347,7 +309,7 @@ contains
       else
         hdr(2) = 'MMS Hard: u(x,y) = sin(3pi x) sin(4pi y)'
       end if
-      call write_output(N, u_full, u_ex_full, outfile, hdr, size(hdr))
+      call write_field_output(N, N, u_full, u_ex_full, outfile, hdr, size(hdr))
     end block
     call system_clock(t1); t_output = t1 - t0
 
