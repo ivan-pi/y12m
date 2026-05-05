@@ -7,24 +7,28 @@ package and lists tests worth adding in the future.
 
 ## 1. Summary of current tests
 
-| Test file | Routine(s) exercised | Precision | Matrix types |
-|---|---|---|---|
-| `test_y12ma_sp.f90` | y12ma | SP | diagonal, tridiagonal, arrow |
-| `test_y12ma_dp.f90` | y12ma | DP | diagonal, tridiagonal, arrow |
-| `test_y12ma_5x5.F90` | y12ma | SP + DP | UMFPACK 5×5 |
-| `test_y12ma_rand.F90` | y12ma | SP + DP | random 9×9 (LAPACK ref, optional) |
-| `test_y12mb_mc_md_sp.f90` | y12mb + y12mc + y12md | SP | diagonal, full 2×2, tridiagonal, arrow |
-| `test_y12mb_mc_md_dp.f90` | y12mb + y12mc + y12md | DP | same |
-| `test_y12mb_errors.F90` | y12mb | SP + DP | error-path coverage |
-| `test_y12mc_errors.F90` | y12mc | SP + DP | error-path coverage |
-| `test_y12mc_z_intent.F90` | y12mc | SP + DP | regression: z intent violation |
-| `test_y12md_errors.F90` | y12md | SP + DP | error-path coverage |
-| `test_y12mf_sp.f90` | y12mf | SP | tridiagonal n=3,5,7,10 |
-| `test_y12mf_errors.f90` | y12mf | SP | 6×6 reference; error/output invariants; LU-reuse |
-| `test_y12mg_mh.f90` | y12mg + y12mh | SP + DP | tridiagonal |
-| `y12m_solve.f90` | y12ma | SP + DP | Netlib SPARSE format files mat0–mat5 |
-| `y12m_mm.f90` | y12ma | SP + DP | arbitrary Matrix Market format (optional) |
-| `test_y12ma_y12mf_bench_sp.f90` | y12ma + y12mf | SP | UMFPACK 5×5, HB 4×4, Pardiso 8×8, Templates 6×6 |
+Files with a `.F90` extension are compiled twice via a `TEST_SINGLE_PRECISION`
+preprocessor macro, producing separate `_sp` and `_dp` CTest executables.
+Files with a `.f90` extension produce a single executable.
+
+| Test file | CTest name(s) | Routine(s) exercised | Precision | Matrix types / notes |
+|---|---|---|---|---|
+| `test_y12ma_sp.f90` | `test_y12ma_sp` | y12ma | SP | n=1 diagonal (IFAIL=12 error path), n=2–4 tridiagonal, n=5 arrow |
+| `test_y12ma_dp.f90` | `test_y12ma_dp` | y12ma | DP | n=6–7,9–10 tridiagonal, n=8 arrow |
+| `test_y12ma_5x5.F90` | `test_y12ma_5x5_sp`, `test_y12ma_5x5_dp` | y12ma | SP + DP | UMFPACK 5×5; residual check (2-norm and ∞-norm) |
+| `test_y12ma_rand.F90` | `test_y12ma_rand_sp`, `test_y12ma_rand_dp` | y12ma | SP + DP | random 9×9 diag.-dominant, 3 RHS; cross-checked vs LAPACK sgesv/dgesv (optional, requires LAPACK) |
+| `test_y12mb_mc_md_sp.f90` | `test_y12mb_mc_md_sp` | y12mb + y12mc + y12md | SP | n=1 diagonal (IFAIL=12 error path), n=2 full 2×2, n=3–4 tridiagonal, n=5 arrow |
+| `test_y12mb_mc_md_dp.f90` | `test_y12mb_mc_md_dp` | y12mb + y12mc + y12md | DP | n=6,8,9 tridiagonal, n=7 arrow, n=10 pentadiagonal (bandwidth 2) |
+| `test_y12mb_errors.F90` | `test_y12mb_errors_sp`, `test_y12mb_errors_dp` | y12mb | SP + DP | error-path coverage (IFAIL 5,6,11–18,24,25); valid-call postconditions (IFLAG(1)=−1, AFLAG(6)=max\|A\|) |
+| `test_y12mc_errors.F90` | `test_y12mc_errors_sp`, `test_y12mc_errors_dp` | y12mc | SP + DP | error-path coverage (IFAIL 2–4,7–9,19–22); success block verifies IFLAG(1)=−2, AFLAG(6,8), pivot sequence, and residual |
+| `test_y12mc_z_intent.F90` | `test_y12mc_z_intent_sp`, `test_y12mc_z_intent_dp` | y12mc | SP + DP | regression: `z` must be unchanged on success path, on early-error exit, and when passed as an integer literal |
+| `test_y12md_errors.F90` | `test_y12md_errors_sp`, `test_y12md_errors_dp` | y12mb + y12mc + y12md | SP + DP | error-path coverage (IFAIL=1); success with IFLAG(5)=1 and IFLAG(5)=2; multiple-RHS reuse (IFLAG(5)=3) on 6×6 reference matrix |
+| `test_y12mf_sp.f90` | `test_y12mf_sp` | y12mf | SP | tridiagonal n=3,5,7,10 |
+| `test_y12mf_errors.f90` | `test_y12mf_errors` | y12mf | SP | 6×6 reference; error-path (IFAIL=10,23); output-parameter invariants (IFLAG(12), AFLAG(9–11), B, B1); LU-reuse (IFLAG(5)=3) |
+| `test_y12mg_mh.f90` | `test_y12mg_mh` | y12mg + y12mh | SP + DP | 1-norm of n=5 (SP) and n=10 (DP) tridiagonal; condition estimate after full y12mb→y12mc→y12md→y12mg sequence |
+| `test_y12ma_y12mf_bench_sp.f90` | `test_y12ma_y12mf_bench_sp` | y12ma + y12mf | SP | UMFPACK 5×5, Harwell-Boeing 4×4, Pardiso 8×8, Templates 6×6 |
+| `y12m_solve.f90` | `y12m_solve_mat0` … `y12m_solve_mat5` (no mat4) | y12ma (DP) | DP | five `.mtx` data files (mat0–mat3, mat5); file-based regression driver with `--verbose` output |
+| `y12m_mm.f90` | *(excluded when `WITH_NIST_MMIO=OFF`)* | y12ma | SP + DP | arbitrary Matrix Market format; requires NIST mmio library |
 
 ---
 
@@ -56,18 +60,20 @@ verify error flags and iterative-refinement benefit on ill-conditioned
 problems, nor tests that exercise the near-singularity detection path
 (IFAIL = 7 or 8).
 
-### 2.5 LU structure reuse (multiple same-structure systems)
+### 2.5 Limited variety of benchmark matrices
 
-The `y12mb + y12mc + y12md` reuse path (`IFLAG(4)=2`, `IFLAG(5)=3`) is
-tested only inside `test_y12mf_errors.f90` (for y12mf).  The analogous
-three-step API reuse path is not tested directly.
+Most tests use tridiagonal or arrow matrices.  `test_y12ma_y12mf_bench_sp`
+adds four literature matrices (UMFPACK 5×5, Harwell-Boeing 4×4, Pardiso 8×8,
+Templates 6×6) but only in single precision and only for y12ma/y12mf.  Broader
+structural variety (block-diagonal, banded, general unsymmetric) at double
+precision and through the y12mb/y12mc/y12md API is still missing.
 
-### 2.6 Limited variety of benchmark matrices
+### 2.6 y12md input-validation checks not implemented
 
-Most tests use tridiagonal or arrow matrices.  Only one external benchmark
-matrix (UMFPACK 5×5) is tested with the direct API before the new benchmark
-driver is added.  Broader structural variety (block-diagonal, banded, general
-unsymmetric) is missing.
+`test_y12md_errors.F90` documents (as commented-out blocks) three input checks
+that `y12md` does not currently perform: `NN < 2*Z` (IFLAG(5)=1), `NN < 3*Z`
+(IFLAG(5)=2), and `IHA < N`.  These tests cannot be activated until the
+corresponding validation logic is added to the `y12md` source.
 
 ### 2.7 y12mh/y12mg with non-tridiagonal inputs
 
@@ -91,6 +97,12 @@ CTest tests but are separate from the main `test/` suite.  Bringing the
 class-D/E/F generators into the test suite would let the automated tests
 cover a much wider range of matrix structures and sizes without duplicating
 test infrastructure.
+
+### 2.10 y12m_solve missing mat4 data file
+
+The `y12m_solve` driver is registered for mat0, mat1, mat2, mat3, and mat5,
+but `test/data/mat4.mtx` does not exist.  Adding this data file (or explaining
+why it is intentionally absent) would complete the mat0–mat5 series.
 
 ---
 
@@ -125,33 +137,32 @@ and verify that `AFLAG(9)/AFLAG(11)` (relative-error estimate) decreases
 monotonically across refinement iterations and reaches a value below a
 strict tolerance that the direct solve cannot meet.
 
-### SP-6  LU structure-reuse with y12mb + y12mc + y12md
-Set up two right-hand sides for the same sparsity structure.  Solve the
-first with `IFLAG(4) = 0`, `IFLAG(5) = 1` to factorize.  Solve the second
-with `IFLAG(4) = 2`, `IFLAG(5) = 3` to reuse the factorization.  Verify
-that both solutions are correct and that the second call does not modify
-the LU factors.
-
-### SP-7  Near-singular matrix: IFAIL = 7 or 8 detection
+### SP-6  Near-singular matrix: IFAIL = 7 or 8 detection
 Construct a nearly singular matrix (one row/column approximately linearly
 dependent on another) and call y12mc with tight stability settings.  Verify
 that IFAIL is non-zero (7 or 8) and that no undefined-behaviour occurs.
 
-### SP-8  y12mh and y12mg with general unsymmetric matrices
+### SP-7  y12mh and y12mg with general unsymmetric matrices
 Call y12mh and y12mg on the UMFPACK 5×5 and the Pardiso 8×8 matrices.
 Verify that 1-norm values match hand-computed column sums, and that RCOND
 is positive and consistent with a well-conditioned matrix.
 
-### SP-9  `y12m_solve` regression suite with stored tolerances
-The `test/data/` directory contains five sparse systems in the Netlib SPARSE
-text format (files `mat0`–`mat5`).  Extend the `y12m_solve` driver to record
-expected residual norms alongside each data file and fail if the computed
-residual exceeds those stored tolerances.  Add at least one additional
+### SP-8  `y12m_solve` regression suite with stored tolerances
+The `test/data/` directory contains five sparse systems in `.mtx` format
+(mat0–mat3, mat5).  Extend the `y12m_solve` driver to record expected
+residual norms alongside each data file and fail if the computed residual
+exceeds those stored tolerances.  Add `mat4.mtx` and at least one additional
 problem to broaden structural coverage.
 
-### SP-10  Integrate class D/E/F matrix generators into the test suite
+### SP-9  Integrate class D/E/F matrix generators into the test suite
 Move the class D, E and F matrix generators from `examples/` into the shared
 test infrastructure so that `y12ma`, `y12mb + y12mc + y12md`, and `y12mf`
 are all automatically exercised on parameterised matrices of varying size and
 density.  This would significantly increase structural diversity without
 adding hand-crafted matrices.
+
+### SP-10  y12md input-validation checks
+Add `NN` and `IHA` precondition checks to the `y12md` implementation and
+activate the commented-out test blocks in `test_y12md_errors.F90`
+(see gap 2.6 above).  The expected error codes are IFAIL=5 for `NN` violations
+and IFAIL=15 for `IHA < N`.
