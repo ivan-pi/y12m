@@ -97,3 +97,16 @@ add_pde_test(conv_diff_cds conv_diff_cds.f90)
 add_pde_test(fem_anisotropic fem_anisotropic.f90)
 add_pde_test(darcy_flow darcy_flow.f90)
 add_pde_test(elasticity elasticity.f90)
+
+# --------------------------------------------------------------------------
+# LU-reuse examples: demonstrate the low-level y12mb / y12mc / y12md API
+# --------------------------------------------------------------------------
+
+# Case (ii): implicit heat equation -- factorize once, solve many times
+add_pde_test(heat_implicit heat_implicit.f90)
+
+# Case (ii): Poisson with multiple load cases -- one factorization, nrhs solves
+add_pde_test(multiple_loads multiple_loads.f90)
+
+# Case (iii): Newton iteration for Bratu -- reuse Markowitz ordering
+add_pde_test(newton_bratu newton_bratu.f90)
