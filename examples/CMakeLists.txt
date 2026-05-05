@@ -99,6 +99,7 @@ endfunction()
 
 
 add_pde_test(poisson_9pt poisson_9pt.F90)
+add_pde_test(poisson_3d poisson_3d.f90)
 add_pde_test(biharmonic_13pt biharmonic_13pt.f90)
 target_link_libraries(biharmonic_13pt PRIVATE y12m_example_helpers)
 add_pde_test(conv_diff_cds conv_diff_cds.f90)
