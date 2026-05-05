@@ -1,4 +1,5 @@
 ! SPDX-License-Identifier: GPL-2.0-only
+! Assisted-by: GitHub Copilot:claude-sonnet-4.5
 !
 ! newton_bratu.f90 - Newton iteration for the 2-D Bratu problem
 !
@@ -28,7 +29,7 @@
 ! --------------
 ! Total grid N x N (including boundary nodes), spacing h = 1/(N-1).
 ! Interior nodes: ndof = (N-2)^2.
-! DOF index: k(i,j) = (j-2)*(N-2) + (i-2) + 1.
+! 2-D indexing: interior node (i,j) with i,j in [2, N-1].
 !
 ! Solver strategy -- Case (iii): same sparsity, changing values
 ! -------------------------------------------------------------
@@ -50,7 +51,7 @@
 !   newton_bratu [--help] [N] [lambda] [max_iter] [output_file]
 !
 !     N           total grid size (>= 3, default 22)
-!     lambda      reaction parameter (default 1.0, must be < 6.808)
+!     lambda      reaction parameter (default 1.0, must be in (0, 6.808))
 !     max_iter    maximum Newton iterations (default 20)
 !     output_file output data file name (default: newton_bratu.dat)
 !
@@ -70,34 +71,34 @@ contains
 
   !> Compute the Bratu residual F(u) and its infinity norm.
   !>
-  !> F_k = [K u]_k - h2lam * exp(u_k)
-  !> where [K u]_k = 4 u_k - sum of neighbour values.
+  !> F(i,j) = [K u]_{i,j} - h2lam * exp(u(i,j))
+  !> where [K u]_{i,j} = 4 u(i,j) - sum of neighbour values.
+  !> Boundary values are zero (homogeneous Dirichlet) and are not stored in u.
   subroutine compute_residual(N, h2lam, u, F, fnorm)
     integer, intent(in) :: N
     real(dp), intent(in) :: h2lam
-    real(dp), intent(in) :: u(:)
-    real(dp), intent(out) :: F(:)
+    real(dp), intent(in) :: u(2:N-1, 2:N-1)
+    real(dp), intent(out) :: F(2:N-1, 2:N-1)
     real(dp), intent(out) :: fnorm
 
-    integer :: ndof_1d, i, j, k
-    real(dp) :: ku_k
+    integer :: i, j
+    real(dp) :: ku_ij
 
-    ndof_1d = N - 2
     fnorm = 0.0_dp
 
     do j = 2, N - 1
       do i = 2, N - 1
-        k = (j - 2) * ndof_1d + (i - 2) + 1
+        ! 5-point stencil action [K u]_{i,j} = 4 u(i,j) - neighbours.
+        ! Boundary values (i==1, i==N, j==1, j==N) are zero; the
+        ! conditional checks avoid accessing u outside its [2:N-1] bounds.
+        ku_ij = 4.0_dp * u(i, j)
+        if (i > 2)   ku_ij = ku_ij - u(i-1, j)   ! west
+        if (i < N-1) ku_ij = ku_ij - u(i+1, j)   ! east
+        if (j > 2)   ku_ij = ku_ij - u(i, j-1)   ! south
+        if (j < N-1) ku_ij = ku_ij - u(i, j+1)   ! north
 
-        ! 5-point stencil action [K u]_k = 4 u_k - neighbours
-        ku_k = 4.0_dp * u(k)
-        if (i > 2)   ku_k = ku_k - u((j - 2) * ndof_1d + (i - 3) + 1)  ! west
-        if (i < N - 1) ku_k = ku_k - u((j - 2) * ndof_1d + (i - 1) + 1)  ! east
-        if (j > 2)   ku_k = ku_k - u((j - 3) * ndof_1d + (i - 2) + 1)  ! south
-        if (j < N - 1) ku_k = ku_k - u((j - 1) * ndof_1d + (i - 2) + 1)  ! north
-
-        F(k) = ku_k - h2lam * exp(u(k))
-        fnorm = max(fnorm, abs(F(k)))
+        F(i, j) = ku_ij - h2lam * exp(u(i, j))
+        fnorm = max(fnorm, abs(F(i, j)))
       end do
     end do
   end subroutine compute_residual
@@ -111,7 +112,7 @@ contains
   subroutine assemble_jacobian(N, h2lam, u, a, rnr, snr, nz)
     integer, intent(in) :: N
     real(dp), intent(in) :: h2lam
-    real(dp), intent(in) :: u(:)
+    real(dp), intent(in) :: u(2:N-1, 2:N-1)
     real(dp), intent(out) :: a(:)
     integer, intent(out) :: rnr(:), snr(:)
     integer, intent(out) :: nz
@@ -125,11 +126,11 @@ contains
       do i = 2, N - 1
         k_row = (j - 2) * ndof_1d + (i - 2) + 1
 
-        ! Diagonal: 4 - h2lam * exp(u_k)
+        ! Diagonal: 4 - h2lam * exp(u(i,j))
         nz = nz + 1
         rnr(nz) = k_row
         snr(nz) = k_row
-        a(nz) = 4.0_dp - h2lam * exp(u(k_row))
+        a(nz) = 4.0_dp - h2lam * exp(u(i, j))
 
         ! West neighbour (i-1, j)
         if (i > 2) then
@@ -167,6 +168,39 @@ contains
     end do
   end subroutine assemble_jacobian
 
+  !> Write the Newton solution to a gnuplot-compatible file.
+  !>
+  !> Boundary nodes are handled separately from interior nodes because
+  !> they are not stored in u: the homogeneous Dirichlet BCs impose
+  !> u = 0 on the boundary, so the numerical solution there is exactly zero.
+  subroutine write_solution(N, h, u, lam, outfile)
+    integer, intent(in) :: N
+    real(dp), intent(in) :: h, lam
+    real(dp), intent(in) :: u(2:N-1, 2:N-1)
+    character(len=*), intent(in) :: outfile
+
+    integer :: i, j, funit
+
+    open(newunit=funit, file=outfile, status='unknown', action='write')
+    write(funit, '(a)') '# Bratu problem -- Newton iteration with structural LU reuse'
+    write(funit, '(a,i0,a,es10.3)') '# N=', N, '  lambda=', lam
+    write(funit, '(a)') '# Columns: x  y  u_numerical'
+    do j = 1, N
+      do i = 1, N
+        ! Boundary nodes are not stored in u; homogeneous Dirichlet gives u=0 there.
+        if (i == 1 .or. i == N .or. j == 1 .or. j == N) then
+          write(funit, '(3(1x,es14.6))') &
+              real(i - 1, dp) * h, real(j - 1, dp) * h, 0.0_dp
+        else
+          write(funit, '(3(1x,es14.6))') &
+              real(i - 1, dp) * h, real(j - 1, dp) * h, u(i, j)
+        end if
+      end do
+      write(funit, *)
+    end do
+    close(funit)
+  end subroutine write_solution
+
   ! ---------------------------------------------------------------
   ! Main driver: Newton iteration with structural LU reuse
   ! ---------------------------------------------------------------
@@ -178,15 +212,17 @@ contains
 
     integer :: ndof_1d, ndof, nz_max, nz, nn, nn1, iha
     real(dp) :: h, h2lam, fnorm
-    real(dp), allocatable :: a(:), pivot(:), u(:), F(:), delta_u(:)
+    real(dp), allocatable, target :: u_flat(:), F_flat(:)
+    real(dp), pointer :: u(:,:) => null(), F_2d(:,:) => null()
+    real(dp), allocatable :: a(:), pivot(:), delta_u(:)
     integer, allocatable :: snr(:), rnr(:), ha(:,:)
     real(dp) :: aflag(8)
     integer :: iflag(10), ifail
-    integer :: i, j, k, iter, funit
+    integer :: iter
     integer :: t0, t1, clock_rate
     integer :: t_order_first, t_order_rest, t_factor, t_solve
+    integer :: dt_mb, dt_mc, dt_md
     real(dp) :: s_order_first, s_order_rest, s_factor, s_solve
-    real(dp) :: t0_iter, t1_iter
     logical :: converged
     real(dp), parameter :: tol = 1.0e-10_dp
 
@@ -205,13 +241,19 @@ contains
     nn = max(3 * nz_max, 2 * (ndof_1d + 2) * ndof)
     nn1 = nn
     iha = ndof
-    allocate(a(nn), pivot(ndof), u(ndof), F(ndof), delta_u(ndof))
+    allocate(u_flat(ndof), F_flat(ndof), a(nn), pivot(ndof), delta_u(ndof))
     allocate(snr(nn), rnr(nn1), ha(ndof, 11))
+
+    ! Create 2-D views of the flat solution and residual arrays via pointer
+    ! remapping.  Column-major Fortran storage maps u(i,j) to
+    ! u_flat((j-2)*ndof_1d + (i-2) + 1), consistent with k(i,j).
+    u(2:N-1, 2:N-1)   => u_flat
+    F_2d(2:N-1, 2:N-1) => F_flat
 
     call system_clock(count_rate=clock_rate)
 
     ! Initial guess: u = 0
-    u = 0.0_dp
+    u_flat = 0.0_dp
 
     t_order_first = 0
     t_order_rest  = 0
@@ -229,6 +271,7 @@ contains
     iflag = 0
     iflag(2) = 3        ! Markowitz search width
     iflag(3) = 1        ! use column interchanges
+    iflag(4) = 1        ! compute ordering on first call (set to 2 after)
     iflag(5) = 1        ! discard L: each Newton step has a single RHS, so
                         ! there is no need to retain L for later solves
     aflag(1) = 16.0_dp
@@ -240,7 +283,7 @@ contains
     do iter = 1, max_iter
 
       ! Compute residual F(u^k) and its norm
-      call compute_residual(N, h2lam, u, F, fnorm)
+      call compute_residual(N, h2lam, u, F_2d, fnorm)
 
       if (iter == 1) then
         write(output_unit, '(2x,i4,3x,es10.3)') 0, fnorm
@@ -252,69 +295,69 @@ contains
       end if
 
       ! RHS for the Newton system: delta_u = J^{-1} (-F)
-      delta_u = -F
+      delta_u = -F_flat
 
       ! Assemble Jacobian J(u^k) -- same (rnr, snr) pattern every iteration
       call assemble_jacobian(N, h2lam, u, a, rnr, snr, nz)
 
       ! ---------------------------------------------------------------
-      ! Ordering step: IFLAG(4) = 1 on first iteration (compute and
-      ! store Markowitz ordering), IFLAG(4) = 2 on subsequent iterations
-      ! (reuse stored ordering from HA).
+      ! Ordering step: iflag(4) starts as 1 (set before the loop).
+      ! After the first factorization y12mc stores fill-in counts in
+      ! iflag(9)/iflag(10) and iflag(4) is set to 2 so that subsequent
+      ! calls to y12mb and y12mc reuse the stored ordering and fill-in.
       ! ---------------------------------------------------------------
-      iflag(4) = merge(1, 2, iter == 1)   ! 1: compute ordering; 2: reuse it
-
       call system_clock(t0)
       call y12mb(ndof, nz, a, snr, nn, rnr, nn1, ha, iha, aflag, iflag, ifail)
       call system_clock(t1)
-      if (iter == 1) then
-        t_order_first = t_order_first + (t1 - t0)
-      else
-        t_order_rest = t_order_rest + (t1 - t0)
-      end if
-      t0_iter = real(t1 - t0, dp)   ! store for per-iter output
-
       if (ifail /= 0) then
         write(error_unit, '(a,i0,a,i0)') &
             'ERROR: y12mb iter ', iter, ' returned IFAIL = ', ifail
         stop 1, quiet = .true.
       end if
+      dt_mb = t1 - t0
+      if (iflag(4) == 1) then
+        t_order_first = dt_mb   ! first call only
+      else
+        t_order_rest = t_order_rest + dt_mb
+      end if
 
-      ! Factorize J(u^k); y12mc applies L^{-1} to delta_u = -F
+      ! Factorize J(u^k); y12mc applies L^{-1} to delta_u = -F.
+      ! When iflag(4)=1, y12mc stores fill-in counts in iflag(9)/iflag(10);
+      ! set iflag(4)=2 afterwards so subsequent calls reuse them.
       call system_clock(t0)
       call y12mc(ndof, nz, a, snr, nn, rnr, nn1, pivot, delta_u, ha, iha, &
           aflag, iflag, ifail)
       call system_clock(t1)
-      t_factor = t_factor + (t1 - t0)
-      t1_iter = real(t1 - t0, dp)   ! store for per-iter output
-
       if (ifail /= 0) then
         write(error_unit, '(a,i0,a,i0)') &
             'ERROR: y12mc iter ', iter, ' returned IFAIL = ', ifail
         stop 1, quiet = .true.
       end if
+      t_factor = t_factor + (t1 - t0)
+      dt_mc = t1 - t0
+      iflag(4) = 2   ! reuse Markowitz ordering and fill-in from here on
 
       ! Solve for delta_u (backward substitution with U)
       call system_clock(t0)
       call y12md(ndof, a, nn, delta_u, pivot, snr, ha, iha, iflag, ifail)
       call system_clock(t1)
-      t_solve = t_solve + (t1 - t0)
-
       if (ifail /= 0) then
         write(error_unit, '(a,i0,a,i0)') &
             'ERROR: y12md iter ', iter, ' returned IFAIL = ', ifail
         stop 1, quiet = .true.
       end if
+      t_solve = t_solve + (t1 - t0)
+      dt_md = t1 - t0
 
       ! Newton update
-      u = u + delta_u
+      u_flat = u_flat + delta_u
 
       ! Compute and print residual after update
-      call compute_residual(N, h2lam, u, F, fnorm)
+      call compute_residual(N, h2lam, u, F_2d, fnorm)
       write(output_unit, '(2x,i4,3x,es10.3,3(2x,es10.3))') iter, fnorm, &
-          t0_iter / real(clock_rate, dp), &
-          t1_iter / real(clock_rate, dp), &
-          real(t1 - t0, dp) / real(clock_rate, dp)
+          real(dt_mb, dp) / real(clock_rate, dp), &
+          real(dt_mc, dp) / real(clock_rate, dp), &
+          real(dt_md, dp) / real(clock_rate, dp)
 
     end do
 
@@ -329,24 +372,7 @@ contains
     ! =====================================================================
     ! Write solution
     ! =====================================================================
-    open(newunit=funit, file=outfile, status='unknown', action='write')
-    write(funit, '(a)') '# Bratu problem -- Newton iteration with structural LU reuse'
-    write(funit, '(a,i0,a,es10.3)') '# N=', N, '  lambda=', lam
-    write(funit, '(a)') '# Columns: x  y  u_numerical'
-    do j = 1, N
-      do i = 1, N
-        if (i == 1 .or. i == N .or. j == 1 .or. j == N) then
-          write(funit, '(3(1x,es14.6))') &
-              real(i - 1, dp) * h, real(j - 1, dp) * h, 0.0_dp
-        else
-          k = (j - 2) * ndof_1d + (i - 2) + 1
-          write(funit, '(3(1x,es14.6))') &
-              real(i - 1, dp) * h, real(j - 1, dp) * h, u(k)
-        end if
-      end do
-      write(funit, *)
-    end do
-    close(funit)
+    call write_solution(N, h, u, lam, trim(outfile))
     write(output_unit, '(a)') 'Solution written to ' // trim(outfile)
 
     ! =====================================================================
@@ -401,7 +427,7 @@ program newton_bratu
     if (trim(arg) == '--help' .or. trim(arg) == '-h') then
       write(*, '(a)') 'Usage: newton_bratu [--help] [N] [lambda] [max_iter] [output_file]'
       write(*, '(a)') '  N           total grid size (>= 3, default 22)'
-      write(*, '(a)') '  lambda      reaction parameter (default 1.0, must be < 6.808)'
+      write(*, '(a)') '  lambda      reaction parameter (default 1.0, must be in (0, 6.808))'
       write(*, '(a)') '  max_iter    max Newton iterations (default 20)'
       write(*, '(a)') '  output_file output file (default: newton_bratu.dat)'
       stop 0
@@ -416,8 +442,8 @@ program newton_bratu
         end if
       case (2)
         read(arg, *, iostat=ios) lam
-        if (ios /= 0 .or. lam <= 0.0d0) then
-          write(error_unit, '(a)') 'ERROR: lambda must be a positive real'
+        if (ios /= 0 .or. lam <= 0.0d0 .or. lam >= 6.808d0) then
+          write(error_unit, '(a)') 'ERROR: lambda must be in (0, 6.808)'
           stop 1
         end if
       case (3)

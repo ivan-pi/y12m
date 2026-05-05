@@ -1,4 +1,5 @@
 ! SPDX-License-Identifier: GPL-2.0-only
+! Assisted-by: GitHub Copilot:claude-sonnet-4.5
 !
 ! heat_implicit.f90 - Implicit time-stepping for the 2-D heat equation
 !
@@ -23,6 +24,10 @@
 ! Total grid N x N (including boundary nodes), spacing h = 1/(N-1).
 ! Interior nodes: ndof = (N-2)^2.
 ! DOF index: k(i,j) = (j-2)*(N-2) + (i-2) + 1.
+!
+! Because the boundary conditions are homogeneous (u = 0 on the boundary),
+! boundary nodes are always zero.  The right-hand side b therefore only
+! contains values at interior nodes, and no BCs contribution is needed.
 !
 ! Time integration: backward (implicit) Euler with step dt = T / nsteps.
 !
@@ -141,6 +146,53 @@ contains
     end do
   end subroutine assemble_matrix
 
+  !> Write solution and exact solution to a gnuplot-compatible file.
+  !>
+  !> Boundary nodes (i==1, i==N, j==1, j==N) are handled separately
+  !> from interior nodes because they are not stored in b: the homogeneous
+  !> Dirichlet boundary conditions impose u = 0 on the boundary, so the
+  !> numerical solution there is identically zero.  The exact solution at
+  !> those nodes is also printed for reference.
+  subroutine write_solution(N, h, b, T, kappa, outfile)
+    integer, intent(in) :: N
+    real(dp), intent(in) :: h
+    real(dp), intent(in), target :: b(:)
+    real(dp), intent(in) :: T, kappa
+    character(len=*), intent(in) :: outfile
+
+    integer :: ndof_1d, i, j, funit
+
+    ndof_1d = N - 2
+    open(newunit=funit, file=outfile, status='unknown', action='write')
+    write(funit, '(a)') '# 2D heat equation -- backward Euler implicit time-stepping'
+    write(funit, '(a,i0,a,es10.3,a,es10.3)') &
+        '# N=', N, '  T=', T, '  kappa=', kappa
+    write(funit, '(a)') '# Columns: x  y  u_numerical  u_exact'
+
+    block
+      real(dp), pointer :: b_2d(:,:) => null()
+      b_2d(2:N-1, 2:N-1) => b(1:ndof_1d*ndof_1d)
+      do j = 1, N
+        do i = 1, N
+          ! Boundary nodes are not stored in b; the homogeneous Dirichlet
+          ! conditions impose u=0 on the boundary, so we write zero there.
+          if (i == 1 .or. i == N .or. j == 1 .or. j == N) then
+            write(funit, '(4(1x,es14.6))') &
+                real(i - 1, dp) * h, real(j - 1, dp) * h, 0.0_dp, &
+                u_exact(real(i - 1, dp) * h, real(j - 1, dp) * h, T, kappa)
+          else
+            write(funit, '(4(1x,es14.6))') &
+                real(i - 1, dp) * h, real(j - 1, dp) * h, b_2d(i, j), &
+                u_exact(real(i - 1, dp) * h, real(j - 1, dp) * h, T, kappa)
+          end if
+        end do
+        write(funit, *)
+      end do
+    end block
+
+    close(funit)
+  end subroutine write_solution
+
   ! ---------------------------------------------------------------
   ! Main driver: assemble, factorize once, time-step with LU reuse
   ! ---------------------------------------------------------------
@@ -152,15 +204,16 @@ contains
 
     integer :: ndof_1d, ndof, nz_max, nz, nn, nn1, iha
     real(dp) :: h, dt, r
-    real(dp), allocatable :: a(:), pivot(:), b(:)
+    real(dp), allocatable :: a(:), pivot(:)
+    real(dp), allocatable, target :: b(:)
     integer, allocatable :: snr(:), rnr(:), ha(:,:)
     real(dp) :: aflag(8)
     integer :: iflag(10), ifail
-    integer :: i, j, k, step, funit
+    integer :: i, j, step
     integer :: t0, t1, clock_rate
     integer :: t_assemble, t_factor, t_steps
     real(dp) :: s_assemble, s_factor, s_steps
-    real(dp) :: err_max
+    real(dp) :: err_max, err_l2
 
     ndof_1d = N - 2
     ndof = ndof_1d * ndof_1d
@@ -187,16 +240,21 @@ contains
 
     ! =====================================================================
     ! 1. Assemble A and set initial condition b = u^0
+    !
+    ! Because the boundary conditions are homogeneous (u = 0 on boundary),
+    ! only the interior nodes need to be initialised.  The boundary values
+    ! are always zero and do not appear in the right-hand side vector b.
     ! =====================================================================
     call system_clock(t0)
     call assemble_matrix(N, r, a, rnr, snr, nz)
 
-    do j = 2, N - 1
-      do i = 2, N - 1
-        k = (j - 2) * ndof_1d + (i - 2) + 1
-        b(k) = u_exact(real(i - 1, dp) * h, real(j - 1, dp) * h, 0.0_dp, kappa)
+    block
+      real(dp), pointer :: b_2d(:,:) => null()
+      b_2d(2:N-1, 2:N-1) => b(1:ndof)
+      do concurrent (i = 2:N-1, j = 2:N-1)
+        b_2d(i, j) = u_exact(real(i - 1, dp) * h, real(j - 1, dp) * h, 0.0_dp, kappa)
       end do
-    end do
+    end block
     call system_clock(t1)
     t_assemble = t1 - t0
 
@@ -235,70 +293,53 @@ contains
     t_factor = t1 - t0
 
     ! =====================================================================
-    ! 3. Time loop: one y12md call per step
-    !    Step 1: IFLAG(5) = 2 -- y12mc already applied L, so only U^{-1}
-    !    Steps 2..nsteps: IFLAG(5) = 3 -- apply full L^{-1} U^{-1}
+    ! 3. Time loop: one y12md call per step (merged loop)
+    !    Step 1: IFLAG(5) = 2 -- y12mc already applied L^{-1}, so y12md
+    !            only needs to apply U^{-1}.
+    !    Steps 2..nsteps: IFLAG(5) = 3 -- fresh RHS each step; y12md
+    !            applies the full L^{-1} U^{-1}.
     ! =====================================================================
     call system_clock(t0)
 
-    ! Step 1 (iflag(5) still = 2 from y12mc): backward substitution only
-    call y12md(ndof, a, nn, b, pivot, snr, ha, iha, iflag, ifail)
-    if (ifail /= 0) then
-      write(error_unit, '(a,i0)') 'ERROR: y12md step 1 returned IFAIL = ', ifail
-      stop 1, quiet = .true.
-    end if
-
-    ! Steps 2..nsteps: b = u^{step-1} is the new RHS -> y12md gives u^{step}
-    iflag(5) = 3
-    do step = 2, nsteps
+    do step = 1, nsteps
       call y12md(ndof, a, nn, b, pivot, snr, ha, iha, iflag, ifail)
       if (ifail /= 0) then
         write(error_unit, '(a,i0,a,i0)') &
             'ERROR: y12md step ', step, ' returned IFAIL = ', ifail
         stop 1, quiet = .true.
       end if
+      ! After the first step, switch to full L^{-1} U^{-1} for subsequent steps.
+      if (step == 1) iflag(5) = 3
     end do
 
     call system_clock(t1)
     t_steps = t1 - t0
 
     ! =====================================================================
-    ! 4. Error at t = T
+    ! 4. Error at t = T  (infinity-norm and L2-norm)
     ! =====================================================================
     err_max = 0.0_dp
-    do j = 2, N - 1
-      do i = 2, N - 1
-        k = (j - 2) * ndof_1d + (i - 2) + 1
-        err_max = max(err_max, &
-            abs(b(k) - u_exact(real(i - 1, dp) * h, real(j - 1, dp) * h, T, kappa)))
+    err_l2  = 0.0_dp
+    block
+      real(dp), pointer :: b_2d(:,:) => null()
+      real(dp) :: diff
+      b_2d(2:N-1, 2:N-1) => b(1:ndof)
+      do j = 2, N - 1
+        do i = 2, N - 1
+          diff = b_2d(i, j) - u_exact(real(i-1, dp)*h, real(j-1, dp)*h, T, kappa)
+          err_max = max(err_max, abs(diff))
+          err_l2  = err_l2 + diff**2
+        end do
       end do
-    end do
-    write(output_unit, '(a,es12.4)') 'Max error at T: ', err_max
+    end block
+    err_l2 = sqrt(h**2 * err_l2)
+    write(output_unit, '(a,es12.4)') 'Max error at T (inf-norm): ', err_max
+    write(output_unit, '(a,es12.4)') 'L2  error at T            : ', err_l2
 
     ! =====================================================================
     ! 5. Write solution
     ! =====================================================================
-    open(newunit=funit, file=outfile, status='unknown', action='write')
-    write(funit, '(a)') '# 2D heat equation -- backward Euler implicit time-stepping'
-    write(funit, '(a,i0,a,es10.3,a,es10.3)') &
-        '# N=', N, '  T=', T, '  kappa=', kappa
-    write(funit, '(a)') '# Columns: x  y  u_numerical  u_exact'
-    do j = 1, N
-      do i = 1, N
-        if (i == 1 .or. i == N .or. j == 1 .or. j == N) then
-          write(funit, '(4(1x,es14.6))') &
-              real(i - 1, dp) * h, real(j - 1, dp) * h, 0.0_dp, &
-              u_exact(real(i - 1, dp) * h, real(j - 1, dp) * h, T, kappa)
-        else
-          k = (j - 2) * ndof_1d + (i - 2) + 1
-          write(funit, '(4(1x,es14.6))') &
-              real(i - 1, dp) * h, real(j - 1, dp) * h, b(k), &
-              u_exact(real(i - 1, dp) * h, real(j - 1, dp) * h, T, kappa)
-        end if
-      end do
-      write(funit, *)
-    end do
-    close(funit)
+    call write_solution(N, h, b, T, kappa, trim(outfile))
     write(output_unit, '(a)') 'Solution written to ' // trim(outfile)
 
     ! =====================================================================

@@ -1,4 +1,5 @@
 ! SPDX-License-Identifier: GPL-2.0-only
+! Assisted-by: GitHub Copilot:claude-sonnet-4.5
 !
 ! multiple_loads.f90 - Poisson equation with multiple right-hand sides
 !
@@ -142,6 +143,48 @@ contains
     end do
   end subroutine assemble_stiffness
 
+  !> Write the solution for load case kload to a gnuplot-compatible file.
+  !>
+  !> Boundary nodes are handled separately from interior nodes because
+  !> they are not stored in u_last: the homogeneous Dirichlet BCs impose
+  !> u = 0 on the boundary, so the numerical solution there is exactly zero.
+  subroutine write_solution(N, h, u_last, kload, outfile)
+    integer, intent(in) :: N, kload
+    real(dp), intent(in) :: h
+    real(dp), intent(in), target :: u_last(:)
+    character(len=*), intent(in) :: outfile
+
+    integer :: ndof_1d, i, j, funit
+
+    ndof_1d = N - 2
+    open(newunit=funit, file=outfile, status='unknown', action='write')
+    write(funit, '(a)') '# Poisson equation -- multiple load cases'
+    write(funit, '(a,i0,a,i0)') '# N=', N, '  kload=', kload
+    write(funit, '(a)') '# Columns: x  y  u_numerical  u_exact'
+
+    block
+      real(dp), pointer :: u_2d(:,:) => null()
+      u_2d(2:N-1, 2:N-1) => u_last(1:ndof_1d*ndof_1d)
+      do j = 1, N
+        do i = 1, N
+          ! Boundary nodes are not stored; homogeneous Dirichlet gives u=0 there.
+          if (i == 1 .or. i == N .or. j == 1 .or. j == N) then
+            write(funit, '(4(1x,es14.6))') &
+                real(i - 1, dp) * h, real(j - 1, dp) * h, 0.0_dp, &
+                u_exact_k(real(i - 1, dp) * h, real(j - 1, dp) * h, kload)
+          else
+            write(funit, '(4(1x,es14.6))') &
+                real(i - 1, dp) * h, real(j - 1, dp) * h, u_2d(i, j), &
+                u_exact_k(real(i - 1, dp) * h, real(j - 1, dp) * h, kload)
+          end if
+        end do
+        write(funit, *)
+      end do
+    end block
+
+    close(funit)
+  end subroutine write_solution
+
   ! ---------------------------------------------------------------
   ! Main driver: factorize K once, solve nrhs times
   ! ---------------------------------------------------------------
@@ -154,14 +197,15 @@ contains
     real(dp) :: h, h2
     real(dp), allocatable :: a(:), pivot(:), b(:)
     integer, allocatable :: snr(:), rnr(:), ha(:,:)
-    real(dp), allocatable :: b_all(:,:), u_all(:,:)
+    real(dp), allocatable :: b_all(:,:)
+    real(dp), allocatable, target :: u_all(:,:)
     real(dp) :: aflag(8)
     integer :: iflag(10), ifail
-    integer :: i, j, k, kload, funit
+    integer :: i, j, kload
     integer :: t0, t1, clock_rate
     integer :: t_assemble, t_factor, t_solve
     real(dp) :: s_assemble, s_factor, s_solve
-    real(dp) :: err_max, err_k
+    real(dp) :: err_max, err_k, err_l2_k
 
     ndof_1d = N - 2
     ndof = ndof_1d * ndof_1d
@@ -191,9 +235,8 @@ contains
     do kload = 1, nrhs
       do j = 2, N - 1
         do i = 2, N - 1
-          k = (j - 2) * ndof_1d + (i - 2) + 1
-          b_all(k, kload) = h2 * f_load_k(real(i - 1, dp) * h, &
-              real(j - 1, dp) * h, kload)
+          b_all((j - 2) * ndof_1d + (i - 2) + 1, kload) = &
+              h2 * f_load_k(real(i - 1, dp) * h, real(j - 1, dp) * h, kload)
         end do
       end do
     end do
@@ -237,24 +280,16 @@ contains
     t_factor = t1 - t0
 
     ! =====================================================================
-    ! 3. Solve for each load case
-    !    Load case 1: IFLAG(5) = 2 (y12mc already applied L^{-1})
-    !    Load cases 2..nrhs: IFLAG(5) = 3 (fresh RHS each time)
+    ! 3. Solve for each load case (merged loop)
+    !    Load case 1: IFLAG(5) = 2 -- y12mc already applied L^{-1}, so
+    !                  y12md only applies U^{-1}.
+    !    Load cases 2..nrhs: IFLAG(5) = 3 -- full L^{-1} U^{-1} applied.
     ! =====================================================================
     call system_clock(t0)
 
-    ! Solve for load case 1
-    call y12md(ndof, a, nn, b, pivot, snr, ha, iha, iflag, ifail)
-    if (ifail /= 0) then
-      write(error_unit, '(a,i0)') 'ERROR: y12md load 1 returned IFAIL = ', ifail
-      stop 1, quiet = .true.
-    end if
-    u_all(:, 1) = b
-
-    ! Solve for load cases 2..nrhs using the stored LU factorization
-    iflag(5) = 3
-    do kload = 2, nrhs
-      b = b_all(:, kload)
+    do kload = 1, nrhs
+      ! For kload > 1 the original b was overwritten; reload from b_all.
+      if (kload > 1) b = b_all(:, kload)
       call y12md(ndof, a, nn, b, pivot, snr, ha, iha, iflag, ifail)
       if (ifail /= 0) then
         write(error_unit, '(a,i0,a,i0)') &
@@ -262,55 +297,45 @@ contains
         stop 1, quiet = .true.
       end if
       u_all(:, kload) = b
+      ! After the first RHS (which was forward-substituted by y12mc), switch
+      ! to full L^{-1} U^{-1} for subsequent right-hand sides.
+      if (kload == 1) iflag(5) = 3
     end do
 
     call system_clock(t1)
     t_solve = t1 - t0
 
     ! =====================================================================
-    ! 4. Error check
+    ! 4. Error check  (infinity-norm and L2-norm per load case)
     ! =====================================================================
     write(output_unit, '(/,a)') 'Error table:'
-    write(output_unit, '(a)') '  k   max|u_num - u_exact|'
+    write(output_unit, '(a)') '  k   max|error|     L2-error'
     err_max = 0.0_dp
     do kload = 1, nrhs
-      err_k = 0.0_dp
-      do j = 2, N - 1
-        do i = 2, N - 1
-          k = (j - 2) * ndof_1d + (i - 2) + 1
-          err_k = max(err_k, abs(u_all(k, kload) - &
-              u_exact_k(real(i - 1, dp) * h, real(j - 1, dp) * h, kload)))
+      err_k    = 0.0_dp
+      err_l2_k = 0.0_dp
+      block
+        real(dp), pointer :: u_2d(:,:) => null()
+        real(dp) :: diff
+        u_2d(2:N-1, 2:N-1) => u_all(1:ndof, kload)
+        do j = 2, N - 1
+          do i = 2, N - 1
+            diff = u_2d(i, j) - u_exact_k(real(i-1, dp)*h, real(j-1, dp)*h, kload)
+            err_k    = max(err_k, abs(diff))
+            err_l2_k = err_l2_k + diff**2
+          end do
         end do
-      end do
-      write(output_unit, '(2x,i3,3x,es12.4)') kload, err_k
+        err_l2_k = sqrt(h**2 * err_l2_k)
+      end block
+      write(output_unit, '(2x,i3,3x,es12.4,3x,es12.4)') kload, err_k, err_l2_k
       err_max = max(err_max, err_k)
     end do
-    write(output_unit, '(a,es12.4)') 'Max over all load cases: ', err_max
+    write(output_unit, '(a,es12.4)') 'Max inf-norm over all load cases: ', err_max
 
     ! =====================================================================
     ! 5. Write last solution to output file
     ! =====================================================================
-    open(newunit=funit, file=outfile, status='unknown', action='write')
-    write(funit, '(a)') '# Poisson equation -- multiple load cases'
-    write(funit, '(a,i0,a,i0)') '# N=', N, '  nrhs=', nrhs
-    write(funit, '(a)') '# Solution for last load case k=nrhs'
-    write(funit, '(a)') '# Columns: x  y  u_numerical  u_exact'
-    do j = 1, N
-      do i = 1, N
-        if (i == 1 .or. i == N .or. j == 1 .or. j == N) then
-          write(funit, '(4(1x,es14.6))') &
-              real(i - 1, dp) * h, real(j - 1, dp) * h, 0.0_dp, &
-              u_exact_k(real(i - 1, dp) * h, real(j - 1, dp) * h, nrhs)
-        else
-          k = (j - 2) * ndof_1d + (i - 2) + 1
-          write(funit, '(4(1x,es14.6))') &
-              real(i - 1, dp) * h, real(j - 1, dp) * h, u_all(k, nrhs), &
-              u_exact_k(real(i - 1, dp) * h, real(j - 1, dp) * h, nrhs)
-        end if
-      end do
-      write(funit, *)
-    end do
-    close(funit)
+    call write_solution(N, h, u_all(:, nrhs), nrhs, trim(outfile))
     write(output_unit, '(a)') 'Solution written to ' // trim(outfile)
 
     ! =====================================================================
