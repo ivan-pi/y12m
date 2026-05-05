@@ -6,7 +6,7 @@ project(y12m
     LANGUAGES Fortran)
 
 option(BUILD_EXAMPLES "Build the example programs" ON)
-option(WITH_NIST_MMIO "Build the Matrix Market driver (y12m_mm)" ON)
+option(WITH_NIST_MMIO "Build the Matrix Market driver (y12m_mm)" OFF)
 
 if(WITH_NIST_MMIO)
     include(cmake/FetchMMIO.cmake)
