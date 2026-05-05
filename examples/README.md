@@ -24,6 +24,7 @@ generators (`matrd1`, `matre1`, `matrf2`) and a wall-clock timing helper
   - [`matf_bench.f90`](#matf_benchf90)
 - [Discretised PDE examples](#discretised-pde-examples)
   - [`poisson_2d.F90`](#poisson_2df90)
+  - [`poisson_3d.f90`](#poisson_3df90)
   - [`biharmonic_13pt.f90`](#biharmonic_13ptf90)
   - [`fem_anisotropic.f90`](#fem_anisotropicf90)
   - [`darcy_flow.f90`](#darcy_flowf90)
@@ -45,6 +46,7 @@ coverage grows.
 | `timings_de` | ✓ | | | |
 | `matf_bench` | ✓ | | | |
 | `poisson_2d` | ✓ | | | |
+| `poisson_3d` | ✓ | | | |
 | `biharmonic_13pt` | ✓ | | | |
 | `fem_anisotropic` | ✓ | | | |
 | `darcy_flow` | ✓ | | | |
@@ -129,6 +131,16 @@ in the mesh spacing h.
 
 ```
 Usage: poisson_2d [--help] [N] [output_file]
+```
+
+### `poisson_3d.f90`
+
+Solves the **3-D Poisson equation** on the unit cube with homogeneous Dirichlet
+boundary conditions using a **7-point finite-difference stencil** and a
+manufactured sine-mode solution.  Expected convergence order: 2nd order in h.
+
+```
+Usage: poisson_3d [--help] [N] [kx] [ky] [kz]
 ```
 
 ### `biharmonic_13pt.f90`
