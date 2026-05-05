@@ -66,7 +66,7 @@ reordering.
   greedy local Markowitz strategy during elimination.  Users can apply an
   external permutation themselves before calling `Y12MB`; see
   [docs/fill_in_ordering.md](docs/fill_in_ordering.md).
-- **Statically allocated workspace.** The work arrays (`A`/`SNR`/`RNR` sized
+- **Static workspace allocation.** The work arrays (`A`/`SNR`/`RNR` sized
   by `NN` and `NN1`) must be pre-allocated by the caller before the solve.
   Because the amount of fill-in is not known in advance, these arrays must be
   over-provisioned, and the solver will fail with an error if they are too
