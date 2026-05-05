@@ -59,9 +59,9 @@
 ! -----
 !   poisson_3d [--help] [N] [kx] [ky] [kz]
 !
-!     N           total grid size per direction (>= 3, default 12
-!                 -> (N-2)^3 = 10^3 = 1000 interior DOFs)
-!     kx,ky,kz   sine-mode indices (>= 1, default: 1 1 1)
+!     N           total grid size per direction (>= 3, default 12)
+!                 -> (N-2)^3 = 10^3 = 1000 interior DOFs
+!     kx, ky, kz sine-mode indices (>= 1, default: 1 1 1)
 !
 
 ! ==============================================================
@@ -372,7 +372,7 @@ program poisson_3d
       write(*, '(a)') 'Usage: poisson_3d [--help] [N] [kx] [ky] [kz]'
       write(*, '(a)') '  N           total grid size per direction (>= 3, default 12)'
       write(*, '(a)') '              (N-2)^3 interior DOFs; e.g. N=12 -> 10^3 = 1000 DOFs'
-      write(*, '(a)') '  kx,ky,kz   sine-mode indices (>= 1, default: 1 1 1)'
+      write(*, '(a)') '  kx, ky, kz sine-mode indices (>= 1, default: 1 1 1)'
       stop 0
     end if
   end do
