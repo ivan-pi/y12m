@@ -135,45 +135,12 @@ Usage: poisson_2d [--help] [N] [output_file]
 
 ### `poisson_3d.f90`
 
-Solves the **3-D Poisson equation** (steady-state diffusion) on the unit cube
-with homogeneous Dirichlet boundary conditions:
-
-```
-  −∇²u = f(x,y,z)   on (0,1)×(0,1)×(0,1),   u = 0 on ∂Ω
-```
-
-The manufactured solution is parameterised by three sine-mode indices
-`(kx, ky, kz)`:
-
-```
-  u_exact(x,y,z) = sin(kx π x) sin(ky π y) sin(kz π z)
-```
-
-which automatically satisfies the homogeneous Dirichlet boundary conditions.
-The matching right-hand side is:
-
-```
-  f(x,y,z) = (kx² + ky² + kz²) π² u_exact(x,y,z)
-```
-
-The discretisation uses the **7-point finite-difference stencil** for −∇²
-on a uniform N×N×N grid (diagonal = 6, six face-neighbour coefficients = −1,
-RHS scaled by h²).  Interior DOFs are numbered with x varying fastest, giving
-an LU fill-in bandwidth of b = (N−2)², which limits practical problem sizes
-to roughly N ≤ 20 without reordering.  Workspace is allocated as
-`nn = nn1 = max(3·nz_orig, 2·(b+2)·ndof)`.
-
-Expected convergence order: 2nd order in the mesh spacing h (standard
-7-point stencil).  A convergence shell script
-(`scripts/poisson_3d_convergence.sh`) automates a grid-refinement study over
-a user-supplied list of N values and produces a gnuplot log–log convergence
-plot.
+Solves the **3-D Poisson equation** on the unit cube with homogeneous Dirichlet
+boundary conditions using a **7-point finite-difference stencil** and a
+manufactured sine-mode solution.  Expected convergence order: 2nd order in h.
 
 ```
 Usage: poisson_3d [--help] [N] [kx] [ky] [kz]
-       N           total grid size per direction (>= 3, default 12)
-                   -> (N-2)^3 interior DOFs; e.g. N=12 -> 10^3 = 1000 DOFs
-       kx, ky, kz sine-mode indices (>= 1, default: 1 1 1)
 ```
 
 ### `biharmonic_13pt.f90`
