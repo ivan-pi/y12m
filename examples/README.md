@@ -27,6 +27,9 @@ generators (`matrd1`, `matre1`, `matrf2`) and a wall-clock timing helper
   - [`biharmonic_13pt.f90`](#biharmonic_13ptf90)
   - [`fem_anisotropic.f90`](#fem_anisotropicf90)
   - [`darcy_flow.f90`](#darcy_flowf90)
+  - [`heat_implicit.f90`](#heat_implicitf90)
+  - [`multiple_loads.f90`](#multiple_loadsf90)
+  - [`newton_bratu.f90`](#newton_bratuf90)
 - [Legacy drivers](#legacy-drivers)
 
 ---
@@ -37,14 +40,17 @@ The table below lists every modern (free-form Fortran 90+) driver together
 with the Y12M API routines it exercises.  Columns will be extended as
 coverage grows.
 
-| Driver | `Y12MA` |
-|--------|:-------:|
-| `timings_de` | ✓ |
-| `matf_bench` | ✓ |
-| `poisson_9pt` | ✓ |
-| `biharmonic_13pt` | ✓ |
-| `fem_anisotropic` | ✓ |
-| `darcy_flow` | ✓ |
+| Driver | `Y12MA` | `Y12MB` | `Y12MC` | `Y12MD` |
+|--------|:-------:|:-------:|:-------:|:-------:|
+| `timings_de` | ✓ | | | |
+| `matf_bench` | ✓ | | | |
+| `poisson_9pt` | ✓ | | | |
+| `biharmonic_13pt` | ✓ | | | |
+| `fem_anisotropic` | ✓ | | | |
+| `darcy_flow` | ✓ | | | |
+| `heat_implicit` | | ✓ | ✓ | ✓ |
+| `multiple_loads` | | ✓ | ✓ | ✓ |
+| `newton_bratu` | | ✓ | ✓ | ✓ |
 
 ---
 
@@ -187,6 +193,113 @@ on an indefinite saddle-point system with a challenging sparsity pattern.
 
 ```
 Usage: darcy_flow [--help] [N]
+```
+
+### `heat_implicit.f90`
+
+Solves the **2-D heat equation** (parabolic PDE) on the unit square using
+implicit (backward Euler) time integration:
+
+```
+  u_t = κ (u_xx + u_yy)   on (0,1)×(0,1),  t ∈ (0, T]
+  u = 0 on the boundary,   u(x,y,0) = sin(πx) sin(πy)
+```
+
+The exact solution (separation of variables) is
+`u(x,y,t) = exp(−2π²κt) sin(πx) sin(πy)`.
+
+At each time step the implicit Euler scheme requires solving the linear
+system `A u^{n+1} = u^n` where `A = I + r K` with `r = dt κ / h²` and
+K the 5-point stiffness matrix.  Because A is **constant across all time
+steps**, the driver demonstrates **Case (ii) – same matrix, many
+right-hand sides**:
+
+* `y12mb` + `y12mc` (with `IFLAG(5) = 2`) are called **once** to factorize A.
+* `y12md` is called at **every time step** using the stored LU factors,
+  switching from `IFLAG(5) = 2` (first step) to `IFLAG(5) = 3`
+  (all subsequent steps).
+
+This amortises the factorization cost over all time steps, which is
+particularly advantageous for long integration runs.
+
+```
+Usage: heat_implicit [--help] [N] [nsteps] [T] [kappa] [output_file]
+       N           total grid size (>= 3, default 42)
+       nsteps      number of time steps (default 200)
+       T           final time (default 0.1)
+       kappa       thermal diffusivity > 0 (default 1.0)
+       output_file output file (default: heat_implicit.dat)
+```
+
+### `multiple_loads.f90`
+
+Solves a family of **2-D Poisson problems** on the unit square with
+homogeneous Dirichlet boundary conditions and a set of modal load cases:
+
+```
+  −∇²u_k = f_k(x,y) = sin(kπx) sin(πy)   on (0,1)×(0,1),  k = 1, ..., nrhs
+```
+
+Exact solutions: `u_k(x,y) = sin(kπx) sin(πy) / ((k²+1) π²)`.
+
+The stiffness matrix K (5-point Laplacian) is **identical for all load
+cases**.  The driver demonstrates **Case (ii) – same matrix, many
+right-hand sides**:
+
+* `y12mb` + `y12mc` (with `IFLAG(5) = 2`) factorize K **once**.
+* `y12md` is called once per load case (`IFLAG(5) = 2` for the first
+  RHS pre-substituted by `y12mc`, then `IFLAG(5) = 3` for the rest).
+
+A naive implementation would refactorize K for each RHS at cost
+`nrhs × O(nnz_LU)`; the LU-reuse strategy reduces this to
+`1 × O(nnz_LU)` plus `nrhs` cheap substitution passes.
+
+```
+Usage: multiple_loads [--help] [N] [nrhs] [output_file]
+       N           total grid size (>= 3, default 42)
+       nrhs        number of load cases (>= 1, default 8)
+       output_file output file (default: multiple_loads.dat)
+```
+
+### `newton_bratu.f90`
+
+Solves the **nonlinear Bratu (Liouville–Gelfand) problem** on the unit
+square using Newton's method:
+
+```
+  −∇²u = λ exp(u)   on (0,1)×(0,1),   u = 0 on ∂Ω
+```
+
+The problem has two solutions for λ < λ_c ≈ 6.808 and no solution for
+λ > λ_c.  The Newton linearisation at step k reads:
+
+```
+  J(u^k) δu = −F(u^k)
+  u^{k+1}   = u^k + δu
+```
+
+where the Jacobian J = K − h² λ diag(exp(u)) has the **same non-zero
+pattern** as the 5-point Laplacian K at every iteration (only diagonal
+values change).  The driver demonstrates **Case (iii) – same sparsity,
+changing values (structural reuse)**:
+
+* First Newton step: `IFLAG(4) = 1`.  `y12mb` computes the Markowitz
+  column ordering and stores it in HA; `y12mc` + `y12md` complete the
+  first solve.
+* Subsequent steps: `IFLAG(4) = 2`.  `y12mb` reuses the stored ordering
+  and skips the expensive Markowitz search, only inserting updated
+  numerical values at the already-known positions.
+
+`IFLAG` is initialised **once outside the Newton loop** so that the
+fill-in counts stored in `IFLAG(9)`/`IFLAG(10)` by `y12mc` on the first
+call are preserved for subsequent iterations.
+
+```
+Usage: newton_bratu [--help] [N] [lambda] [max_iter] [output_file]
+       N           total grid size (>= 3, default 22)
+       lambda      reaction parameter in (0, 6.808) (default 1.0)
+       max_iter    max Newton iterations (default 20)
+       output_file output file (default: newton_bratu.dat)
 ```
 
 ---
