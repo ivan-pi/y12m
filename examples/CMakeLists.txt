@@ -98,7 +98,7 @@ function(add_pde_test NAME SOURCE)
 endfunction()
 
 
-add_pde_test(poisson_9pt poisson_9pt.F90)
+add_pde_test(poisson_2d poisson_2d.F90)
 add_pde_test(poisson_3d poisson_3d.f90)
 add_pde_test(biharmonic_13pt biharmonic_13pt.f90)
 target_link_libraries(biharmonic_13pt PRIVATE y12m_example_helpers)

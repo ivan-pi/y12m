@@ -23,7 +23,7 @@ generators (`matrd1`, `matre1`, `matrf2`) and a wall-clock timing helper
   - [`timings_de.f90`](#timings_def90)
   - [`matf_bench.f90`](#matf_benchf90)
 - [Discretised PDE examples](#discretised-pde-examples)
-  - [`poisson_9pt.F90`](#poisson_9ptf90)
+  - [`poisson_2d.F90`](#poisson_2df90)
   - [`biharmonic_13pt.f90`](#biharmonic_13ptf90)
   - [`fem_anisotropic.f90`](#fem_anisotropicf90)
   - [`darcy_flow.f90`](#darcy_flowf90)
@@ -44,7 +44,7 @@ coverage grows.
 |--------|:-------:|:-------:|:-------:|:-------:|
 | `timings_de` | ✓ | | | |
 | `matf_bench` | ✓ | | | |
-| `poisson_9pt` | ✓ | | | |
+| `poisson_2d` | ✓ | | | |
 | `biharmonic_13pt` | ✓ | | | |
 | `fem_anisotropic` | ✓ | | | |
 | `darcy_flow` | ✓ | | | |
@@ -112,7 +112,7 @@ the Method of Manufactured Solutions (MMS) or a Fourier-series reference.
 Convergence shell scripts (`*_convergence.sh`) perform a grid-refinement
 study and save the solution data for plotting with gnuplot (`plot_poisson.gp`).
 
-### `poisson_9pt.F90`
+### `poisson_2d.F90`
 
 Solves the **2-D Laplace equation** (steady-state heat diffusion) on the unit
 square with a parabolic Dirichlet boundary condition on the top edge:
@@ -128,7 +128,7 @@ Fourier sine series (odd modes only).  Expected convergence order: 4th order
 in the mesh spacing h.
 
 ```
-Usage: poisson_9pt [--help] [N] [output_file]
+Usage: poisson_2d [--help] [N] [output_file]
 ```
 
 ### `biharmonic_13pt.f90`

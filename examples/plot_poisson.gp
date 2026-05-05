@@ -1,4 +1,4 @@
-# plot_poisson.gp — Visualise the output of the poisson_9pt example.
+# plot_poisson.gp — Visualise the output of the poisson_2d example.
 #
 # Produces a two-panel PNG with a colour-map (heat-map) of the numerical
 # solution and the exact solution side by side.
@@ -6,10 +6,10 @@
 # Usage:
 #   gnuplot plot_poisson.gp
 #
-# Requires poisson_9pt.dat (produced by the poisson_9pt program).
+# Requires poisson_2d.dat (produced by the poisson_2d program).
 
 set terminal pngcairo size 1200,520 font "Sans,12"
-set output "poisson_9pt.png"
+set output "poisson_2d.png"
 
 # --- palette: blue (cold) → white → red (hot) ---
 set palette defined (0 "#2166ac", 0.25 "#92c5de", 0.5 "white", \
@@ -33,10 +33,10 @@ set multiplot layout 1,2 \
 
 # --- Left panel: numerical solution ---
 set title "Numerical solution  (y12ma solver)"
-splot "poisson_9pt.dat" using 1:2:3 notitle
+splot "poisson_2d.dat" using 1:2:3 notitle
 
 # --- Right panel: exact solution ---
 set title "Exact solution  u = {/Symbol S}_{n odd} [32/(n{/Symbol p})^3] sin(n{/Symbol p}x) sinh(n{/Symbol p}y)/sinh(n{/Symbol p})"
-splot "poisson_9pt.dat" using 1:2:4 notitle
+splot "poisson_2d.dat" using 1:2:4 notitle
 
 unset multiplot

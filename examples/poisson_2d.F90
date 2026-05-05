@@ -436,7 +436,7 @@ end module poisson_solver
 ! ==============================================================
 ! Main program: parse CLI, call run(N, outfile).
 ! ==============================================================
-program poisson_9pt
+program poisson_2d
   use poisson_solver, only: run
   use, intrinsic :: iso_fortran_env, only: error_unit
   implicit none
@@ -444,7 +444,7 @@ program poisson_9pt
   integer :: N, ios, iarg, nargs
   character(len=256) :: arg, outfile
   integer, parameter :: default_n = 22
-  character(len=*), parameter :: default_outfile = 'poisson_9pt.dat'
+  character(len=*), parameter :: default_outfile = 'poisson_2d.dat'
 
   N      = default_n
   outfile = default_outfile
@@ -480,4 +480,4 @@ program poisson_9pt
 
   call run(N, trim(outfile))
 
-end program poisson_9pt
+end program poisson_2d
