@@ -52,10 +52,17 @@ add_test(NAME maind
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
 )
 
+# Shared helpers for the modern example programs
+add_library(y12m_example_helpers OBJECT y12m_example_helpers.f90)
+set_target_properties(y12m_example_helpers PROPERTIES
+    Fortran_MODULE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/include")
+target_include_directories(y12m_example_helpers INTERFACE
+    "${CMAKE_CURRENT_BINARY_DIR}/include")
+
 # Double-precision timing driver for class D and E matrices
 add_executable(timings_de timings_de.f90)
 target_compile_options(timings_de PRIVATE ${TEST_COMPILE_FLAGS})
-target_link_libraries(timings_de PRIVATE y12m_legacy)
+target_link_libraries(timings_de PRIVATE y12m_legacy y12m_example_helpers)
 
 # Smoke tests: one for class D and one for class E
 add_test(NAME timings_de_d
@@ -71,7 +78,7 @@ add_test(NAME timings_de_e
 # Double-precision timing driver for class F2 matrices
 add_executable(matf_bench matf_bench.f90)
 target_compile_options(matf_bench PRIVATE ${TEST_COMPILE_FLAGS})
-target_link_libraries(matf_bench PRIVATE y12m_legacy)
+target_link_libraries(matf_bench PRIVATE y12m_legacy y12m_example_helpers)
 
 # Smoke test: small F2 matrix (n=50, c=15, r=3)
 add_test(NAME matf_bench
@@ -93,8 +100,11 @@ endfunction()
 
 add_pde_test(poisson_9pt poisson_9pt.F90)
 add_pde_test(biharmonic_13pt biharmonic_13pt.f90)
+target_link_libraries(biharmonic_13pt PRIVATE y12m_example_helpers)
 add_pde_test(conv_diff_cds conv_diff_cds.f90)
+target_link_libraries(conv_diff_cds PRIVATE y12m_example_helpers)
 add_pde_test(fem_anisotropic fem_anisotropic.f90)
+target_link_libraries(fem_anisotropic PRIVATE y12m_example_helpers)
 add_pde_test(darcy_flow darcy_flow.f90)
 add_pde_test(elasticity elasticity.f90)
 

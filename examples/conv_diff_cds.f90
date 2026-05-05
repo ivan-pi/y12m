@@ -40,6 +40,7 @@
 !
 
 module conv_diff_solver
+  use y12m_example_helpers, only: rms_diff
   use, intrinsic :: iso_fortran_env, only: output_unit, error_unit
   implicit none
   private
@@ -100,15 +101,6 @@ contains
         + alpha * (pi**2 / 2.0_dp) * cos(pi * x) * one_minus_y2 &
         + 2.0_dp * alpha * c_half_sq
   end function f_src_2
-
-  ! ---------------------------------------------------------------
-  ! Root-mean-square of element-wise difference
-  ! ---------------------------------------------------------------
-  function rms_diff(a, b) result(rms)
-    real(dp), intent(in) :: a(:,:), b(:,:)
-    real(dp) :: rms
-    rms = norm2(a - b) / sqrt(real(size(a), dp))
-  end function rms_diff
 
 ! ---------------------------------------------------------------
   ! Assemble the sparse matrix for all N x N nodes
