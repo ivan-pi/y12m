@@ -22,11 +22,7 @@
 !   tol = 1e-4  (single precision)
 !   tol = 1e-10 (double precision)
 !
-#ifdef TEST_SINGLE_PRECISION
-program test_y12ma_sp
-#else
-program test_y12ma_dp
-#endif
+program test_y12ma
   use y12m, only: y12ma
   use y12m_test_helpers, only: build_tridiag, build_arrow, check_solution
   implicit none
@@ -58,17 +54,9 @@ program test_y12ma_dp
   call y12ma(n, z, a, snr, nn, rnr, nn1, pivot, ha, iha, &
       aflag, iflag, b, ifail)
   if (ifail == 12) then
-#ifdef TEST_SINGLE_PRECISION
-    write(*,'(a)') 'PASS y12ma_sp n=1 error-diag: ifail=12 (N<2) as expected'
-#else
-    write(*,'(a)') 'PASS y12ma_dp n=1 error-diag: ifail=12 (N<2) as expected'
-#endif
+    write(*,'(a)') 'PASS y12ma n=1 error-diag: ifail=12 (N<2) as expected'
   else
-#ifdef TEST_SINGLE_PRECISION
-    write(*,'(a,i0)') 'FAIL y12ma_sp n=1 error-diag: expected ifail=12, got ', ifail
-#else
-    write(*,'(a,i0)') 'FAIL y12ma_dp n=1 error-diag: expected ifail=12, got ', ifail
-#endif
+    write(*,'(a,i0)') 'FAIL y12ma n=1 error-diag: expected ifail=12, got ', ifail
     nfail = nfail + 1
   end if
 
@@ -80,23 +68,11 @@ program test_y12ma_dp
         aflag, iflag, b, ifail)
     select case (n)
     case (2)
-#ifdef TEST_SINGLE_PRECISION
-      call check_solution('y12ma_sp n=2 tridiag', n, b, ifail, tol_sol, nfail)
-#else
-      call check_solution('y12ma_dp n=2 tridiag', n, b, ifail, tol_sol, nfail)
-#endif
+      call check_solution('y12ma n=2 tridiag', n, b, ifail, tol_sol, nfail)
     case (3)
-#ifdef TEST_SINGLE_PRECISION
-      call check_solution('y12ma_sp n=3 tridiag', n, b, ifail, tol_sol, nfail)
-#else
-      call check_solution('y12ma_dp n=3 tridiag', n, b, ifail, tol_sol, nfail)
-#endif
+      call check_solution('y12ma n=3 tridiag', n, b, ifail, tol_sol, nfail)
     case (4)
-#ifdef TEST_SINGLE_PRECISION
-      call check_solution('y12ma_sp n=4 tridiag', n, b, ifail, tol_sol, nfail)
-#else
-      call check_solution('y12ma_dp n=4 tridiag', n, b, ifail, tol_sol, nfail)
-#endif
+      call check_solution('y12ma n=4 tridiag', n, b, ifail, tol_sol, nfail)
     end select
   end do
 
@@ -106,11 +82,7 @@ program test_y12ma_dp
   nn = NNP ; nn1 = NN1P ; iha = NMAX
   call y12ma(n, z, a, snr, nn, rnr, nn1, pivot, ha, iha, &
       aflag, iflag, b, ifail)
-#ifdef TEST_SINGLE_PRECISION
-  call check_solution('y12ma_sp n=5 arrow', n, b, ifail, tol_sol, nfail)
-#else
-  call check_solution('y12ma_dp n=5 arrow', n, b, ifail, tol_sol, nfail)
-#endif
+  call check_solution('y12ma n=5 arrow', n, b, ifail, tol_sol, nfail)
 
   ! --- n=6,7: tridiagonal ---
   do n = 6, 7
@@ -120,17 +92,9 @@ program test_y12ma_dp
         aflag, iflag, b, ifail)
     select case (n)
     case (6)
-#ifdef TEST_SINGLE_PRECISION
-      call check_solution('y12ma_sp n=6 tridiag', n, b, ifail, tol_sol, nfail)
-#else
-      call check_solution('y12ma_dp n=6 tridiag', n, b, ifail, tol_sol, nfail)
-#endif
+      call check_solution('y12ma n=6 tridiag', n, b, ifail, tol_sol, nfail)
     case (7)
-#ifdef TEST_SINGLE_PRECISION
-      call check_solution('y12ma_sp n=7 tridiag', n, b, ifail, tol_sol, nfail)
-#else
-      call check_solution('y12ma_dp n=7 tridiag', n, b, ifail, tol_sol, nfail)
-#endif
+      call check_solution('y12ma n=7 tridiag', n, b, ifail, tol_sol, nfail)
     end select
   end do
 
@@ -140,11 +104,7 @@ program test_y12ma_dp
   nn = NNP ; nn1 = NN1P ; iha = NMAX
   call y12ma(n, z, a, snr, nn, rnr, nn1, pivot, ha, iha, &
       aflag, iflag, b, ifail)
-#ifdef TEST_SINGLE_PRECISION
-  call check_solution('y12ma_sp n=8 arrow', n, b, ifail, tol_sol, nfail)
-#else
-  call check_solution('y12ma_dp n=8 arrow', n, b, ifail, tol_sol, nfail)
-#endif
+  call check_solution('y12ma n=8 arrow', n, b, ifail, tol_sol, nfail)
 
   ! --- n=9,10: tridiagonal ---
   do n = 9, 10
@@ -154,17 +114,9 @@ program test_y12ma_dp
         aflag, iflag, b, ifail)
     select case (n)
     case (9)
-#ifdef TEST_SINGLE_PRECISION
-      call check_solution('y12ma_sp n=9 tridiag', n, b, ifail, tol_sol, nfail)
-#else
-      call check_solution('y12ma_dp n=9 tridiag', n, b, ifail, tol_sol, nfail)
-#endif
+      call check_solution('y12ma n=9 tridiag', n, b, ifail, tol_sol, nfail)
     case (10)
-#ifdef TEST_SINGLE_PRECISION
-      call check_solution('y12ma_sp n=10 tridiag', n, b, ifail, tol_sol, nfail)
-#else
-      call check_solution('y12ma_dp n=10 tridiag', n, b, ifail, tol_sol, nfail)
-#endif
+      call check_solution('y12ma n=10 tridiag', n, b, ifail, tol_sol, nfail)
     end select
   end do
 
@@ -172,14 +124,6 @@ program test_y12ma_dp
     write(*,'(i0,a)') nfail, ' test(s) FAILED'
     stop 1
   end if
-#ifdef TEST_SINGLE_PRECISION
-  write(*,'(a)') 'All test_y12ma_sp tests PASSED'
-#else
-  write(*,'(a)') 'All test_y12ma_dp tests PASSED'
-#endif
+  write(*,'(a)') 'All test_y12ma tests PASSED'
 
-#ifdef TEST_SINGLE_PRECISION
-end program test_y12ma_sp
-#else
-end program test_y12ma_dp
-#endif
+end program test_y12ma
