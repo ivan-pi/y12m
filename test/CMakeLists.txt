@@ -12,8 +12,6 @@ target_compile_options(y12m_test_helpers PRIVATE ${TEST_COMPILE_FLAGS})
 target_link_libraries(y12m_test_helpers PUBLIC y12m_legacy)
 
 foreach(tname
-    test_y12ma_sp
-    test_y12ma_dp
     test_y12mb_mc_md_sp
     test_y12mb_mc_md_dp
     test_y12mf_sp
@@ -23,6 +21,20 @@ foreach(tname
   add_executable(${tname} ${tname}.f90)
   target_compile_options(${tname} PRIVATE ${TEST_COMPILE_FLAGS})
   target_link_libraries(${tname} PRIVATE y12m_test_helpers y12m_legacy)
+  add_test(NAME ${tname} COMMAND ${tname})
+
+endforeach()
+
+foreach(tname
+    test_y12ma_sp
+    test_y12ma_dp)
+
+  add_executable(${tname} test_y12ma.F90)
+  target_compile_options(${tname} PRIVATE ${TEST_COMPILE_FLAGS})
+  target_link_libraries(${tname} PRIVATE y12m_test_helpers y12m_legacy)
+  if(tname MATCHES "_sp$")
+    target_compile_definitions(${tname} PRIVATE TEST_SINGLE_PRECISION)
+  endif()
   add_test(NAME ${tname} COMMAND ${tname})
 
 endforeach()
