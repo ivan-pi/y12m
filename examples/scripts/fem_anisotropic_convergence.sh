@@ -1,5 +1,5 @@
 #!/bin/bash
-# plot_fem_convergence.sh - Automates testing and plotting for the FEM Anisotropic solver
+# fem_anisotropic_convergence.sh - Automates testing and plotting for the FEM Anisotropic solver
 
 EXEC="./build/examples/fem_anisotropic"
 

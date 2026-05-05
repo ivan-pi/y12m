@@ -1,5 +1,5 @@
 #!/bin/bash
-# plot_poisson_convergence.sh - Automates testing and plotting for the 9-pt Poisson solver
+# poisson_2d_convergence.sh - Automates testing and plotting for the 9-pt Poisson solver
 
 EXEC="./build/examples/poisson_9pt"
 

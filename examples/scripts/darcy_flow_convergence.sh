@@ -1,5 +1,5 @@
 #!/bin/bash
-# plot_darcy.sh - Automates testing and plotting for Mixed Darcy solver
+# darcy_flow_convergence.sh - Automates testing and plotting for Mixed Darcy solver
 
 EXEC="./build/examples/darcy_flow"
 DATA_FILE="darcy_convergence.dat"

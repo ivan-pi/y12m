@@ -1,5 +1,5 @@
 #!/bin/bash
-# plot_convergence.sh - Automates testing and plotting for the Biharmonic solver
+# biharmonic_convergence.sh - Automates testing and plotting for the Biharmonic solver
 
 EXEC="./build/examples/biharmonic_13pt"
 

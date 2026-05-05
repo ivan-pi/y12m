@@ -1,5 +1,5 @@
 #!/bin/bash
-# plot_convdiff_convergence.sh - Automates testing and plotting for the Convection-Diffusion solver
+# conv_diff_cds_convergence.sh - Automates testing and plotting for the Convection-Diffusion solver
 
 EXEC="./build/examples/conv_diff_cds"
 
