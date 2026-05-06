@@ -171,6 +171,7 @@ contains
     nn1 = 6*nz
     iha = n
 
+    ! Keep copies of the original COO matrix: y12ma overwrites a/snr/rnr with LU data.
     allocate(a(nn), a0(nz), pivot(n), b(n), b0(n), aflag(8))
     allocate(snr(nn), rnr(nn1), snr0(nz), rnr0(nz), iflag(10), ha(iha,11))
 
@@ -226,6 +227,7 @@ contains
     nn1 = 6*nz
     iha = n
 
+    ! Keep copies of the original COO matrix: y12ma overwrites a/snr/rnr with LU data.
     allocate(a(nn), a0(nz), pivot(n), b(n), b0(n), aflag(8))
     allocate(snr(nn), rnr(nn1), snr0(nz), rnr0(nz), iflag(10), ha(iha,11))
 
