@@ -232,9 +232,15 @@ contains
       x_e = real(e - 1, dp) * h
       call elem_stiffness(h, x_e, Ke)
       call elem_force(h, x_e, fe)
+      ! Indexing conventions:
+      !   li, lj  local DOF indices within element e (1..4)
+      !   gi, gj  global DOF indices: node k owns DOFs 2k-1 (w) and 2k (theta)
+      !           so gi = 2*(e-1) + li  (first node of element e is node e)
+      !   ri, rj  reduced (free) indices: ri = gi - 2, shifted so that the
+      !           first free DOF (global DOF 3, node 2) maps to ri = 1
       do li = 1, 4
         gi = 2*e - 2 + li
-        if (gi <= 2) cycle   ! skip clamped DOFs at node 1
+        if (gi <= 2) cycle   ! skip clamped DOFs at node 1 (global DOFs 1 and 2)
         ri = gi - 2
         b(ri) = b(ri) + fe(li)
         do lj = 1, 4
@@ -273,11 +279,12 @@ contains
     h    = 1.0_dp / real(N, dp)
     ndof = 2 * N
 
-    ! y12ma needs headroom for LU factors; 10× the compressed non-zero count
-    ! (at most 12*N for this block-tridiagonal pattern) is consistent with
-    ! other examples (e.g. darcy_flow.f90).  The same buffer also holds the
-    ! raw COO triplets during assembly (at most 16*N << 120*N).
-    nn = max(10 * 12 * N, 100 * ndof)
+    ! Allocate arrays for y12ma.  The compressed stiffness matrix has at most
+    ! 12*N non-zeros (block-tridiagonal, 2x2 blocks, half-bandwidth 1 in blocks).
+    ! A factor-of-10 buffer is sufficient headroom for LU fill-in on this
+    ! narrow-band system.  The same buffer holds the raw (pre-compress) COO
+    ! triplets during assembly, whose count is at most 16*N.
+    nn = 10 * 12 * N
     allocate(a(nn), pivot(ndof), b(ndof), snr(nn), rnr(nn), ha(ndof, 11))
 
     aflag = 0.0_dp
