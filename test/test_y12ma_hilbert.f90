@@ -28,6 +28,7 @@ program test_y12ma_hilbert
   nfail = 0
 
   ! Compare SP and DP on a moderate ill-conditioned problem.
+  ! n=8 is large enough to show a clear SP/DP gap, while still factorizing in SP.
   call compare_precision(8, nfail)
 
   ! Exercise singularity detection on larger Hilbert matrices in SP.
@@ -162,18 +163,13 @@ contains
     real(sp), intent(out) :: fwd_err, bwd_err
 
     integer :: nz, nn, nn1, iha, i, j, k
-    real(sp), allocatable :: a(:), a0(:), pivot(:), b(:), b0(:), aflag(:)
-    integer, allocatable :: snr(:), rnr(:), snr0(:), rnr0(:), iflag(:), ha(:,:)
-    real(sp) :: x_true(n)
+    real(sp) :: a(6*n*n), a0(n*n), pivot(n), b(n), b0(n), aflag(8), x_true(n)
+    integer :: snr(6*n*n), rnr(6*n*n), snr0(n*n), rnr0(n*n), iflag(10), ha(n,11)
 
     nz = n*n
     nn = 6*nz
     nn1 = 6*nz
     iha = n
-
-    ! Keep copies of the original COO matrix: y12ma overwrites a/snr/rnr with LU data.
-    allocate(a(nn), a0(nz), pivot(n), b(n), b0(n), aflag(8))
-    allocate(snr(nn), rnr(nn1), snr0(nz), rnr0(nz), iflag(10), ha(iha,11))
 
     k = 0
     do i = 1, n
@@ -182,11 +178,12 @@ contains
         rnr(k) = i
         snr(k) = j
         a(k) = 1.0_sp / real(i + j - 1, sp)
-        rnr0(k) = rnr(k)
-        snr0(k) = snr(k)
-        a0(k) = a(k)
       end do
     end do
+    ! Keep copies of original COO data: y12ma overwrites a/snr/rnr with LU data.
+    rnr0(1:nz) = rnr(1:nz)
+    snr0(1:nz) = snr(1:nz)
+    a0(1:nz) = a(1:nz)
 
     b0 = 0.0_sp
     do k = 1, nz
@@ -206,10 +203,10 @@ contains
 
     ! Forward error: maximum absolute difference from exact x=[1,...,1].
     x_true = 1.0_sp
-    call forward_error(n, b, x_true, fwd_err)
+    fwd_err = forward_error(n, b, x_true)
 
     ! Backward error: smallest relative perturbation that explains residual.
-    call backward_error(n, nz, a0, rnr0, snr0, b, b0, bwd_err)
+    bwd_err = backward_error(n, nz, a0, rnr0, snr0, b, b0)
   end subroutine solve_hilbert_sp
 
   subroutine solve_hilbert_dp(n, ifail, fwd_err, bwd_err)
@@ -218,18 +215,13 @@ contains
     real(dp), intent(out) :: fwd_err, bwd_err
 
     integer :: nz, nn, nn1, iha, i, j, k
-    real(dp), allocatable :: a(:), a0(:), pivot(:), b(:), b0(:), aflag(:)
-    integer, allocatable :: snr(:), rnr(:), snr0(:), rnr0(:), iflag(:), ha(:,:)
-    real(dp) :: x_true(n)
+    real(dp) :: a(6*n*n), a0(n*n), pivot(n), b(n), b0(n), aflag(8), x_true(n)
+    integer :: snr(6*n*n), rnr(6*n*n), snr0(n*n), rnr0(n*n), iflag(10), ha(n,11)
 
     nz = n*n
     nn = 6*nz
     nn1 = 6*nz
     iha = n
-
-    ! Keep copies of the original COO matrix: y12ma overwrites a/snr/rnr with LU data.
-    allocate(a(nn), a0(nz), pivot(n), b(n), b0(n), aflag(8))
-    allocate(snr(nn), rnr(nn1), snr0(nz), rnr0(nz), iflag(10), ha(iha,11))
 
     k = 0
     do i = 1, n
@@ -238,11 +230,12 @@ contains
         rnr(k) = i
         snr(k) = j
         a(k) = 1.0_dp / real(i + j - 1, dp)
-        rnr0(k) = rnr(k)
-        snr0(k) = snr(k)
-        a0(k) = a(k)
       end do
     end do
+    ! Keep copies of original COO data: y12ma overwrites a/snr/rnr with LU data.
+    rnr0(1:nz) = rnr(1:nz)
+    snr0(1:nz) = snr(1:nz)
+    a0(1:nz) = a(1:nz)
 
     b0 = 0.0_dp
     do k = 1, nz
@@ -262,10 +255,10 @@ contains
 
     ! Forward error: maximum absolute difference from exact x=[1,...,1].
     x_true = 1.0_dp
-    call forward_error(n, b, x_true, fwd_err)
+    fwd_err = forward_error(n, b, x_true)
 
     ! Backward error: smallest relative perturbation that explains residual.
-    call backward_error(n, nz, a0, rnr0, snr0, b, b0, bwd_err)
+    bwd_err = backward_error(n, nz, a0, rnr0, snr0, b, b0)
   end subroutine solve_hilbert_dp
 
 end program test_y12ma_hilbert

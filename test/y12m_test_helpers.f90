@@ -581,29 +581,32 @@ contains
   ! Error metrics
   ! ===========================================================================
 
-  subroutine forward_error_sp(n, x, expected, err)
+  real(sp) function forward_error_sp(n, x, expected) result(err)
     integer,  intent(in)  :: n
     real(sp), intent(in)  :: x(n), expected(n)
-    real(sp), intent(out) :: err
     err = maxval(abs(x - expected))
-  end subroutine forward_error_sp
+  end function forward_error_sp
 
-  subroutine forward_error_dp(n, x, expected, err)
+  real(dp) function forward_error_dp(n, x, expected) result(err)
     integer,  intent(in)  :: n
     real(dp), intent(in)  :: x(n), expected(n)
-    real(dp), intent(out) :: err
     err = maxval(abs(x - expected))
-  end subroutine forward_error_dp
+  end function forward_error_dp
 
-  subroutine backward_error_sp(n, nz, val, row, col, x, b, err)
+  !> Return normwise backward error eta for A*x ~= b in infinity norm:
+  !> eta = ||b-Ax||_inf / (||A||_inf ||x||_inf + ||b||_inf).
+  !> This is the relative size of the smallest perturbation that makes x
+  !> an exact solution of a nearby linear system.
+  real(sp) function backward_error_sp(n, nz, val, row, col, x, b) result(err)
     integer,  intent(in)  :: n, nz
     real(sp), intent(in)  :: val(nz), x(n), b(n)
     integer,  intent(in)  :: row(nz), col(nz)
-    real(sp), intent(out) :: err
 
     integer :: k
     real(sp) :: a_inf, x_inf, b_inf, r_inf, denom
-    real(sp) :: row_sum(n), residual(n), ax(n)
+    real(sp), allocatable :: row_sum(:), residual(:), ax(:)
+
+    allocate(row_sum(n), residual(n), ax(n))
 
     row_sum = 0.0_sp
     do k = 1, nz
@@ -621,17 +624,22 @@ contains
     ! Guard against exact-zero denominator.
     denom = max(a_inf * x_inf + b_inf, tiny(1.0_sp))
     err = r_inf / denom
-  end subroutine backward_error_sp
+  end function backward_error_sp
 
-  subroutine backward_error_dp(n, nz, val, row, col, x, b, err)
+  !> Return normwise backward error eta for A*x ~= b in infinity norm:
+  !> eta = ||b-Ax||_inf / (||A||_inf ||x||_inf + ||b||_inf).
+  !> This is the relative size of the smallest perturbation that makes x
+  !> an exact solution of a nearby linear system.
+  real(dp) function backward_error_dp(n, nz, val, row, col, x, b) result(err)
     integer,  intent(in)  :: n, nz
     real(dp), intent(in)  :: val(nz), x(n), b(n)
     integer,  intent(in)  :: row(nz), col(nz)
-    real(dp), intent(out) :: err
 
     integer :: k
     real(dp) :: a_inf, x_inf, b_inf, r_inf, denom
-    real(dp) :: row_sum(n), residual(n), ax(n)
+    real(dp), allocatable :: row_sum(:), residual(:), ax(:)
+
+    allocate(row_sum(n), residual(n), ax(n))
 
     row_sum = 0.0_dp
     do k = 1, nz
@@ -649,6 +657,6 @@ contains
     ! Guard against exact-zero denominator.
     denom = max(a_inf * x_inf + b_inf, tiny(1.0_dp))
     err = r_inf / denom
-  end subroutine backward_error_dp
+  end function backward_error_dp
 
 end module y12m_test_helpers
