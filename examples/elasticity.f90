@@ -117,6 +117,7 @@ contains
   ! Global Assembly (Masked Dirichlet & Optimized Boundary Loops)
   ! ---------------------------------------------------------------
   subroutine assemble_system(NX, NY, L, D, P, E, nu, Inertia, a, rnr, snr, b, nz)
+    use y12m_example_helpers, only: compress_matrix
     integer, intent(in) :: NX, NY
     real(dp), intent(in) :: L, D, P, E, nu, Inertia
     real(dp), intent(out) :: a(:), b(:)
@@ -220,85 +221,6 @@ contains
       a(nz) = val
     end subroutine add
   end subroutine assemble_system
-
-  ! ---------------------------------------------------------------
-  ! Sort and Merge Duplicates in a COO Matrix
-  ! ---------------------------------------------------------------
-  subroutine compress_matrix(nz, rnr, snr, a)
-    integer, intent(inout) :: nz
-    integer, intent(inout) :: rnr(:), snr(:)
-    real(dp), intent(inout) :: a(:)
-
-    integer :: write_ptr, i
-
-    if (nz <= 1) return
-
-    ! 1. Sort the arrays by Row, then by Column
-    call quicksort_coo(1, nz, rnr, snr, a)
-
-    ! 2. Linear pass to merge duplicates
-    write_ptr = 1
-    do i = 2, nz
-      if (rnr(i) == rnr(write_ptr) .and. snr(i) == snr(write_ptr)) then
-        ! Duplicate found: sum the values
-        a(write_ptr) = a(write_ptr) + a(i)
-      else
-        ! Unique entry: advance the write pointer and store
-        write_ptr = write_ptr + 1
-        rnr(write_ptr) = rnr(i)
-        snr(write_ptr) = snr(i)
-        a(write_ptr)   = a(i)
-      end if
-    end do
-
-    ! 3. Update the total number of non-zeros
-    nz = write_ptr
-  contains
-
-    ! ---------------------------------------------------------------
-    ! Recursive QuickSort tailored for COO Arrays
-    ! ---------------------------------------------------------------
-    recursive subroutine quicksort_coo(low, high, rnr, snr, a)
-      integer, intent(in) :: low, high
-      integer, intent(inout) :: rnr(:), snr(:)
-      real(dp), intent(inout) :: a(:)
-
-      integer :: i, j, pivot_r, pivot_s
-      integer :: temp_i
-      real(dp) :: temp_a
-
-      if (low >= high) return
-
-      ! Lomuto partition scheme
-      pivot_r = rnr(high)
-      pivot_s = snr(high)
-      i = low - 1
-
-      do j = low, high - 1
-        ! Sort condition: Row is smaller, OR Row is equal and Col is smaller
-        if (rnr(j) < pivot_r .or. (rnr(j) == pivot_r .and. snr(j) < pivot_s)) then
-          i = i + 1
-          ! Swap rnr
-          temp_i = rnr(i); rnr(i) = rnr(j); rnr(j) = temp_i
-          ! Swap snr
-          temp_i = snr(i); snr(i) = snr(j); snr(j) = temp_i
-          ! Swap a
-          temp_a = a(i); a(i) = a(j); a(j) = temp_a
-        end if
-      end do
-
-      ! Swap pivot into place
-      i = i + 1
-      temp_i = rnr(i); rnr(i) = rnr(high); rnr(high) = temp_i
-      temp_i = snr(i); snr(i) = snr(high); snr(high) = temp_i
-      temp_a = a(i); a(i) = a(high); a(high) = temp_a
-
-      ! Recursive calls
-      call quicksort_coo(low, i - 1, rnr, snr, a)
-      call quicksort_coo(i + 1, high, rnr, snr, a)
-    end subroutine quicksort_coo
-
-  end subroutine compress_matrix
 
   ! ---------------------------------------------------------------
   ! Solve

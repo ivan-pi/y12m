@@ -192,17 +192,65 @@ contains
     real(dp), intent(in) :: h, x_e
     real(dp), intent(out) :: fe(4)
     real(dp) :: xi, q_loc, N(4)
-    integer :: g, i
+    integer :: g
     fe = 0.0_dp
     do g = 1, ng3
       xi    = gp3(g)
       q_loc = load_q(x_e + xi*h)
       call shape_N(xi, h, N)
-      do i = 1, 4
-        fe(i) = fe(i) + gw3(g) * h * N(i) * q_loc
-      end do
+      fe = fe + gw3(g) * h * N * q_loc
     end do
   end subroutine elem_force
+
+  !> Assemble the stiffness matrix and load vector in COO format.
+  !>
+  !> Triplets are appended directly to (rnr, snr, a) without pre-filtering;
+  !> shared boundary-node DOFs between adjacent elements therefore produce
+  !> duplicate (row,col) pairs.  compress_matrix sorts and sums them at the
+  !> end (y12ma returns IFAIL=11 on duplicate positions).
+  !>
+  !> Global DOF numbering: node k owns DOFs 2k-1 (deflection) and 2k (rotation).
+  !> The two clamped DOFs at node 1 (global DOFs 1 and 2) are excluded.
+  !> All DOFs from ri=1 to ndof=2*N are assembled; no special treatment is
+  !> needed at the free tip because the natural BCs (zero moment and shear)
+  !> are automatically satisfied by the FEM weak form.
+  subroutine assemble_system(N, h, ndof, nn, nz, rnr, snr, a, b)
+    use y12m_example_helpers, only: compress_matrix
+    integer, intent(in) :: N, ndof, nn
+    real(dp), intent(in) :: h
+    integer, intent(out) :: nz
+    integer, intent(inout) :: rnr(nn), snr(nn)
+    real(dp), intent(inout) :: a(nn)
+    real(dp), intent(out) :: b(ndof)
+
+    integer :: e, li, lj, gi, gj, ri, rj
+    real(dp) :: x_e, Ke(4,4), fe(4)
+
+    b  = 0.0_dp
+    nz = 0
+    do e = 1, N
+      x_e = real(e - 1, dp) * h
+      call elem_stiffness(h, x_e, Ke)
+      call elem_force(h, x_e, fe)
+      do li = 1, 4
+        gi = 2*e - 2 + li
+        if (gi <= 2) cycle   ! skip clamped DOFs at node 1
+        ri = gi - 2
+        b(ri) = b(ri) + fe(li)
+        do lj = 1, 4
+          gj = 2*e - 2 + lj
+          if (gj <= 2) cycle
+          rj = gj - 2
+          nz = nz + 1
+          rnr(nz) = ri
+          snr(nz) = rj
+          a(nz)   = Ke(li, lj)
+        end do
+      end do
+    end do
+
+    call compress_matrix(nz, rnr, snr, a)
+  end subroutine assemble_system
 
   !> Solve the tapered cantilever beam with N Hermite cubic elements.
   !>
@@ -215,68 +263,28 @@ contains
     character(len=*), intent(in) :: outfile
     real(dp), intent(out) :: err_w, err_theta
 
-    integer :: ndof, nz_raw_max, nz_raw, nz, nn, ifail
-    integer :: e, li, lj, gi, gj, ri, rj, nd, funit
-    real(dp) :: h, x, x_e, w_ex, theta_ex
-    real(dp) :: Ke(4,4), fe_vec(4)
-    real(dp), allocatable :: val_raw(:), a(:), b(:), pivot(:)
-    integer, allocatable :: row_raw(:), col_raw(:), snr(:), rnr(:), ha(:,:)
+    integer :: ndof, nz, nn, ifail, nd, funit
+    real(dp) :: h, x
+    real(dp), allocatable :: a(:), b(:), pivot(:)
+    integer, allocatable :: snr(:), rnr(:), ha(:,:)
     real(dp) :: aflag(8)
     integer :: iflag(10)
 
     h    = 1.0_dp / real(N, dp)
-    ndof = 2 * N   ! free DOFs: clamped BC at x=0 removes 2 DOFs
+    ndof = 2 * N
 
-    ! Upper bound on raw COO entries before compression: each element
-    ! contributes at most 4*4=16 triplets (fewer for element 1, where 2 DOFs
-    ! are clamped).  Adjacent elements share a boundary node, so the
-    ! compressed entry count is strictly less than the raw count.
-    nz_raw_max = 16 * N
-
-    ! y12ma needs extra space for LU factors; compressed non-zeros for the
-    ! block-tridiagonal pattern are at most 12*N.  A 10x buffer is consistent
-    ! with other examples (e.g. darcy_flow.f90).
+    ! y12ma needs headroom for LU factors; 10× the compressed non-zero count
+    ! (at most 12*N for this block-tridiagonal pattern) is consistent with
+    ! other examples (e.g. darcy_flow.f90).  The same buffer also holds the
+    ! raw COO triplets during assembly (at most 16*N << 120*N).
     nn = max(10 * 12 * N, 100 * ndof)
     allocate(a(nn), pivot(ndof), b(ndof), snr(nn), rnr(nn), ha(ndof, 11))
-    allocate(val_raw(nz_raw_max), row_raw(nz_raw_max), col_raw(nz_raw_max))
 
-    b     = 0.0_dp
     aflag = 0.0_dp
     iflag = 0
     ifail = 0
 
-    ! Phase 1 — sparse element assembly.
-    ! Global DOF numbering: node k owns DOFs 2k-1 (w) and 2k (theta).
-    ! Node 1 is clamped: DOFs 1 and 2 are eliminated.
-    ! Reduced (free) index: r = global_DOF - 2,  valid for global_DOF > 2.
-    ! Adjacent elements share the DOFs of their common boundary node, so the
-    ! raw COO list may contain duplicate (ri,rj) pairs at shared nodes.
-    nz_raw = 0
-    do e = 1, N
-      x_e = real(e - 1, dp) * h
-      call elem_stiffness(h, x_e, Ke)
-      call elem_force(h, x_e, fe_vec)
-      do li = 1, 4
-        gi = 2*e - 2 + li   ! global DOF index for local DOF li
-        if (gi <= 2) cycle   ! skip clamped DOFs at node 1
-        ri = gi - 2          ! reduced (free) row index
-        b(ri) = b(ri) + fe_vec(li)
-        do lj = 1, 4
-          gj = 2*e - 2 + lj
-          if (gj <= 2) cycle
-          rj = gj - 2
-          nz_raw = nz_raw + 1
-          row_raw(nz_raw) = ri
-          col_raw(nz_raw) = rj
-          val_raw(nz_raw) = Ke(li, lj)
-        end do
-      end do
-    end do
-
-    ! Phase 2 — compress: sort by (row,col) and sum duplicate entries.
-    ! y12ma returns IFAIL=11 if any two triplets share the same (i,j) position.
-    call coo_compress(ndof, nz_raw, row_raw, col_raw, val_raw, nz, rnr, snr, a)
-    deallocate(val_raw, row_raw, col_raw)
+    call assemble_system(N, h, ndof, nn, nz, rnr, snr, a, b)
 
     call y12ma(ndof, nz, a, snr, nn, rnr, nn, pivot, ha, ndof, aflag, iflag, b, ifail)
 
@@ -292,11 +300,9 @@ contains
     err_w     = 0.0_dp
     err_theta = 0.0_dp
     do nd = 2, N + 1
-      x        = real(nd - 1, dp) * h
-      w_ex     = exact_w(x)
-      theta_ex = exact_theta(x)
-      err_w     = max(err_w,     abs(b(2*(nd-1)-1) - w_ex))   ! deflection
-      err_theta = max(err_theta, abs(b(2*(nd-1))   - theta_ex)) ! rotation
+      x = real(nd - 1, dp) * h
+      err_w     = max(err_w,     abs(b(2*(nd-1)-1) - exact_w(x)))
+      err_theta = max(err_theta, abs(b(2*(nd-1))   - exact_theta(x)))
     end do
 
     if (len_trim(outfile) > 0) then
@@ -309,7 +315,7 @@ contains
       do nd = 2, N + 1
         x = real(nd - 1, dp) * h
         write(funit, '(5(1x,es14.6))') x, &
-             b(2*(nd-1)-1), b(2*(nd-1)), &   ! deflection, rotation
+             b(2*(nd-1)-1), b(2*(nd-1)), &
              exact_w(x), exact_theta(x)
       end do
       close(funit)
@@ -317,65 +323,6 @@ contains
     end if
 
   end subroutine run
-
-  !> Sort and sum duplicate (row,col) entries in a COO triplet list.
-  !>
-  !> Uses a counting-sort pass (keyed on (row-1)*ndof + col) followed by a
-  !> single linear sweep to accumulate values for repeated positions.
-  !> On entry nz_in triplets (row_in, col_in, val_in) may contain duplicates;
-  !> on exit (row_out, col_out, val_out) is a duplicate-free, row-major sorted
-  !> list of length nz_out.  The output arrays must each have at least nz_in
-  !> elements (worst case: no duplicates, nz_out == nz_in).
-  !>
-  !> Note: y12ma returns IFAIL=11 when two entries share the same (i,j)
-  !> position, so compression is mandatory for element-by-element FEM assembly.
-  subroutine coo_compress(ndof, nz_in, row_in, col_in, val_in, &
-                          nz_out, row_out, col_out, val_out)
-    integer, intent(in) :: ndof, nz_in
-    integer, intent(in) :: row_in(nz_in), col_in(nz_in)
-    real(dp), intent(in) :: val_in(nz_in)
-    integer, intent(out) :: nz_out
-    integer, intent(out) :: row_out(:), col_out(:)
-    real(dp), intent(out) :: val_out(:)
-
-    integer :: k, key, last_key, nkeys
-    integer, allocatable :: cnt(:), sorted_idx(:)
-
-    ! Counting sort: key = (row-1)*ndof + col  (1-based, row-major order)
-    nkeys = ndof * ndof
-    allocate(cnt(nkeys), sorted_idx(nz_in))
-    cnt = 0
-    do k = 1, nz_in
-      key = (row_in(k) - 1) * ndof + col_in(k)
-      cnt(key) = cnt(key) + 1
-    end do
-    do key = 2, nkeys
-      cnt(key) = cnt(key) + cnt(key - 1)
-    end do
-    do k = nz_in, 1, -1
-      key = (row_in(k) - 1) * ndof + col_in(k)
-      sorted_idx(cnt(key)) = k
-      cnt(key) = cnt(key) - 1
-    end do
-
-    ! Linear sweep: compress duplicate (row,col) pairs by summing values
-    nz_out = 0
-    last_key = -1
-    do k = 1, nz_in
-      key = (row_in(sorted_idx(k)) - 1) * ndof + col_in(sorted_idx(k))
-      if (key /= last_key) then
-        nz_out = nz_out + 1
-        row_out(nz_out) = row_in(sorted_idx(k))
-        col_out(nz_out) = col_in(sorted_idx(k))
-        val_out(nz_out) = val_in(sorted_idx(k))
-        last_key = key
-      else
-        val_out(nz_out) = val_out(nz_out) + val_in(sorted_idx(k))
-      end if
-    end do
-
-    deallocate(cnt, sorted_idx)
-  end subroutine coo_compress
 
 end module beam_solver
 
@@ -389,10 +336,8 @@ program euler_bernoulli_beam
 
   integer, parameter :: dp = kind(1.0d0)
 
-  integer :: N, ios, iarg, nargs, pos_count, i
+  integer :: N, ios, iarg, nargs, pos_count
   character(len=256) :: arg, outfile
-  real(dp) :: err_w, err_theta, h, h_prev, err_w_prev, err_theta_prev
-  real(dp) :: rate_w, rate_theta
   integer, parameter :: n_refine = 5
   integer :: ns(n_refine)
   logical :: do_conv
@@ -434,46 +379,52 @@ program euler_bernoulli_beam
   end do
 
   if (do_conv) then
-    write(output_unit, '(a)') &
-         'Euler-Bernoulli beam — Hermite cubic FEM convergence study'
-    write(output_unit, '(a)') &
-         'Tapered cantilever: EI(x)=1+x, q(x)=-120+120x+240x^2'
-    write(output_unit, '(a)') &
-         'Exact: w=20x^2-10x^3+x^5,  theta=40x-30x^2+5x^4'
-    write(output_unit, *)
-    write(output_unit, '(a)') &
-         '   N        h        max|e_w|      max|e_t|     rate_w  rate_t'
-    write(output_unit, '(a)') &
-         '  ---  ----------  -----------  -----------  -------  -------'
+    block
+      real(dp) :: err_w, err_theta, h, h_prev, err_w_prev, err_theta_prev
+      real(dp) :: rate_w, rate_theta
+      integer :: i
 
-    h_prev         = 0.0_dp
-    err_w_prev     = 0.0_dp
-    err_theta_prev = 0.0_dp
+      write(output_unit, '(a)') &
+           'Euler-Bernoulli beam — Hermite cubic FEM convergence study'
+      write(output_unit, '(a)') &
+           'Tapered cantilever: EI(x)=1+x, q(x)=-120+120x+240x^2'
+      write(output_unit, '(a)') &
+           'Exact: w=20x^2-10x^3+x^5,  theta=40x-30x^2+5x^4'
+      write(output_unit, *)
+      write(output_unit, '(a)') &
+           '   N        h        max|e_w|      max|e_t|     rate_w  rate_t'
+      write(output_unit, '(a)') &
+           '  ---  ----------  -----------  -----------  -------  -------'
 
-    do i = 1, n_refine
-      call run(ns(i), '', err_w, err_theta)
-      h = 1.0_dp / real(ns(i), dp)
-      if (i == 1) then
-        write(output_unit, '(i5,f12.6,2(2x,es11.4),2(9x,a1))') &
-             ns(i), h, err_w, err_theta, '-', '-'
-      else
-        rate_w     = log(err_w_prev     / err_w)     / log(h_prev / h)
-        rate_theta = log(err_theta_prev / err_theta) / log(h_prev / h)
-        write(output_unit, '(i5,f12.6,2(2x,es11.4),2f9.2)') &
-             ns(i), h, err_w, err_theta, rate_w, rate_theta
-      end if
-      h_prev         = h
-      err_w_prev     = err_w
-      err_theta_prev = err_theta
-    end do
+      h_prev         = 0.0_dp
+      err_w_prev     = 0.0_dp
+      err_theta_prev = 0.0_dp
 
-    ! Write the finest-mesh nodal solution to file
-    call run(ns(n_refine), trim(outfile), err_w, err_theta)
+      do i = 1, n_refine
+        call run(ns(i), '', err_w, err_theta)
+        h = 1.0_dp / real(ns(i), dp)
+        if (i == 1) then
+          write(output_unit, '(i5,f12.6,2(2x,es11.4),2(9x,a1))') &
+               ns(i), h, err_w, err_theta, '-', '-'
+        else
+          rate_w     = log(err_w_prev     / err_w)     / log(h_prev / h)
+          rate_theta = log(err_theta_prev / err_theta) / log(h_prev / h)
+          write(output_unit, '(i5,f12.6,2(2x,es11.4),2f9.2)') &
+               ns(i), h, err_w, err_theta, rate_w, rate_theta
+        end if
+        h_prev         = h
+        err_w_prev     = err_w
+        err_theta_prev = err_theta
+      end do
+    end block
   else
-    call run(N, trim(outfile), err_w, err_theta)
-    write(output_unit, '(a,i0,a)') 'N = ', N, ' Hermite cubic elements'
-    write(output_unit, '(a,es12.4)') 'Max nodal error in deflection : ', err_w
-    write(output_unit, '(a,es12.4)') 'Max nodal error in rotation   : ', err_theta
+    block
+      real(dp) :: err_w, err_theta
+      call run(N, trim(outfile), err_w, err_theta)
+      write(output_unit, '(a,i0,a)') 'N = ', N, ' Hermite cubic elements'
+      write(output_unit, '(a,es12.4)') 'Max nodal error in deflection : ', err_w
+      write(output_unit, '(a,es12.4)') 'Max nodal error in rotation   : ', err_theta
+    end block
   end if
 
 end program euler_bernoulli_beam

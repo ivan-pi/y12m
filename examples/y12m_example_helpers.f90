@@ -17,6 +17,7 @@ module y12m_example_helpers
    public :: parse_range
    public :: rms_diff
    public :: write_field_output
+   public :: compress_matrix
 
    !> Root-mean-square of element-wise differences.
    !> Overloaded for 1-D and 2-D assumed-shape real(dp) arrays.
@@ -153,5 +154,81 @@ contains
       end do
       close(funit)
    end subroutine write_field_output
+
+
+   ! -----------------------------------------------------------------------
+   !> Sort and merge duplicate (row,col) entries in a COO sparse matrix.
+   !>
+   !> On entry, nz COO triplets (rnr, snr, a) may contain duplicate (i,j)
+   !> positions.  On exit the triplets are sorted row-major and duplicates
+   !> are summed; nz is updated to the compressed count.
+   !>
+   !> The arrays rnr, snr, a must be allocated to at least nz elements on
+   !> entry (the in-place operation does not grow them).
+   !>
+   !> Note: y12ma returns IFAIL=11 when two entries share the same (i,j)
+   !> position, so this routine must be called before passing a FEM-assembled
+   !> COO matrix to y12ma.
+   subroutine compress_matrix(nz, rnr, snr, a)
+      integer, intent(inout) :: nz
+      integer, intent(inout) :: rnr(:), snr(:)
+      real(dp), intent(inout) :: a(:)
+
+      integer :: write_ptr, i
+
+      if (nz <= 1) return
+
+      call quicksort_coo(1, nz, rnr, snr, a)
+
+      write_ptr = 1
+      do i = 2, nz
+         if (rnr(i) == rnr(write_ptr) .and. snr(i) == snr(write_ptr)) then
+            a(write_ptr) = a(write_ptr) + a(i)
+         else
+            write_ptr = write_ptr + 1
+            rnr(write_ptr) = rnr(i)
+            snr(write_ptr) = snr(i)
+            a(write_ptr)   = a(i)
+         end if
+      end do
+
+      nz = write_ptr
+
+   contains
+
+      recursive subroutine quicksort_coo(low, high, rnr, snr, a)
+         integer, intent(in) :: low, high
+         integer, intent(inout) :: rnr(:), snr(:)
+         real(dp), intent(inout) :: a(:)
+
+         integer :: i, j, pivot_r, pivot_s, temp_i
+         real(dp) :: temp_a
+
+         if (low >= high) return
+
+         pivot_r = rnr(high)
+         pivot_s = snr(high)
+         i = low - 1
+
+         do j = low, high - 1
+            if (rnr(j) < pivot_r .or. &
+                (rnr(j) == pivot_r .and. snr(j) < pivot_s)) then
+               i = i + 1
+               temp_i = rnr(i); rnr(i) = rnr(j); rnr(j) = temp_i
+               temp_i = snr(i); snr(i) = snr(j); snr(j) = temp_i
+               temp_a = a(i);   a(i)   = a(j);   a(j)   = temp_a
+            end if
+         end do
+
+         i = i + 1
+         temp_i = rnr(i); rnr(i) = rnr(high); rnr(high) = temp_i
+         temp_i = snr(i); snr(i) = snr(high); snr(high) = temp_i
+         temp_a = a(i);   a(i)   = a(high);   a(high)   = temp_a
+
+         call quicksort_coo(low, i - 1, rnr, snr, a)
+         call quicksort_coo(i + 1, high, rnr, snr, a)
+      end subroutine quicksort_coo
+
+   end subroutine compress_matrix
 
 end module y12m_example_helpers

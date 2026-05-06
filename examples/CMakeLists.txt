@@ -108,7 +108,9 @@ add_pde_test(fem_anisotropic fem_anisotropic.f90)
 target_link_libraries(fem_anisotropic PRIVATE y12m_example_helpers)
 add_pde_test(darcy_flow darcy_flow.f90)
 add_pde_test(elasticity elasticity.f90)
+target_link_libraries(elasticity PRIVATE y12m_example_helpers)
 add_pde_test(euler_bernoulli_beam euler_bernoulli_beam.f90)
+target_link_libraries(euler_bernoulli_beam PRIVATE y12m_example_helpers)
 
 # --------------------------------------------------------------------------
 # LU-reuse examples: demonstrate the low-level y12mb / y12mc / y12md API
