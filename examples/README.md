@@ -31,6 +31,7 @@ generators (`matrd1`, `matre1`, `matrf2`) and a wall-clock timing helper
   - [`heat_implicit.f90`](#heat_implicitf90)
   - [`multiple_loads.f90`](#multiple_loadsf90)
   - [`newton_bratu.f90`](#newton_bratuf90)
+  - [`euler_bernoulli_beam.f90`](#euler_bernoulli_beamf90)
 - [Legacy drivers](#legacy-drivers)
 
 ---
@@ -53,6 +54,7 @@ coverage grows.
 | `heat_implicit` | | ✓ | ✓ | ✓ |
 | `multiple_loads` | | ✓ | ✓ | ✓ |
 | `newton_bratu` | | ✓ | ✓ | ✓ |
+| `euler_bernoulli_beam` | ✓ | | | |
 
 ---
 
@@ -312,6 +314,73 @@ Usage: newton_bratu [--help] [N] [lambda] [max_iter] [output_file]
        lambda      reaction parameter in (0, 6.808) (default 1.0)
        max_iter    max Newton iterations (default 20)
        output_file output file (default: newton_bratu.dat)
+```
+
+---
+
+### `euler_bernoulli_beam.f90`
+
+**1D Hermite cubic FEM for a tapered Euler-Bernoulli cantilever beam.**
+
+Solves the variable-stiffness fourth-order problem
+
+```
+d^2/dx^2 [ EI(x) d^2w/dx^2 ] = q(x)   on (0, 1)
+```
+
+with a linearly tapered bending stiffness `EI(x) = 1 + x` and clamped-free
+boundary conditions (`w(0) = w'(0) = 0`; zero moment and shear at `x = 1`).
+
+The exact solution is supplied by the Method of Manufactured Solutions:
+
+```
+w(x)     = 20 x^2 − 10 x^3 + x^5
+theta(x) = 40 x − 30 x^2 + 5 x^4
+q(x)     = −120 + 120 x + 240 x^2
+```
+
+**Discretisation.**  Each element has **4 DOFs** — deflection and rotation at
+each end node — giving a `4×4` element stiffness matrix computed by 2-point
+Gauss-Legendre quadrature (exact for the linear-EI integrand).  The
+consistent load vector uses 3-point quadrature (exact for the quadratic load
+times cubic shape functions).  After eliminating the two clamped DOFs at
+`x = 0`, the assembled global stiffness matrix is `(2N) × (2N)` with a banded
+structure and **half-bandwidth 3**, because each element couples at most 4
+consecutive DOFs in the reduced ordering.  This mixed deflection/rotation
+coupling gives a sparsity pattern distinct from all other examples in this
+folder.
+
+**Convergence.**  1D Hermite cubic elements are superconvergent at the DOF
+nodes for smooth variable-coefficient beam problems, giving:
+
+```
+max |w_h − w|     = O(h^4)
+max |theta_h − w'| = O(h^4)
+```
+
+Sample output from `--conv` (N = 2 to 32, uniform mesh):
+
+```
+   N        h        max|e_w|      max|e_t|     rate_w  rate_t
+  ---  ----------  -----------  -----------  -------  -------
+    2    0.500000   8.5154E-03   4.2577E-03         -         -
+    4    0.250000   5.1073E-04   2.5536E-04     4.06     4.06
+    8    0.125000   3.1560E-05   1.5780E-05     4.02     4.02
+   16    0.062500   1.9668E-06   9.8352E-07     4.00     4.00
+   32    0.031250   1.2416E-07   6.3132E-08     3.99     3.96
+```
+
+The beam stiffness matrix has condition number O(h⁻⁴), so for fine meshes
+(N > 32) the LU rounding errors begin to dominate; the convergence study is
+limited to N ≤ 32.
+
+**Usage:**
+
+```
+Usage: euler_bernoulli_beam [--help] [--conv] [N] [output_file]
+  N            number of Hermite cubic elements (default 16)
+  output_file  output data file (default: euler_bernoulli_beam.dat)
+  --conv       grid-refinement convergence study (N=2,4,8,16,32)
 ```
 
 ---
