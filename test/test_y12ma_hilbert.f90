@@ -3,12 +3,12 @@
 !
 ! test_y12ma_hilbert.f90 - Precision comparison on Hilbert systems.
 !
-! This test avoids fixed absolute error cutoffs.  Instead it compares
+! This test avoids fixed absolute error cutoffs. Instead it compares
 ! forward and backward errors between single and double precision on the
 ! same ill-conditioned problem.
 !
-! Hilbert matrix H has entries H(i,j)=1/(i+j-1).  It is a classic dense
-! matrix that quickly becomes ill-conditioned as n grows.  We intentionally
+! Hilbert matrix H has entries H(i,j)=1/(i+j-1). It is a classic dense
+! matrix that quickly becomes ill-conditioned as n grows. We intentionally
 ! feed this dense matrix to y12m's sparse-direct path so we can stress
 ! precision behavior and singularity detection in a controlled way.
 !
