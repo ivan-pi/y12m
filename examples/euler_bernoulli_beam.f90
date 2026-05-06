@@ -30,6 +30,38 @@
 !   carry different physical meanings (deflection/rotation coupling), making
 !   the sparsity pattern distinct from purely nodal discretisations.
 !
+! Node/DOF numbering (N=4 elements example):
+!
+!   Physical node:  1[C]        2           3           4           5
+!   Global DOF  :   1    2      3    4      5    6      7    8      9   10
+!                   w    t      w    t      w    t      w    t      w    t
+!   Clamped [C] :  [x    x] <- removed; reduced index  r = global_DOF - 2
+!   Reduced DOF :                r1   r2     r3   r4     r5   r6     r7   r8
+!
+! Block-tridiagonal sparsity of K after clamping w=t=0 at node 1 (N=4):
+!
+!              r1   r2 | r3   r4 | r5   r6 | r7   r8
+!   r1 (w2) [  x    x |  x    x |  .    . |  .    . ]
+!   r2 (t2) [  x    x |  x    x |  .    . |  .    . ]
+!           [---------+---------+---------+---------]
+!   r3 (w3) [  x    x |  x    x |  x    x |  .    . ]
+!   r4 (t3) [  x    x |  x    x |  x    x |  .    . ]
+!           [---------+---------+---------+---------]
+!   r5 (w4) [  .    . |  x    x |  x    x |  x    x ]
+!   r6 (t4) [  .    . |  x    x |  x    x |  x    x ]
+!           [---------+---------+---------+---------]
+!   r7 (w5) [  .    . |  .    . |  x    x |  x    x ]
+!   r8 (t5) [  .    . |  .    . |  x    x |  x    x ]
+!
+!   Each 2x2 sub-block couples deflection (w) and rotation (t=theta) at a
+!   node or between adjacent nodes.  Block half-bandwidth = 1.
+!
+! Assembly:
+!   Element contributions are appended directly to COO triplet arrays
+!   (Phase 1).  Because adjacent elements share boundary-node DOFs the raw
+!   list contains duplicate (row, col) pairs; a counting-sort pass compresses
+!   and sums these before the solver call (Phase 2).
+!
 ! Solver: y12ma (double-precision sparse direct).
 !
 ! Expected nodal convergence on a uniform mesh (superconvergence for 1D
@@ -183,76 +215,68 @@ contains
     character(len=*), intent(in) :: outfile
     real(dp), intent(out) :: err_w, err_theta
 
-    ! Half-bandwidth of the assembled stiffness matrix
-    integer, parameter :: bw = 3
-
-    integer :: ndof, nz_max, nz, nn, ifail
-    integer :: e, li, lj, gi, gj, ri, rj, i, j, nd, funit
+    integer :: ndof, nz_raw_max, nz_raw, nz, nn, ifail
+    integer :: e, li, lj, gi, gj, ri, rj, nd, funit
     real(dp) :: h, x, x_e, w_ex, theta_ex
     real(dp) :: Ke(4,4), fe_vec(4)
-    real(dp), allocatable :: Kfull(:,:), a(:), b(:), pivot(:)
-    integer, allocatable :: snr(:), rnr(:), ha(:,:)
+    real(dp), allocatable :: val_raw(:), a(:), b(:), pivot(:)
+    integer, allocatable :: row_raw(:), col_raw(:), snr(:), rnr(:), ha(:,:)
     real(dp) :: aflag(8)
     integer :: iflag(10)
 
     h    = 1.0_dp / real(N, dp)
     ndof = 2 * N   ! free DOFs: clamped BC at x=0 removes 2 DOFs
 
-    ! Dense band buffer for accumulation (avoids duplicate COO entries from
-    ! shared nodes between adjacent elements)
-    allocate(Kfull(ndof, ndof))
-    Kfull = 0.0_dp
+    ! Upper bound on raw COO entries before compression: each element
+    ! contributes at most 4*4=16 triplets (fewer for element 1, where 2 DOFs
+    ! are clamped).  Adjacent elements share a boundary node, so the
+    ! compressed entry count is strictly less than the raw count.
+    nz_raw_max = 16 * N
 
-    nz_max = (2*bw + 1) * ndof
-    ! y12ma internally reorders entries and stores the LU factorisation in the
-    ! same arrays.  For a band matrix with half-bandwidth bw the LU factors
-    ! remain within the band (no fill-in outside), so nz_LU <= nz_max.  A
-    ! 10x multiplier on nz_max provides comfortable headroom for y12ma's
-    ! internal workspace (Markowitz reordering, row/column permutations),
-    ! consistent with the factor used in other examples (e.g. darcy_flow).
-    nn     = max(10 * nz_max, 100 * ndof)
+    ! y12ma needs extra space for LU factors; compressed non-zeros for the
+    ! block-tridiagonal pattern are at most 12*N.  A 10x buffer is consistent
+    ! with other examples (e.g. darcy_flow.f90).
+    nn = max(10 * 12 * N, 100 * ndof)
     allocate(a(nn), pivot(ndof), b(ndof), snr(nn), rnr(nn), ha(ndof, 11))
+    allocate(val_raw(nz_raw_max), row_raw(nz_raw_max), col_raw(nz_raw_max))
 
     b     = 0.0_dp
     aflag = 0.0_dp
     iflag = 0
     ifail = 0
 
-    ! Element-level assembly.
-    ! Node e has global DOFs (2e-1, 2e); DOFs 1 and 2 are clamped (w=theta=0).
-    ! Reduced (free) index: r = global_index - 2,  valid for global > 2.
+    ! Phase 1 — sparse element assembly.
+    ! Global DOF numbering: node k owns DOFs 2k-1 (w) and 2k (theta).
+    ! Node 1 is clamped: DOFs 1 and 2 are eliminated.
+    ! Reduced (free) index: r = global_DOF - 2,  valid for global_DOF > 2.
+    ! Adjacent elements share the DOFs of their common boundary node, so the
+    ! raw COO list may contain duplicate (ri,rj) pairs at shared nodes.
+    nz_raw = 0
     do e = 1, N
       x_e = real(e - 1, dp) * h
       call elem_stiffness(h, x_e, Ke)
       call elem_force(h, x_e, fe_vec)
       do li = 1, 4
-        gi = 2*e - 2 + li   ! global DOF of local DOF li
+        gi = 2*e - 2 + li   ! global DOF index for local DOF li
         if (gi <= 2) cycle   ! skip clamped DOFs at node 1
-        ri = gi - 2          ! reduced (free) index
+        ri = gi - 2          ! reduced (free) row index
         b(ri) = b(ri) + fe_vec(li)
         do lj = 1, 4
           gj = 2*e - 2 + lj
           if (gj <= 2) cycle
           rj = gj - 2
-          Kfull(ri, rj) = Kfull(ri, rj) + Ke(li, lj)
+          nz_raw = nz_raw + 1
+          row_raw(nz_raw) = ri
+          col_raw(nz_raw) = rj
+          val_raw(nz_raw) = Ke(li, lj)
         end do
       end do
     end do
 
-    ! Extract non-zeros into COO format (exploit the known banded structure)
-    nz = 0
-    do i = 1, ndof
-      do j = max(1, i-bw), min(ndof, i+bw)
-        if (Kfull(i,j) /= 0.0_dp) then
-          nz = nz + 1
-          rnr(nz) = i
-          snr(nz) = j
-          a(nz)   = Kfull(i,j)
-        end if
-      end do
-    end do
-
-    deallocate(Kfull)
+    ! Phase 2 — compress: sort by (row,col) and sum duplicate entries.
+    ! y12ma returns IFAIL=11 if any two triplets share the same (i,j) position.
+    call coo_compress(ndof, nz_raw, row_raw, col_raw, val_raw, nz, rnr, snr, a)
+    deallocate(val_raw, row_raw, col_raw)
 
     call y12ma(ndof, nz, a, snr, nn, rnr, nn, pivot, ha, ndof, aflag, iflag, b, ifail)
 
@@ -262,9 +286,9 @@ contains
     end if
 
     ! Maximum nodal errors over free DOFs (nodes 2 to N+1).
-    ! After removing the 2 clamped DOFs at node 1, the reduced indices are:
-    !   deflection at node nd : 2*(nd-1)-1
-    !   rotation   at node nd : 2*(nd-1)
+    ! Clamped node 1 removed DOFs 1 and 2; reduced index = global_DOF - 2.
+    !   deflection at node nd : reduced index 2*(nd-1) - 1  (= 2*nd - 3)
+    !   rotation   at node nd : reduced index 2*(nd-1)      (= 2*nd - 2)
     err_w     = 0.0_dp
     err_theta = 0.0_dp
     do nd = 2, N + 1
@@ -293,6 +317,65 @@ contains
     end if
 
   end subroutine run
+
+  !> Sort and sum duplicate (row,col) entries in a COO triplet list.
+  !>
+  !> Uses a counting-sort pass (keyed on (row-1)*ndof + col) followed by a
+  !> single linear sweep to accumulate values for repeated positions.
+  !> On entry nz_in triplets (row_in, col_in, val_in) may contain duplicates;
+  !> on exit (row_out, col_out, val_out) is a duplicate-free, row-major sorted
+  !> list of length nz_out.  The output arrays must each have at least nz_in
+  !> elements (worst case: no duplicates, nz_out == nz_in).
+  !>
+  !> Note: y12ma returns IFAIL=11 when two entries share the same (i,j)
+  !> position, so compression is mandatory for element-by-element FEM assembly.
+  subroutine coo_compress(ndof, nz_in, row_in, col_in, val_in, &
+                          nz_out, row_out, col_out, val_out)
+    integer, intent(in) :: ndof, nz_in
+    integer, intent(in) :: row_in(nz_in), col_in(nz_in)
+    real(dp), intent(in) :: val_in(nz_in)
+    integer, intent(out) :: nz_out
+    integer, intent(out) :: row_out(:), col_out(:)
+    real(dp), intent(out) :: val_out(:)
+
+    integer :: k, key, last_key, nkeys
+    integer, allocatable :: cnt(:), sorted_idx(:)
+
+    ! Counting sort: key = (row-1)*ndof + col  (1-based, row-major order)
+    nkeys = ndof * ndof
+    allocate(cnt(nkeys), sorted_idx(nz_in))
+    cnt = 0
+    do k = 1, nz_in
+      key = (row_in(k) - 1) * ndof + col_in(k)
+      cnt(key) = cnt(key) + 1
+    end do
+    do key = 2, nkeys
+      cnt(key) = cnt(key) + cnt(key - 1)
+    end do
+    do k = nz_in, 1, -1
+      key = (row_in(k) - 1) * ndof + col_in(k)
+      sorted_idx(cnt(key)) = k
+      cnt(key) = cnt(key) - 1
+    end do
+
+    ! Linear sweep: compress duplicate (row,col) pairs by summing values
+    nz_out = 0
+    last_key = -1
+    do k = 1, nz_in
+      key = (row_in(sorted_idx(k)) - 1) * ndof + col_in(sorted_idx(k))
+      if (key /= last_key) then
+        nz_out = nz_out + 1
+        row_out(nz_out) = row_in(sorted_idx(k))
+        col_out(nz_out) = col_in(sorted_idx(k))
+        val_out(nz_out) = val_in(sorted_idx(k))
+        last_key = key
+      else
+        val_out(nz_out) = val_out(nz_out) + val_in(sorted_idx(k))
+      end if
+    end do
+
+    deallocate(cnt, sorted_idx)
+  end subroutine coo_compress
 
 end module beam_solver
 
