@@ -585,14 +585,14 @@ contains
     integer,  intent(in)  :: n
     real(sp), intent(in)  :: x(n), expected(n)
     real(sp), intent(out) :: err
-    err = maxval(abs(x(1:n) - expected(1:n)))
+    err = maxval(abs(x - expected))
   end subroutine forward_error_sp
 
   subroutine forward_error_dp(n, x, expected, err)
     integer,  intent(in)  :: n
     real(dp), intent(in)  :: x(n), expected(n)
     real(dp), intent(out) :: err
-    err = maxval(abs(x(1:n) - expected(1:n)))
+    err = maxval(abs(x - expected))
   end subroutine forward_error_dp
 
   subroutine backward_error_sp(n, nz, val, row, col, x, b, err)
