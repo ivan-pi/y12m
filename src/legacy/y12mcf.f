@@ -32,7 +32,7 @@ c
 c
 c  use the information about fill-ins if it is possible.
 c
-      nr=n*n
+      nr=huge(nr)
       if(iflag(4).ne.2)go to 100
       if(iflag(10).gt.nn)go to 50
       l1=iflag(10)

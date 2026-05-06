@@ -17,15 +17,18 @@ Files with a `.f90` extension produce a single executable.
 | `test_y12ma_dp.f90` | `test_y12ma_dp` | y12ma | DP | n=6–7,9–10 tridiagonal, n=8 arrow |
 | `test_y12ma_5x5.F90` | `test_y12ma_5x5_sp`, `test_y12ma_5x5_dp` | y12ma | SP + DP | UMFPACK 5×5; residual check (2-norm and ∞-norm) |
 | `test_y12ma_rand.F90` | `test_y12ma_rand_sp`, `test_y12ma_rand_dp` | y12ma | SP + DP | random 9×9 diag.-dominant, 3 RHS; cross-checked vs LAPACK sgesv/dgesv (optional, requires LAPACK) |
+| `test_y12ma_hilbert.f90` | `test_y12ma_hilbert` | y12ma | SP + DP | 6×6 Hilbert matrix (cond≈1.5e7): verifies DP error < 1e-5, SP error > 1e-2, and DP is strictly more accurate |
 | `test_y12mb_mc_md_sp.f90` | `test_y12mb_mc_md_sp` | y12mb + y12mc + y12md | SP | n=1 diagonal (IFAIL=12 error path), n=2 full 2×2, n=3–4 tridiagonal, n=5 arrow |
 | `test_y12mb_mc_md_dp.f90` | `test_y12mb_mc_md_dp` | y12mb + y12mc + y12md | DP | n=6,8,9 tridiagonal, n=7 arrow, n=10 pentadiagonal (bandwidth 2) |
 | `test_y12mb_errors.F90` | `test_y12mb_errors_sp`, `test_y12mb_errors_dp` | y12mb | SP + DP | error-path coverage (IFAIL 5,6,11–18,24,25); valid-call postconditions (IFLAG(1)=−1, AFLAG(6)=max\|A\|) |
 | `test_y12mc_errors.F90` | `test_y12mc_errors_sp`, `test_y12mc_errors_dp` | y12mc | SP + DP | error-path coverage (IFAIL 2–4,7–9,19–22); success block verifies IFLAG(1)=−2, AFLAG(6,8), pivot sequence, and residual |
 | `test_y12mc_z_intent.F90` | `test_y12mc_z_intent_sp`, `test_y12mc_z_intent_dp` | y12mc | SP + DP | regression: `z` must be unchanged on success path, on early-error exit, and when passed as an integer literal |
+| `test_y12mc_large_n_dp.f90` | `test_y12mc_large_n_dp` | y12mb + y12mc + y12md | DP | regression for 32-bit Markowitz overflow (nr=n*n→nr=huge(nr)); n=50000 tridiagonal |
 | `test_y12md_errors.F90` | `test_y12md_errors_sp`, `test_y12md_errors_dp` | y12mb + y12mc + y12md | SP + DP | error-path coverage (IFAIL=1); success with IFLAG(5)=1 and IFLAG(5)=2; multiple-RHS reuse (IFLAG(5)=3) on 6×6 reference matrix |
 | `test_y12mf_sp.f90` | `test_y12mf_sp` | y12mf | SP | tridiagonal n=3,5,7,10 |
 | `test_y12mf_errors.f90` | `test_y12mf_errors` | y12mf | SP | 6×6 reference; error-path (IFAIL=10,23); output-parameter invariants (IFLAG(12), AFLAG(9–11), B, B1); LU-reuse (IFLAG(5)=3) |
 | `test_y12mg_mh.f90` | `test_y12mg_mh` | y12mg + y12mh | SP + DP | 1-norm of n=5 (SP) and n=10 (DP) tridiagonal; condition estimate after full y12mb→y12mc→y12md→y12mg sequence |
+| `test_y12mg_mh_arrow.f90` | `test_y12mg_mh_arrow` | y12mg + y12mh | SP + DP | 1-norm of n=6 arrow (SP), n=8 arrow and n=10 pentadiagonal (DP); condition estimates for arrow and pentadiagonal |
 | `test_y12ma_y12mf_bench_sp.f90` | `test_y12ma_y12mf_bench_sp` | y12ma + y12mf | SP | UMFPACK 5×5, Harwell-Boeing 4×4, Pardiso 8×8, Templates 6×6 |
 | `y12m_solve.f90` | `y12m_solve_mat0` … `y12m_solve_mat5` (no mat4) | y12ma (DP) | DP | five `.mtx` data files (mat0–mat3, mat5); file-based regression driver with `--verbose` output |
 | `y12m_mm.f90` | *(excluded when `WITH_NIST_MMIO=OFF`)* | y12ma | SP + DP | arbitrary Matrix Market format; requires NIST mmio library |
@@ -50,15 +53,27 @@ public API is exposed through `include/y12m.h` (C) and `include/y12m.hpp`
 
 ### 2.3 Large-n Markowitz overflow bug
 
-The 32-bit overflow fix in `y12mce`/`y12mcf` (variable `nr = n*n` for large
-`n` replaced by `nr = huge(nr)`) is not covered by any current test.
+~~The 32-bit overflow fix in `y12mce`/`y12mcf` (variable `nr = n*n` for large
+`n` replaced by `nr = huge(nr)`) is not covered by any current test.~~
+
+**Fixed.** Both `src/legacy/y12mcf.f` and `src/legacy/y12mce.f` now use
+`nr = huge(nr)`.  The regression test `test_y12mc_large_n_dp` exercises the
+fixed code with a 50 000-row tridiagonal system (well above the 46 341 overflow
+threshold) and verifies that `IFAIL = 0` and `max|x−1| < 1e-10`.
 
 ### 2.4 Ill-conditioned and near-singular matrices
 
-All current test matrices are well-conditioned.  There are no tests that
+~~All current test matrices are well-conditioned.  There are no tests that
 verify error flags and iterative-refinement benefit on ill-conditioned
 problems, nor tests that exercise the near-singularity detection path
-(IFAIL = 7 or 8).
+(IFAIL = 7 or 8).~~
+
+**Partially addressed.**  `test_y12ma_hilbert` solves the 6×6 Hilbert matrix
+(condition number ≈ 1.5×10^7) in both SP and DP, verifying that the DP error
+is below 1×10^{−5} while the SP error exceeds 1×10^{−2} and that DP is
+strictly more accurate.  Near-singularity detection (IFAIL = 7 or 8) was
+already covered by `test_y12mc_errors`.  Iterative-refinement benefit on
+ill-conditioned matrices (SP-5 from section 3) remains future work.
 
 ### 2.5 Limited variety of benchmark matrices
 
@@ -77,9 +92,14 @@ corresponding validation logic is added to the `y12md` source.
 
 ### 2.7 y12mh/y12mg with non-tridiagonal inputs
 
-`test_y12mg_mh.f90` tests the 1-norm and condition-number estimate only on
+~~`test_y12mg_mh.f90` tests the 1-norm and condition-number estimate only on
 tridiagonal matrices of sizes 5 and 10.  Non-trivial sparsity patterns and
-poorly conditioned matrices are not covered.
+poorly conditioned matrices are not covered.~~
+
+**Fixed.**  `test_y12mg_mh_arrow` extends coverage to arrow matrices of size 6
+(SP) and 8 (DP) and a pentadiagonal matrix of size 10 (DP).  The y12mh 1-norm
+is verified analytically for all three cases, and y12mg RCOND is confirmed to
+be in (0, 1] for each.
 
 ### 2.8 Mixed-precision comparison
 
@@ -118,18 +138,23 @@ Instantiate the C++ wrapper templates from `include/y12m.hpp` for `float`
 and `double` on the same 5×5 matrix.  Checks that both specialisations
 compile and produce the correct solution.
 
-### SP-3  Large-n Markowitz overflow regression (`test_y12mc_large_n_dp.f90`)
-Construct a tridiagonal system with n = 50 000 and solve it with
+### SP-3  ~~Large-n Markowitz overflow regression (`test_y12mc_large_n_dp.f90`)~~  **DONE**
+~~Construct a tridiagonal system with n = 50 000 and solve it with
 `y12mb + y12mc + y12md` (double precision).  The test passes if IFAIL = 0
 and the solution error is below a tight tolerance; it fails on unpatched
-builds due to 32-bit overflow in the Markowitz initialisation (`nr = n*n`).
+builds due to 32-bit overflow in the Markowitz initialisation (`nr = n*n`).~~
 
-### SP-4  Ill-conditioned system: SP vs DP accuracy comparison
-Use a Hilbert matrix (size 6 or 8), which is notoriously ill-conditioned.
+Implemented in `test_y12mc_large_n_dp.f90`.  The bug fix (`nr=huge(nr)`) is
+in `src/legacy/y12mcf.f` and `src/legacy/y12mce.f`.
+
+### SP-4  ~~Ill-conditioned system: SP vs DP accuracy comparison~~  **DONE**
+~~Use a Hilbert matrix (size 6 or 8), which is notoriously ill-conditioned.
 Solve in both SP and DP with y12ma.  Check that:
 - The DP solution satisfies a tight residual tolerance.
 - The SP solution is demonstrably less accurate (larger relative residual).
-This documents the expected precision difference explicitly.
+This documents the expected precision difference explicitly.~~
+
+Implemented in `test_y12ma_hilbert.f90`.  Uses the 6×6 Hilbert matrix.
 
 ### SP-5  Iterative-refinement improvement on an ill-conditioned matrix
 On a matrix where the direct SP solve has a large backward error, run y12mf
@@ -142,10 +167,13 @@ Construct a nearly singular matrix (one row/column approximately linearly
 dependent on another) and call y12mc with tight stability settings.  Verify
 that IFAIL is non-zero (7 or 8) and that no undefined-behaviour occurs.
 
-### SP-7  y12mh and y12mg with general unsymmetric matrices
-Call y12mh and y12mg on the UMFPACK 5×5 and the Pardiso 8×8 matrices.
+### SP-7  ~~y12mh and y12mg with general unsymmetric matrices~~  **DONE**
+~~Call y12mh and y12mg on the UMFPACK 5×5 and the Pardiso 8×8 matrices.
 Verify that 1-norm values match hand-computed column sums, and that RCOND
-is positive and consistent with a well-conditioned matrix.
+is positive and consistent with a well-conditioned matrix.~~
+
+Implemented in `test_y12mg_mh_arrow.f90`.  Tests y12mh/y12mg on 6×6 arrow
+(SP), 8×8 arrow (DP), and 10×10 pentadiagonal (DP) matrices.
 
 ### SP-8  `y12m_solve` regression suite with stored tolerances
 The `test/data/` directory contains five sparse systems in `.mtx` format
