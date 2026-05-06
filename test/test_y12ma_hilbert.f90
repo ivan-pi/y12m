@@ -161,7 +161,7 @@ contains
     integer :: nz, nn, nn1, iha, i, j, k
     real(sp), allocatable :: a(:), pivot(:), b(:), b0(:), aflag(:)
     integer, allocatable :: snr(:), rnr(:), iflag(:), ha(:,:)
-    real(sp) :: ax, r_inf, a_inf, x_inf, b_inf, denom
+    real(sp) :: ax_sum, r_inf, a_inf, x_inf, b_inf, denom
 
     nz = n*n
     nn = 6*nz
@@ -205,18 +205,18 @@ contains
     b_inf = maxval(abs(b0))
     x_inf = maxval(abs(b))
     do i = 1, n
-      ax = 0.0_sp
+      ax_sum = 0.0_sp
       do j = 1, n
-        ax = ax + (1.0_sp / real(i + j - 1, sp)) * b(j)
+        ax_sum = ax_sum + (1.0_sp / real(i + j - 1, sp)) * b(j)
       end do
-      r_inf = max(r_inf, abs(b0(i) - ax))
+      r_inf = max(r_inf, abs(b0(i) - ax_sum))
     end do
     do i = 1, n
-      ax = 0.0_sp
+      ax_sum = 0.0_sp
       do j = 1, n
-        ax = ax + abs(1.0_sp / real(i + j - 1, sp))
+        ax_sum = ax_sum + abs(1.0_sp / real(i + j - 1, sp))
       end do
-      a_inf = max(a_inf, ax)
+      a_inf = max(a_inf, ax_sum)
     end do
 
     denom = max(a_inf * x_inf + b_inf, tiny(1.0_sp))
@@ -233,7 +233,7 @@ contains
     integer :: nz, nn, nn1, iha, i, j, k
     real(dp), allocatable :: a(:), pivot(:), b(:), b0(:), aflag(:)
     integer, allocatable :: snr(:), rnr(:), iflag(:), ha(:,:)
-    real(dp) :: ax, r_inf, a_inf, x_inf, b_inf, denom
+    real(dp) :: ax_sum, r_inf, a_inf, x_inf, b_inf, denom
 
     nz = n*n
     nn = 6*nz
@@ -277,18 +277,18 @@ contains
     b_inf = maxval(abs(b0))
     x_inf = maxval(abs(b))
     do i = 1, n
-      ax = 0.0_dp
+      ax_sum = 0.0_dp
       do j = 1, n
-        ax = ax + (1.0_dp / real(i + j - 1, dp)) * b(j)
+        ax_sum = ax_sum + (1.0_dp / real(i + j - 1, dp)) * b(j)
       end do
-      r_inf = max(r_inf, abs(b0(i) - ax))
+      r_inf = max(r_inf, abs(b0(i) - ax_sum))
     end do
     do i = 1, n
-      ax = 0.0_dp
+      ax_sum = 0.0_dp
       do j = 1, n
-        ax = ax + abs(1.0_dp / real(i + j - 1, dp))
+        ax_sum = ax_sum + abs(1.0_dp / real(i + j - 1, dp))
       end do
-      a_inf = max(a_inf, ax)
+      a_inf = max(a_inf, ax_sum)
     end do
 
     denom = max(a_inf * x_inf + b_inf, tiny(1.0_dp))
