@@ -93,6 +93,8 @@ contains
     do n = n_begin, n_end
       call factorize_hilbert_sp(n, ifail)
       if (ifail /= 0) then
+        ! y12m singular/near-singular detection return codes in this path:
+        ! 3 = small pivot detected in factorization, 7/8 = singularity-related failure.
         if (ifail == 3 .or. ifail == 7 .or. ifail == 8) then
           write(*,'(a,i0,a,i0)') 'PASS singularity detection in SP at n=', n, ' ifail=', ifail
           found = .true.
@@ -116,16 +118,18 @@ contains
     integer, intent(out) :: ifail
 
     integer :: nz, nn, nn1, iha, i, j, k
-    real(sp), allocatable :: a(:), b(:), pivot(:), aflag(:)
-    integer, allocatable :: snr(:), rnr(:), iflag(:), ha(:,:)
+    real(sp) :: aflag(8)
+    integer :: iflag(10)
+    real(sp), allocatable :: a(:), b(:), pivot(:)
+    integer, allocatable :: snr(:), rnr(:), ha(:,:)
 
     nz = n*n
     nn = 6*nz
     nn1 = 6*nz
     iha = n
 
-    allocate(a(nn), b(n), pivot(n), aflag(8))
-    allocate(snr(nn), rnr(nn1), iflag(10), ha(iha,11))
+    allocate(a(nn), b(n), pivot(n))
+    allocate(snr(nn), rnr(nn1), ha(iha,11))
 
     k = 0
     do i = 1, n
@@ -163,13 +167,18 @@ contains
     real(sp), intent(out) :: fwd_err, bwd_err
 
     integer :: nz, nn, nn1, iha, i, j, k
-    real(sp) :: a(6*n*n), a0(n*n), pivot(n), b(n), b0(n), aflag(8), x_true(n)
-    integer :: snr(6*n*n), rnr(6*n*n), snr0(n*n), rnr0(n*n), iflag(10), ha(n,11)
+    real(sp) :: aflag(8), x_true(n)
+    integer :: iflag(10)
+    real(sp), allocatable :: a(:), a0(:), pivot(:), b(:), b0(:)
+    integer, allocatable :: snr(:), rnr(:), snr0(:), rnr0(:), ha(:,:)
 
     nz = n*n
     nn = 6*nz
     nn1 = 6*nz
     iha = n
+
+    allocate(a(nn), a0(nz), pivot(n), b(n), b0(n))
+    allocate(snr(nn), rnr(nn1), snr0(nz), rnr0(nz), ha(iha,11))
 
     k = 0
     do i = 1, n
@@ -186,6 +195,7 @@ contains
     a0(1:nz) = a(1:nz)
 
     b0 = 0.0_sp
+    ! Build b0 = A*1 by summing COO values a(k) into their row buckets.
     do k = 1, nz
       b0(rnr(k)) = b0(rnr(k)) + a(k)
     end do
@@ -215,13 +225,18 @@ contains
     real(dp), intent(out) :: fwd_err, bwd_err
 
     integer :: nz, nn, nn1, iha, i, j, k
-    real(dp) :: a(6*n*n), a0(n*n), pivot(n), b(n), b0(n), aflag(8), x_true(n)
-    integer :: snr(6*n*n), rnr(6*n*n), snr0(n*n), rnr0(n*n), iflag(10), ha(n,11)
+    real(dp) :: aflag(8), x_true(n)
+    integer :: iflag(10)
+    real(dp), allocatable :: a(:), a0(:), pivot(:), b(:), b0(:)
+    integer, allocatable :: snr(:), rnr(:), snr0(:), rnr0(:), ha(:,:)
 
     nz = n*n
     nn = 6*nz
     nn1 = 6*nz
     iha = n
+
+    allocate(a(nn), a0(nz), pivot(n), b(n), b0(n))
+    allocate(snr(nn), rnr(nn1), snr0(nz), rnr0(nz), ha(iha,11))
 
     k = 0
     do i = 1, n
@@ -238,6 +253,7 @@ contains
     a0(1:nz) = a(1:nz)
 
     b0 = 0.0_dp
+    ! Build b0 = A*1 by summing COO values a(k) into their row buckets.
     do k = 1, nz
       b0(rnr(k)) = b0(rnr(k)) + a(k)
     end do
