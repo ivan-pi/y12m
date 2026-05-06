@@ -204,7 +204,12 @@ contains
     Kfull = 0.0_dp
 
     nz_max = (2*bw + 1) * ndof
-    ! y12ma needs extra space for LU fill-in; use 10× the structural non-zeros
+    ! y12ma internally reorders entries and stores the LU factorisation in the
+    ! same arrays.  For a band matrix with half-bandwidth bw the LU factors
+    ! remain within the band (no fill-in outside), so nz_LU <= nz_max.  A
+    ! 10x multiplier on nz_max provides comfortable headroom for y12ma's
+    ! internal workspace (Markowitz reordering, row/column permutations),
+    ! consistent with the factor used in other examples (e.g. darcy_flow).
     nn     = max(10 * nz_max, 100 * ndof)
     allocate(a(nn), pivot(ndof), b(ndof), snr(nn), rnr(nn), ha(ndof, 11))
 
@@ -256,16 +261,18 @@ contains
       stop 1
     end if
 
-    ! Maximum nodal errors over free DOFs (nodes 2 to N+1)
+    ! Maximum nodal errors over free DOFs (nodes 2 to N+1).
+    ! After removing the 2 clamped DOFs at node 1, the reduced indices are:
+    !   deflection at node nd : 2*(nd-1)-1
+    !   rotation   at node nd : 2*(nd-1)
     err_w     = 0.0_dp
     err_theta = 0.0_dp
     do nd = 2, N + 1
       x        = real(nd - 1, dp) * h
       w_ex     = exact_w(x)
       theta_ex = exact_theta(x)
-      ! Reduced DOF for w at node nd: 2*(nd-1)-1; for theta: 2*(nd-1)
-      err_w     = max(err_w,     abs(b(2*(nd-1)-1) - w_ex))
-      err_theta = max(err_theta, abs(b(2*(nd-1))   - theta_ex))
+      err_w     = max(err_w,     abs(b(2*(nd-1)-1) - w_ex))   ! deflection
+      err_theta = max(err_theta, abs(b(2*(nd-1))   - theta_ex)) ! rotation
     end do
 
     if (len_trim(outfile) > 0) then
@@ -278,7 +285,7 @@ contains
       do nd = 2, N + 1
         x = real(nd - 1, dp) * h
         write(funit, '(5(1x,es14.6))') x, &
-             b(2*(nd-1)-1), b(2*(nd-1)), &
+             b(2*(nd-1)-1), b(2*(nd-1)), &   ! deflection, rotation
              exact_w(x), exact_theta(x)
       end do
       close(funit)
