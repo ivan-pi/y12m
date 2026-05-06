@@ -618,7 +618,7 @@ contains
 
     x_inf = maxval(abs(x))
     b_inf = maxval(abs(b))
-    ! Guard only against exact-zero denominator (e.g., all-zero A, b, x), while keeping the metric definition unchanged for normal scales.
+    ! Guard against exact-zero denominator.
     denom = max(a_inf * x_inf + b_inf, tiny(1.0_sp))
     err = r_inf / denom
   end subroutine backward_error_sp
@@ -646,7 +646,7 @@ contains
 
     x_inf = maxval(abs(x))
     b_inf = maxval(abs(b))
-    ! Guard only against exact-zero denominator (e.g., all-zero A, b, x), while keeping the metric definition unchanged for normal scales.
+    ! Guard against exact-zero denominator.
     denom = max(a_inf * x_inf + b_inf, tiny(1.0_dp))
     err = r_inf / denom
   end subroutine backward_error_dp
