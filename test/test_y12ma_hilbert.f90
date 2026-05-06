@@ -137,17 +137,17 @@ contains
     end do
     b = 0.0_sp
 
-    iflag(1) = 0  ! fresh start
-    iflag(2) = 3  ! Markowitz search width
-    iflag(3) = 1  ! general Markowitz pivoting
-    iflag(4) = 0  ! no structure reuse
-    iflag(5) = 1  ! discard L factors after factorization
+    iflag(1) = 0 ! fresh start
+    iflag(2) = 3 ! Markowitz search width
+    iflag(3) = 1 ! general Markowitz pivoting
+    iflag(4) = 0 ! no structure reuse
+    iflag(5) = 1 ! discard L factors after factorization
     iflag(6:10) = 0
 
-    aflag(1) = 16.0_sp     ! stability factor
-    aflag(2) = 1.0e-12_sp  ! drop tolerance
-    aflag(3) = 1.0e16_sp   ! growth threshold
-    aflag(4) = 1.0e-4_sp   ! looser singularity threshold for larger Hilbert matrices
+    aflag(1) = 16.0_sp ! stability factor
+    aflag(2) = 1.0e-12_sp ! drop tolerance
+    aflag(3) = 1.0e16_sp ! growth threshold
+    aflag(4) = 1.0e-4_sp ! looser singularity threshold for larger Hilbert matrices
     aflag(5:8) = 0.0_sp
     ha = 0
 

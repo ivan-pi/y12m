@@ -326,7 +326,7 @@ contains
     real(sp),         intent(in)    :: x(n), expected(n), tol
     integer,          intent(inout) :: nfail
     real(sp) :: err
-    err = maxval(abs(x(1:n) - expected(1:n)))
+    err = maxval(abs(x - expected))
     if (err > tol) then
       write(*,'(3a,es10.3)') 'FAIL ', label, ': max|x-expected|=', err
       nfail = nfail + 1
@@ -342,7 +342,7 @@ contains
     real(dp),         intent(in)    :: x(n), expected(n), tol
     integer,          intent(inout) :: nfail
     real(dp) :: err
-    err = maxval(abs(x(1:n) - expected(1:n)))
+    err = maxval(abs(x - expected))
     if (err > tol) then
       write(*,'(3a,es12.5)') 'FAIL ', label, ': max|x-expected|=', err
       nfail = nfail + 1
