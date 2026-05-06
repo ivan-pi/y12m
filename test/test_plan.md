@@ -17,6 +17,7 @@ Files with a `.f90` extension produce a single executable.
 | `test_y12ma_dp.f90` | `test_y12ma_dp` | y12ma | DP | n=6–7,9–10 tridiagonal, n=8 arrow |
 | `test_y12ma_5x5.F90` | `test_y12ma_5x5_sp`, `test_y12ma_5x5_dp` | y12ma | SP + DP | UMFPACK 5×5; residual check (2-norm and ∞-norm) |
 | `test_y12ma_rand.F90` | `test_y12ma_rand_sp`, `test_y12ma_rand_dp` | y12ma | SP + DP | random 9×9 diag.-dominant, 3 RHS; cross-checked vs LAPACK sgesv/dgesv (optional, requires LAPACK) |
+| `test_y12ma_hilbert.f90` | `test_y12ma_hilbert` | y12ma | SP + DP | Hilbert matrices: compares SP vs DP forward/backward errors at n=8 (no fixed cutoffs), and checks SP singularity detection on larger n |
 | `test_y12mb_mc_md_sp.f90` | `test_y12mb_mc_md_sp` | y12mb + y12mc + y12md | SP | n=1 diagonal (IFAIL=12 error path), n=2 full 2×2, n=3–4 tridiagonal, n=5 arrow |
 | `test_y12mb_mc_md_dp.f90` | `test_y12mb_mc_md_dp` | y12mb + y12mc + y12md | DP | n=6,8,9 tridiagonal, n=7 arrow, n=10 pentadiagonal (bandwidth 2) |
 | `test_y12mb_errors.F90` | `test_y12mb_errors_sp`, `test_y12mb_errors_dp` | y12mb | SP + DP | error-path coverage (IFAIL 5,6,11–18,24,25); valid-call postconditions (IFLAG(1)=−1, AFLAG(6)=max\|A\|) |
@@ -59,6 +60,12 @@ All current test matrices are well-conditioned.  There are no tests that
 verify error flags and iterative-refinement benefit on ill-conditioned
 problems, nor tests that exercise the near-singularity detection path
 (IFAIL = 7 or 8).
+
+`test_y12ma_hilbert` now improves mixed-precision coverage by comparing SP and
+DP forward/backward errors without hardcoded absolute cutoffs and by checking
+that single precision eventually triggers singularity detection for larger
+Hilbert sizes.  Iterative-refinement benefit on ill-conditioned matrices
+(SP-5 from section 3) remains future work.
 
 ### 2.5 Limited variety of benchmark matrices
 
@@ -124,12 +131,16 @@ Construct a tridiagonal system with n = 50 000 and solve it with
 and the solution error is below a tight tolerance; it fails on unpatched
 builds due to 32-bit overflow in the Markowitz initialisation (`nr = n*n`).
 
-### SP-4  Ill-conditioned system: SP vs DP accuracy comparison
-Use a Hilbert matrix (size 6 or 8), which is notoriously ill-conditioned.
+### SP-4  ~~Ill-conditioned system: SP vs DP accuracy comparison~~  **DONE**
+~~Use a Hilbert matrix (size 6 or 8), which is notoriously ill-conditioned.
 Solve in both SP and DP with y12ma.  Check that:
 - The DP solution satisfies a tight residual tolerance.
 - The SP solution is demonstrably less accurate (larger relative residual).
-This documents the expected precision difference explicitly.
+This documents the expected precision difference explicitly.~~
+
+Implemented in `test_y12ma_hilbert.f90`.  It compares SP and DP forward and
+backward errors at n=8 without hardcoded absolute thresholds, and also scans
+larger Hilbert sizes to ensure SP singularity detection is exercised.
 
 ### SP-5  Iterative-refinement improvement on an ill-conditioned matrix
 On a matrix where the direct SP solve has a large backward error, run y12mf
