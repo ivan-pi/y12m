@@ -107,13 +107,13 @@ module y12m_test_helpers
     module procedure sparse_gemv_dp
   end interface sparse_gemv
 
-  !> Infinity-norm forward error ||x-expected||_inf.
+  !> Forward error: maximum absolute difference between x and expected.
   interface forward_error
     module procedure forward_error_sp
     module procedure forward_error_dp
   end interface forward_error
 
-  !> Normwise backward error ||r||_inf / (||A||_inf ||x||_inf + ||b||_inf).
+  !> Backward error: residual norm divided by matrix/vector problem scale.
   interface backward_error
     module procedure backward_error_sp
     module procedure backward_error_dp

@@ -147,7 +147,7 @@ contains
     aflag(1) = 16.0_sp     ! stability factor
     aflag(2) = 1.0e-12_sp  ! drop tolerance
     aflag(3) = 1.0e16_sp   ! growth threshold
-    aflag(4) = 1.0e-4_sp   ! looser singularity threshold to trigger detection on larger Hilbert n
+    aflag(4) = 1.0e-4_sp   ! looser singularity threshold for larger Hilbert matrices
     aflag(5:8) = 0.0_sp
     ha = 0
 
@@ -204,7 +204,7 @@ contains
       return
     end if
 
-    ! Forward error: max componentwise distance from exact x=[1,...,1].
+    ! Forward error: maximum absolute difference from exact x=[1,...,1].
     x_true = 1.0_sp
     call forward_error(n, b, x_true, fwd_err)
 
@@ -260,7 +260,7 @@ contains
       return
     end if
 
-    ! Forward error: max componentwise distance from exact x=[1,...,1].
+    ! Forward error: maximum absolute difference from exact x=[1,...,1].
     x_true = 1.0_dp
     call forward_error(n, b, x_true, fwd_err)
 
