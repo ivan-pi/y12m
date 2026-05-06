@@ -31,6 +31,8 @@ module y12m_test_helpers
   public :: setup_ref6
   public :: solve3
   public :: sparse_gemv
+  public :: forward_error
+  public :: backward_error
 
   !> n-by-n tridiagonal (diag=3, off-diag=-1), solution x=[1,...,1].
   interface build_tridiag
@@ -104,6 +106,18 @@ module y12m_test_helpers
     module procedure sparse_gemv_sp
     module procedure sparse_gemv_dp
   end interface sparse_gemv
+
+  !> Infinity-norm forward error ||x-expected||_inf.
+  interface forward_error
+    module procedure forward_error_sp
+    module procedure forward_error_dp
+  end interface forward_error
+
+  !> Normwise backward error ||r||_inf / (||A||_inf ||x||_inf + ||b||_inf).
+  interface backward_error
+    module procedure backward_error_sp
+    module procedure backward_error_dp
+  end interface backward_error
 
 contains
 
@@ -562,5 +576,77 @@ contains
       y(row(k)) = y(row(k)) + alpha * val(k) * x(col(k))
     end do
   end subroutine sparse_gemv_dp
+
+  ! ===========================================================================
+  ! Error metrics
+  ! ===========================================================================
+
+  subroutine forward_error_sp(n, x, expected, err)
+    integer,  intent(in)  :: n
+    real(sp), intent(in)  :: x(n), expected(n)
+    real(sp), intent(out) :: err
+    err = maxval(abs(x(1:n) - expected(1:n)))
+  end subroutine forward_error_sp
+
+  subroutine forward_error_dp(n, x, expected, err)
+    integer,  intent(in)  :: n
+    real(dp), intent(in)  :: x(n), expected(n)
+    real(dp), intent(out) :: err
+    err = maxval(abs(x(1:n) - expected(1:n)))
+  end subroutine forward_error_dp
+
+  subroutine backward_error_sp(n, nz, val, row, col, x, b, err)
+    integer,  intent(in)  :: n, nz
+    real(sp), intent(in)  :: val(nz), x(n), b(n)
+    integer,  intent(in)  :: row(nz), col(nz)
+    real(sp), intent(out) :: err
+
+    integer :: k
+    real(sp) :: a_inf, x_inf, b_inf, r_inf, denom
+    real(sp) :: row_sum(n), residual(n), ax(n)
+
+    row_sum = 0.0_sp
+    do k = 1, nz
+      row_sum(row(k)) = row_sum(row(k)) + abs(val(k))
+    end do
+    a_inf = maxval(row_sum)
+
+    ax = 0.0_sp
+    call sparse_gemv(n, nz, 1.0_sp, val, row, col, x, ax)
+    residual = b - ax
+    r_inf = maxval(abs(residual))
+
+    x_inf = maxval(abs(x))
+    b_inf = maxval(abs(b))
+    denom = max(a_inf * x_inf + b_inf, tiny(1.0_sp))
+    err = r_inf / denom
+  end subroutine backward_error_sp
+
+  subroutine backward_error_dp(n, nz, val, row, col, x, b, err)
+    integer,  intent(in)  :: n, nz
+    real(dp), intent(in)  :: val(nz), x(n), b(n)
+    integer,  intent(in)  :: row(nz), col(nz)
+    real(dp), intent(out) :: err
+
+    integer :: k
+    real(dp) :: a_inf, x_inf, b_inf, r_inf, denom
+    real(dp) :: row_sum(n), residual(n), ax(n)
+
+    row_sum = 0.0_dp
+    do k = 1, nz
+      row_sum(row(k)) = row_sum(row(k)) + abs(val(k))
+    end do
+    a_inf = maxval(row_sum)
+
+    ax = 0.0_dp
+    call sparse_gemv(n, nz, 1.0_dp, val, row, col, x, ax)
+    residual = b - ax
+    r_inf = maxval(abs(residual))
+
+    x_inf = maxval(abs(x))
+    b_inf = maxval(abs(b))
+    denom = max(a_inf * x_inf + b_inf, tiny(1.0_dp))
+    err = r_inf / denom
+  end subroutine backward_error_dp
 
 end module y12m_test_helpers

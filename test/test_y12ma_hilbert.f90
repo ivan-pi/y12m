@@ -7,10 +7,16 @@
 ! forward and backward errors between single and double precision on the
 ! same ill-conditioned problem.
 !
+! Hilbert matrix H has entries H(i,j)=1/(i+j-1).  It is a classic dense
+! matrix that quickly becomes ill-conditioned as n grows.  We intentionally
+! feed this dense matrix to y12m's sparse-direct path so we can stress
+! precision behavior and singularity detection in a controlled way.
+!
 ! It also verifies that larger Hilbert systems trigger y12ma's singularity
 ! detection path in single precision.
 !
 program test_y12ma_hilbert
+  use y12m_test_helpers, only: forward_error, backward_error
   use y12m, only: y12ma, y12mb, y12mc
   implicit none
 
@@ -131,26 +137,23 @@ contains
     end do
     b = 0.0_sp
 
-    iflag(1) = 0
-    iflag(2) = 3
-    iflag(3) = 1
-    iflag(4) = 0
-    iflag(5) = 1
+    iflag(1) = 0  ! fresh start
+    iflag(2) = 3  ! Markowitz search width
+    iflag(3) = 1  ! general Markowitz pivoting
+    iflag(4) = 0  ! no structure reuse
+    iflag(5) = 1  ! discard L factors after factorization
     iflag(6:10) = 0
 
-    aflag(1) = 16.0_sp
-    aflag(2) = 1.0e-12_sp
-    aflag(3) = 1.0e16_sp
-    aflag(4) = 1.0e-4_sp
+    aflag(1) = 16.0_sp     ! stability factor
+    aflag(2) = 1.0e-12_sp  ! drop tolerance
+    aflag(3) = 1.0e16_sp   ! growth threshold
+    aflag(4) = 1.0e-4_sp   ! looser singularity threshold to trigger detection on larger Hilbert n
     aflag(5:8) = 0.0_sp
     ha = 0
 
     call y12mb(n, nz, a, snr, nn, rnr, nn1, ha, iha, aflag, iflag, ifail)
-    if (ifail == 0) then
-      call y12mc(n, nz, a, snr, nn, rnr, nn1, pivot, b, ha, iha, aflag, iflag, ifail)
-    end if
-
-    deallocate(a, b, pivot, aflag, snr, rnr, iflag, ha)
+    if (ifail /= 0) return
+    call y12mc(n, nz, a, snr, nn, rnr, nn1, pivot, b, ha, iha, aflag, iflag, ifail)
   end subroutine factorize_hilbert_sp
 
   subroutine solve_hilbert_sp(n, ifail, fwd_err, bwd_err)
@@ -159,17 +162,17 @@ contains
     real(sp), intent(out) :: fwd_err, bwd_err
 
     integer :: nz, nn, nn1, iha, i, j, k
-    real(sp), allocatable :: a(:), pivot(:), b(:), b0(:), aflag(:)
-    integer, allocatable :: snr(:), rnr(:), iflag(:), ha(:,:)
-    real(sp) :: ax_sum, r_inf, a_inf, x_inf, b_inf, denom
+    real(sp), allocatable :: a(:), a0(:), pivot(:), b(:), b0(:), aflag(:)
+    integer, allocatable :: snr(:), rnr(:), snr0(:), rnr0(:), iflag(:), ha(:,:)
+    real(sp) :: x_true(n)
 
     nz = n*n
     nn = 6*nz
     nn1 = 6*nz
     iha = n
 
-    allocate(a(nn), pivot(n), b(n), b0(n), aflag(8))
-    allocate(snr(nn), rnr(nn1), iflag(10), ha(iha,11))
+    allocate(a(nn), a0(nz), pivot(n), b(n), b0(n), aflag(8))
+    allocate(snr(nn), rnr(nn1), snr0(nz), rnr0(nz), iflag(10), ha(iha,11))
 
     k = 0
     do i = 1, n
@@ -178,6 +181,9 @@ contains
         rnr(k) = i
         snr(k) = j
         a(k) = 1.0_sp / real(i + j - 1, sp)
+        rnr0(k) = rnr(k)
+        snr0(k) = snr(k)
+        a0(k) = a(k)
       end do
     end do
 
@@ -194,35 +200,15 @@ contains
     if (ifail /= 0) then
       fwd_err = huge(1.0_sp)
       bwd_err = huge(1.0_sp)
-      deallocate(a, pivot, b, b0, aflag, snr, rnr, iflag, ha)
       return
     end if
 
-    fwd_err = maxval(abs(b - 1.0_sp))
+    ! Forward error: max componentwise distance from exact x=[1,...,1].
+    x_true = 1.0_sp
+    call forward_error(n, b, x_true, fwd_err)
 
-    r_inf = 0.0_sp
-    a_inf = 0.0_sp
-    b_inf = maxval(abs(b0))
-    x_inf = maxval(abs(b))
-    do i = 1, n
-      ax_sum = 0.0_sp
-      do j = 1, n
-        ax_sum = ax_sum + (1.0_sp / real(i + j - 1, sp)) * b(j)
-      end do
-      r_inf = max(r_inf, abs(b0(i) - ax_sum))
-    end do
-    do i = 1, n
-      ax_sum = 0.0_sp
-      do j = 1, n
-        ax_sum = ax_sum + abs(1.0_sp / real(i + j - 1, sp))
-      end do
-      a_inf = max(a_inf, ax_sum)
-    end do
-
-    denom = max(a_inf * x_inf + b_inf, tiny(1.0_sp))
-    bwd_err = r_inf / denom
-
-    deallocate(a, pivot, b, b0, aflag, snr, rnr, iflag, ha)
+    ! Backward error: smallest relative perturbation that explains residual.
+    call backward_error(n, nz, a0, rnr0, snr0, b, b0, bwd_err)
   end subroutine solve_hilbert_sp
 
   subroutine solve_hilbert_dp(n, ifail, fwd_err, bwd_err)
@@ -231,17 +217,17 @@ contains
     real(dp), intent(out) :: fwd_err, bwd_err
 
     integer :: nz, nn, nn1, iha, i, j, k
-    real(dp), allocatable :: a(:), pivot(:), b(:), b0(:), aflag(:)
-    integer, allocatable :: snr(:), rnr(:), iflag(:), ha(:,:)
-    real(dp) :: ax_sum, r_inf, a_inf, x_inf, b_inf, denom
+    real(dp), allocatable :: a(:), a0(:), pivot(:), b(:), b0(:), aflag(:)
+    integer, allocatable :: snr(:), rnr(:), snr0(:), rnr0(:), iflag(:), ha(:,:)
+    real(dp) :: x_true(n)
 
     nz = n*n
     nn = 6*nz
     nn1 = 6*nz
     iha = n
 
-    allocate(a(nn), pivot(n), b(n), b0(n), aflag(8))
-    allocate(snr(nn), rnr(nn1), iflag(10), ha(iha,11))
+    allocate(a(nn), a0(nz), pivot(n), b(n), b0(n), aflag(8))
+    allocate(snr(nn), rnr(nn1), snr0(nz), rnr0(nz), iflag(10), ha(iha,11))
 
     k = 0
     do i = 1, n
@@ -250,6 +236,9 @@ contains
         rnr(k) = i
         snr(k) = j
         a(k) = 1.0_dp / real(i + j - 1, dp)
+        rnr0(k) = rnr(k)
+        snr0(k) = snr(k)
+        a0(k) = a(k)
       end do
     end do
 
@@ -266,35 +255,15 @@ contains
     if (ifail /= 0) then
       fwd_err = huge(1.0_dp)
       bwd_err = huge(1.0_dp)
-      deallocate(a, pivot, b, b0, aflag, snr, rnr, iflag, ha)
       return
     end if
 
-    fwd_err = maxval(abs(b - 1.0_dp))
+    ! Forward error: max componentwise distance from exact x=[1,...,1].
+    x_true = 1.0_dp
+    call forward_error(n, b, x_true, fwd_err)
 
-    r_inf = 0.0_dp
-    a_inf = 0.0_dp
-    b_inf = maxval(abs(b0))
-    x_inf = maxval(abs(b))
-    do i = 1, n
-      ax_sum = 0.0_dp
-      do j = 1, n
-        ax_sum = ax_sum + (1.0_dp / real(i + j - 1, dp)) * b(j)
-      end do
-      r_inf = max(r_inf, abs(b0(i) - ax_sum))
-    end do
-    do i = 1, n
-      ax_sum = 0.0_dp
-      do j = 1, n
-        ax_sum = ax_sum + abs(1.0_dp / real(i + j - 1, dp))
-      end do
-      a_inf = max(a_inf, ax_sum)
-    end do
-
-    denom = max(a_inf * x_inf + b_inf, tiny(1.0_dp))
-    bwd_err = r_inf / denom
-
-    deallocate(a, pivot, b, b0, aflag, snr, rnr, iflag, ha)
+    ! Backward error: smallest relative perturbation that explains residual.
+    call backward_error(n, nz, a0, rnr0, snr0, b, b0, bwd_err)
   end subroutine solve_hilbert_dp
 
 end program test_y12ma_hilbert
