@@ -214,16 +214,28 @@ contains
             if (rnr(j) < pivot_r .or. &
                 (rnr(j) == pivot_r .and. snr(j) < pivot_s)) then
                i = i + 1
-               temp_i = rnr(i); rnr(i) = rnr(j); rnr(j) = temp_i
-               temp_i = snr(i); snr(i) = snr(j); snr(j) = temp_i
-               temp_a = a(i);   a(i)   = a(j);   a(j)   = temp_a
+               temp_i = rnr(i)
+               rnr(i) = rnr(j)
+               rnr(j) = temp_i
+               temp_i = snr(i)
+               snr(i) = snr(j)
+               snr(j) = temp_i
+               temp_a = a(i)
+               a(i)   = a(j)
+               a(j)   = temp_a
             end if
          end do
 
          i = i + 1
-         temp_i = rnr(i); rnr(i) = rnr(high); rnr(high) = temp_i
-         temp_i = snr(i); snr(i) = snr(high); snr(high) = temp_i
-         temp_a = a(i);   a(i)   = a(high);   a(high)   = temp_a
+         temp_i = rnr(i)
+         rnr(i) = rnr(high)
+         rnr(high) = temp_i
+         temp_i = snr(i)
+         snr(i) = snr(high)
+         snr(high) = temp_i
+         temp_a = a(i)
+         a(i)   = a(high)
+         a(high) = temp_a
 
          call quicksort_coo(low, i - 1, rnr, snr, a)
          call quicksort_coo(i + 1, high, rnr, snr, a)
