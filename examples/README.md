@@ -31,6 +31,7 @@ generators (`matrd1`, `matre1`, `matrf2`) and a wall-clock timing helper
   - [`heat_implicit.f90`](#heat_implicitf90)
   - [`multiple_loads.f90`](#multiple_loadsf90)
   - [`newton_bratu.f90`](#newton_bratuf90)
+  - [`euler_bernoulli_beam.f90`](#euler_bernoulli_beamf90)
 - [Legacy drivers](#legacy-drivers)
 
 ---
@@ -53,6 +54,7 @@ coverage grows.
 | `heat_implicit` | | ✓ | ✓ | ✓ |
 | `multiple_loads` | | ✓ | ✓ | ✓ |
 | `newton_bratu` | | ✓ | ✓ | ✓ |
+| `euler_bernoulli_beam` | ✓ | | | |
 
 ---
 
@@ -312,6 +314,47 @@ Usage: newton_bratu [--help] [N] [lambda] [max_iter] [output_file]
        lambda      reaction parameter in (0, 6.808) (default 1.0)
        max_iter    max Newton iterations (default 20)
        output_file output file (default: newton_bratu.dat)
+```
+
+---
+
+### `euler_bernoulli_beam.f90`
+
+**1D Hermite cubic FEM for a tapered Euler-Bernoulli cantilever beam.**
+
+Solves the variable-stiffness fourth-order problem
+
+```
+d^2/dx^2 [ EI(x) d^2w/dx^2 ] = q(x)   on (0, 1)
+```
+
+with a linearly tapered bending stiffness `EI(x) = 1 + x` and clamped-free
+boundary conditions (`w(0) = w'(0) = 0`; zero moment and shear at `x = 1`).
+
+The exact solution is supplied by the Method of Manufactured Solutions:
+
+```
+w(x)     = 20 x^2 − 10 x^3 + x^5
+theta(x) = 40 x − 30 x^2 + 5 x^4
+q(x)     = −120 + 120 x + 240 x^2
+```
+
+**Discretisation.**  Hermite cubic shape functions provide 2 DOFs per node
+(deflection and rotation), giving a `4×4` element stiffness matrix.  After
+eliminating the two clamped DOFs at `x = 0`, the assembled stiffness matrix
+is `(2N) × (2N)` with half-bandwidth 3 — a block-tridiagonal pattern with
+2×2 sub-blocks coupling adjacent nodes.
+
+**Convergence.**  O(h⁴) nodal superconvergence in both deflection and
+rotation for smooth variable-coefficient problems.
+
+**Usage:**
+
+```
+Usage: euler_bernoulli_beam [--help] [--conv] [N] [output_file]
+  N            number of Hermite cubic elements (default 16)
+  output_file  output data file (default: euler_bernoulli_beam.dat)
+  --conv       grid-refinement convergence study (N=2,4,8,16,32)
 ```
 
 ---
