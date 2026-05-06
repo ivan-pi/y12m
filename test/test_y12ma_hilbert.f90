@@ -113,8 +113,8 @@ contains
     integer, allocatable :: snr(:), rnr(:), iflag(:), ha(:,:)
 
     nz = n*n
-    nn = max(2*nz, 6*nz)
-    nn1 = max(nz, 6*nz)
+    nn = 6*nz
+    nn1 = 6*nz
     iha = n
 
     allocate(a(nn), b(n), pivot(n), aflag(8))
@@ -164,8 +164,8 @@ contains
     real(sp) :: ax, r_inf, a_inf, x_inf, b_inf, denom
 
     nz = n*n
-    nn = max(2*nz, 6*nz)
-    nn1 = max(nz, 6*nz)
+    nn = 6*nz
+    nn1 = 6*nz
     iha = n
 
     allocate(a(nn), pivot(n), b(n), b0(n), aflag(8))
@@ -236,8 +236,8 @@ contains
     real(dp) :: ax, r_inf, a_inf, x_inf, b_inf, denom
 
     nz = n*n
-    nn = max(2*nz, 6*nz)
-    nn1 = max(nz, 6*nz)
+    nn = 6*nz
+    nn1 = 6*nz
     iha = n
 
     allocate(a(nn), pivot(n), b(n), b0(n), aflag(8))
