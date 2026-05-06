@@ -22,7 +22,7 @@
 !   (b) A 8x8 arrow matrix (double precision).
 !       1-norm for n=8: col 8 sum = 8+2 = 10  =>  1-norm = 10.
 !
-!   (c) A 10x10 pentadiagonal matrix (single precision).
+!   (c) A 10x10 pentadiagonal matrix (double precision).
 !       Pentadiagonal: diag=5, dist-1 off-diag=-1, dist-2 off-diag=-0.5.
 !       Column j sum = |a(j,j)| + |a(j-1,j)| + |a(j+1,j)|
 !                      + |a(j-2,j)| + |a(j+2,j)|
@@ -69,10 +69,10 @@ program test_y12mg_mh_arrow
   call y12mh(n, z, a_sp, snr_sp, work_sp, anorm_sp)
   if (abs(anorm_sp - expected_norm_sp) > 1.0e-5) then
     write(*,'(a,f8.3,a,f8.3)') &
-        'FAIL y12mhe n=6 arrow: expected anorm=', expected_norm_sp, ' got ', anorm_sp
+        'FAIL y12mh n=6 arrow: expected anorm=', expected_norm_sp, ' got ', anorm_sp
     nfail = nfail + 1
   else
-    write(*,'(a,f8.3)') 'PASS y12mhe n=6 arrow: anorm=', anorm_sp
+    write(*,'(a,f8.3)') 'PASS y12mh n=6 arrow: anorm=', anorm_sp
   end if
 
   ! =====================================================================
@@ -87,14 +87,14 @@ program test_y12mg_mh_arrow
   call y12mh(n, z, a_dp, snr_dp, work_dp, anorm_dp)
   if (abs(anorm_dp - 10.0d0) > 1.0d-10) then
     write(*,'(a,f10.5)') &
-        'FAIL y12mhf n=8 arrow: expected anorm=10.0 got ', anorm_dp
+        'FAIL y12mh n=8 arrow: expected anorm=10.0 got ', anorm_dp
     nfail = nfail + 1
   else
-    write(*,'(a,f10.5)') 'PASS y12mhf n=8 arrow: anorm=', anorm_dp
+    write(*,'(a,f10.5)') 'PASS y12mh n=8 arrow: anorm=', anorm_dp
   end if
 
   ! =====================================================================
-  ! (c) y12mh on a 10x10 pentadiagonal matrix (single precision)
+  ! (c) y12mh on a 10x10 pentadiagonal matrix (double precision)
   !
   ! Band structure: main=5, dist1=-1, dist2=-0.5
   ! Interior col j (3<=j<=n-2) absolute column sum:
@@ -107,10 +107,10 @@ program test_y12mg_mh_arrow
   call y12mh(n, z, a_dp, snr_dp, work_dp, anorm_dp)
   if (abs(anorm_dp - 8.0d0) > 1.0d-10) then
     write(*,'(a,f10.5)') &
-        'FAIL y12mhf n=10 pentadiag: expected anorm=8.0 got ', anorm_dp
+        'FAIL y12mh n=10 pentadiag: expected anorm=8.0 got ', anorm_dp
     nfail = nfail + 1
   else
-    write(*,'(a,f10.5)') 'PASS y12mhf n=10 pentadiag: anorm=', anorm_dp
+    write(*,'(a,f10.5)') 'PASS y12mh n=10 pentadiag: anorm=', anorm_dp
   end if
 
   ! =====================================================================
