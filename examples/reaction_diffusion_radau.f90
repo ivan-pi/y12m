@@ -34,12 +34,12 @@
 !     output_file output file name (default: reaction_diffusion_radau.dat)
 !
 module reaction_diffusion_radau_solver
-   use, intrinsic :: iso_fortran_env, only: output_unit, error_unit
+   use, intrinsic :: iso_fortran_env, only: output_unit, error_unit, real64
    implicit none
    private
    public :: run
 
-   integer, parameter :: dp = kind(1.0d0)
+   integer, parameter :: dp = real64
    integer, parameter :: nstage = 2
    real(dp), parameter :: x_left = 0.0_dp
    real(dp), parameter :: x_right = 10.0_dp
@@ -249,10 +249,10 @@ contains
       end do
 
       iflag = 0
-      iflag(2) = 3
-      iflag(3) = 1
-      iflag(4) = 1
-      iflag(5) = 1
+      iflag(2) = 3        ! Markowitz search width
+      iflag(3) = 1        ! enable column interchanges
+      iflag(4) = 1        ! compute ordering on the first Jacobian
+      iflag(5) = 1        ! single-RHS solves; do not retain L between solves
       aflag(1) = y12m_growth_limit
       aflag(2) = 1.0e-12_dp
       aflag(3) = 1.0e+16_dp
@@ -372,10 +372,10 @@ end module reaction_diffusion_radau_solver
 
 program reaction_diffusion_radau
    use reaction_diffusion_radau_solver, only: run
-   use, intrinsic :: iso_fortran_env, only: error_unit
+   use, intrinsic :: iso_fortran_env, only: error_unit, real64
    implicit none
 
-   integer, parameter :: dp = kind(1.0d0)
+   integer, parameter :: dp = real64
    integer :: N, nsteps, ios, iarg, nargs, pos_count
    real(dp) :: T
    character(len=256) :: arg, outfile
