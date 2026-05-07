@@ -245,8 +245,9 @@ contains
       allocate(u(ndof), y_flat(nunknown), residual_flat(nunknown), rhs_flat(nunknown), delta(nunknown))
       allocate(a(nn), pivot(nunknown), snr(nn), rnr(nn1), ha(nunknown, 11), newton_iters(nsteps))
 
-      ! The flat storage keeps stage 1 first, then stage 2.  Pointer remapping
-      ! therefore exposes the same data as (space, stage) in column-major order.
+      ! These remapped pointers rely on Fortran column-major storage: the flat
+      ! arrays keep stage 1 first, then stage 2, so they can be viewed safely
+      ! as (space, stage) without copying.
       y_stage(1:ndof, 1:nstage) => y_flat(1:nunknown)
       residual(1:ndof, 1:nstage) => residual_flat(1:nunknown)
       rhs_stage(1:ndof, 1:nstage) => rhs_flat(1:nunknown)
