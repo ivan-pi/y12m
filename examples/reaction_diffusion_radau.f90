@@ -249,10 +249,10 @@ contains
       end do
 
       iflag = 0
-      iflag(2) = 3        ! Markowitz search width
+      iflag(2) = 3        ! Markowitz search width for pivot selection
       iflag(3) = 1        ! enable column interchanges
       iflag(4) = 1        ! compute ordering on the first Jacobian
-      iflag(5) = 1        ! single-RHS solves; do not retain L between solves
+      iflag(5) = 1        ! each factorization solves one Newton RHS; no saved L solve phase
       aflag(1) = y12m_growth_limit
       aflag(2) = 1.0e-12_dp
       aflag(3) = 1.0e+16_dp
