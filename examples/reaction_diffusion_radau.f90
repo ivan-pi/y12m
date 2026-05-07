@@ -19,11 +19,6 @@
 ! A = [             ],   b = [ 3/4, 1/4 ],   c = [ 1/3, 1 ].
 !     [ 3/4    1/4  ]
 !
-! The stage equations are fully coupled, so every Newton step solves a
-! 2-by-2 block sparse linear system with Y12M.  Since the Jacobian pattern is
-! constant across all Newton steps and time steps, this example demonstrates
-! Case (iii): same sparsity, changing values.
-!
 ! Usage
 ! -----
 !   reaction_diffusion_radau [--help] [N] [nsteps] [T] [output_file]
@@ -35,6 +30,7 @@
 !
 module reaction_diffusion_radau_solver
    use, intrinsic :: iso_fortran_env, only: output_unit, error_unit, real64
+   use y12m_example_helpers, only: write_three_column_output
    implicit none
    private
    public :: run, dp
@@ -54,30 +50,59 @@ module reaction_diffusion_radau_solver
    integer, parameter :: y12m_workspace_factor = 20
    integer, parameter :: max_newton = 12
 
-   type :: reaction_diffusion_problem
-      integer :: ndof = 0
-      real(dp) :: h2inv = 0.0_dp
-   end type reaction_diffusion_problem
+   type, abstract :: linear_solver
+   contains
+      procedure(linear_solve_if), deferred :: solve
+   end type linear_solver
 
    abstract interface
-      subroutine irk_rhs_callback(ctx, t, y, f)
+      subroutine linear_solve_if(self, n, nz, a, rnr, snr, rhs, istat)
+         import :: linear_solver, dp
+         class(linear_solver), intent(inout) :: self
+         integer, intent(in) :: n, nz
+         real(dp), intent(inout) :: a(:), rhs(:)
+         integer, intent(inout) :: rnr(:), snr(:)
+         integer, intent(inout) :: istat
+      end subroutine linear_solve_if
+
+      subroutine irk_rhs_callback(n, t, y, f, ipar, rpar, istat)
          import :: dp
-         class(*), intent(in) :: ctx
+         integer, intent(in) :: n
          real(dp), intent(in) :: t
-         real(dp), intent(in) :: y(:)
-         real(dp), intent(out) :: f(:)
+         real(dp), intent(in) :: y(n)
+         real(dp), intent(out) :: f(n)
+         integer, intent(in) :: ipar(*)
+         real(dp), intent(in) :: rpar(*)
+         integer, intent(inout) :: istat
       end subroutine irk_rhs_callback
 
-      subroutine irk_jacobian_callback(ctx, t, y, a, row, col, nz)
+      subroutine irk_jacobian_callback(n, nrow, ncol, t, y, a, lda, row, col, ldc, nz, ipar, rpar, istat)
          import :: dp
-         class(*), intent(in) :: ctx
+         integer, intent(in) :: n, nrow, ncol, lda, ldc
          real(dp), intent(in) :: t
-         real(dp), intent(in) :: y(:)
-         real(dp), intent(out) :: a(:)
-         integer, intent(out) :: row(:), col(:)
+         real(dp), intent(in) :: y(n)
+         real(dp), intent(out) :: a(lda)
+         integer, intent(out) :: row(ldc), col(ldc)
          integer, intent(out) :: nz
+         integer, intent(in) :: ipar(*)
+         real(dp), intent(in) :: rpar(*)
+         integer, intent(inout) :: istat
       end subroutine irk_jacobian_callback
    end interface
+
+   type, extends(linear_solver) :: y12m_linear_solver
+      integer :: n = 0
+      integer :: nn = 0
+      integer :: nn1 = 0
+      integer :: iha = 0
+      integer :: iflag(10) = 0
+      real(dp) :: aflag(8) = 0.0_dp
+      real(dp), allocatable :: pivot(:)
+      integer, allocatable :: ha(:, :)
+   contains
+      procedure :: initialize => y12m_initialize
+      procedure :: solve => y12m_solve
+   end type y12m_linear_solver
 
 contains
 
@@ -104,8 +129,68 @@ contains
       df = u * (2.0_dp - 3.0_dp * u)
    end function reaction_prime
 
-   subroutine compute_stage_residual(ndof, dt, t_stage, u_old, y_stage, rhs_stage, &
-      residual, fnorm, ctx, rhs_cb)
+   subroutine y12m_initialize(self, n, nz_max)
+      class(y12m_linear_solver), intent(inout) :: self
+      integer, intent(in) :: n, nz_max
+
+      self%n = n
+      self%nn = max(y12m_workspace_factor * n, y12m_workspace_factor * nz_max)
+      self%nn1 = self%nn
+      self%iha = n
+
+      allocate(self%pivot(n), self%ha(n, 11))
+
+      self%iflag = 0
+      self%iflag(2) = 3
+      self%iflag(3) = 1
+      self%iflag(4) = 1
+      self%iflag(5) = 1
+      self%aflag(1) = y12m_growth_limit
+      self%aflag(2) = 1.0e-12_dp
+      self%aflag(3) = 1.0e+16_dp
+      self%aflag(4) = 1.0e-12_dp
+      self%aflag(5:8) = 0.0_dp
+   end subroutine y12m_initialize
+
+   subroutine y12m_solve(self, n, nz, a, rnr, snr, rhs, istat)
+      use y12m, only: y12mb, y12mc, y12md
+      class(y12m_linear_solver), intent(inout) :: self
+      integer, intent(in) :: n, nz
+      real(dp), intent(inout) :: a(:), rhs(:)
+      integer, intent(inout) :: rnr(:), snr(:)
+      integer, intent(inout) :: istat
+
+      integer :: ifail
+
+      ifail = 0
+      call y12mb(n, nz, a, snr, self%nn, rnr, self%nn1, self%ha, self%iha, self%aflag, self%iflag, ifail)
+      if (ifail /= 0) then
+         istat = ifail
+         return
+      end if
+
+      call y12mc(n, nz, a, snr, self%nn, rnr, self%nn1, self%pivot, rhs, self%ha, self%iha, &
+         self%aflag, self%iflag, ifail)
+      if (ifail /= 0) then
+         istat = ifail
+         return
+      end if
+
+      self%iflag(4) = 2
+      call y12md(n, a, self%nn, rhs, self%pivot, snr, self%ha, self%iha, self%iflag, ifail)
+      if (ifail /= 0) then
+         istat = ifail
+      end if
+   end subroutine y12m_solve
+
+   ! Assemble stage residuals for the coupled 2-stage Radau system:
+   !
+   !   G1 = Y1 - u_n - dt * (a11*F1 + a12*F2)
+   !   G2 = Y2 - u_n - dt * (a21*F1 + a22*F2)
+   !
+   ! where Fj = F(t_n + c_j*dt, Yj).
+   subroutine compute_stage_residual(ndof, dt, t_stage, u_old, y_stage, rhs_stage, residual, fnorm, &
+      ipar, rpar, rhs_cb, istat)
       integer, intent(in) :: ndof
       real(dp), intent(in) :: dt
       real(dp), intent(in) :: t_stage(nstage)
@@ -114,50 +199,58 @@ contains
       real(dp), intent(out) :: rhs_stage(ndof, nstage)
       real(dp), intent(out) :: residual(ndof, nstage)
       real(dp), intent(out) :: fnorm
-      class(*), intent(in) :: ctx
+      integer, intent(in) :: ipar(*)
+      real(dp), intent(in) :: rpar(*)
       procedure(irk_rhs_callback) :: rhs_cb
+      integer, intent(inout) :: istat
 
-      integer :: i, m, j
+      call rhs_cb(ndof, t_stage(1), y_stage(:, 1), rhs_stage(:, 1), ipar, rpar, istat)
+      if (istat /= 0) return
+      call rhs_cb(ndof, t_stage(2), y_stage(:, 2), rhs_stage(:, 2), ipar, rpar, istat)
+      if (istat /= 0) return
 
-      do j = 1, nstage
-         call rhs_cb(ctx, t_stage(j), y_stage(:, j), rhs_stage(:, j))
-      end do
+      residual(:, 1) = y_stage(:, 1) - u_old - dt * (rk_a(1, 1) * rhs_stage(:, 1) + rk_a(1, 2) * rhs_stage(:, 2))
+      residual(:, 2) = y_stage(:, 2) - u_old - dt * (rk_a(2, 1) * rhs_stage(:, 1) + rk_a(2, 2) * rhs_stage(:, 2))
 
-      fnorm = 0.0_dp
-      do m = 1, nstage
-         do i = 1, ndof
-            residual(i, m) = y_stage(i, m) - u_old(i)
-            do j = 1, nstage
-               residual(i, m) = residual(i, m) - dt * rk_a(m, j) * rhs_stage(i, j)
-            end do
-            fnorm = max(fnorm, abs(residual(i, m)))
-         end do
-      end do
+      fnorm = max(maxval(abs(residual(:, 1))), maxval(abs(residual(:, 2))))
    end subroutine compute_stage_residual
 
-   subroutine assemble_coupled_jacobian(ndof, dt, t_stage, y_stage, jac_val, jac_row, &
-      jac_col, jac_nz, a, rnr, snr, nz, ctx, jac_cb)
-      integer, intent(in) :: ndof
+   ! Assemble the Newton matrix for the coupled stage residuals:
+   !
+   !   dG_m/dY_j = I*delta_mj - dt * a_mj * J_j,
+   !
+   ! where J_j = dF/dy(t_n + c_j*dt, Y_j).
+   !
+   ! This creates a 2x2 block sparse COO matrix with ndof x ndof blocks.
+   subroutine assemble_coupled_jacobian(ndof, dt, t_stage, y_stage, jac_nz_max, jac_val, jac_row, &
+      jac_col, jac_nz, a, rnr, snr, nz, ipar, rpar, jac_cb, istat)
+      integer, intent(in) :: ndof, jac_nz_max
       real(dp), intent(in) :: dt
       real(dp), intent(in) :: t_stage(nstage)
       real(dp), intent(in) :: y_stage(ndof, nstage)
-      real(dp), intent(out) :: jac_val(:, :)
-      integer, intent(out) :: jac_row(:, :), jac_col(:, :)
+      real(dp), intent(out) :: jac_val(jac_nz_max, nstage)
+      integer, intent(out) :: jac_row(jac_nz_max, nstage), jac_col(jac_nz_max, nstage)
       integer, intent(out) :: jac_nz(nstage)
       real(dp), intent(out) :: a(:)
       integer, intent(out) :: rnr(:), snr(:)
       integer, intent(out) :: nz
-      class(*), intent(in) :: ctx
+      integer, intent(in) :: ipar(*)
+      real(dp), intent(in) :: rpar(*)
       procedure(irk_jacobian_callback) :: jac_cb
+      integer, intent(inout) :: istat
 
       integer :: j, k, m, row_offset, col_offset
       real(dp) :: coeff, entry
 
       nz = 0
-      do j = 1, nstage
-         call jac_cb(ctx, t_stage(j), y_stage(:, j), jac_val(:, j), jac_row(:, j), jac_col(:, j), &
-            jac_nz(j))
-      end do
+
+      call jac_cb(ndof, ndof, ndof, t_stage(1), y_stage(:, 1), jac_val(:, 1), jac_nz_max, jac_row(:, 1), &
+         jac_col(:, 1), jac_nz_max, jac_nz(1), ipar, rpar, istat)
+      if (istat /= 0) return
+
+      call jac_cb(ndof, ndof, ndof, t_stage(2), y_stage(:, 2), jac_val(:, 2), jac_nz_max, jac_row(:, 2), &
+         jac_col(:, 2), jac_nz_max, jac_nz(2), ipar, rpar, istat)
+      if (istat /= 0) return
 
       do m = 1, nstage
          row_offset = (m - 1) * ndof
@@ -177,207 +270,200 @@ contains
       end do
    end subroutine assemble_coupled_jacobian
 
-   subroutine solve_newton_system_y12m(nunknown, nz, a, snr, nn, rnr, nn1, pivot, rhs, &
-      ha, iha, aflag, iflag, ifail, t_y12mb, t_y12mc, t_y12md)
-      use y12m, only: y12mb, y12mc, y12md
-      integer, intent(in) :: nunknown, nz, nn, nn1, iha
-      real(dp), intent(inout) :: a(nn), pivot(nunknown), rhs(nunknown)
-      integer, intent(inout) :: snr(nn), rnr(nn1), ha(iha, 11), iflag(10)
-      real(dp), intent(inout) :: aflag(8)
-      integer, intent(out) :: ifail
-      integer, intent(inout) :: t_y12mb, t_y12mc, t_y12md
-
-      integer :: t0, t1
-
-      call system_clock(t0)
-      call y12mb(nunknown, nz, a, snr, nn, rnr, nn1, ha, iha, aflag, iflag, ifail)
-      call system_clock(t1)
-      t_y12mb = t_y12mb + (t1 - t0)
-      if (ifail /= 0) return
-
-      call system_clock(t0)
-      call y12mc(nunknown, nz, a, snr, nn, rnr, nn1, pivot, rhs, ha, iha, aflag, iflag, ifail)
-      call system_clock(t1)
-      t_y12mc = t_y12mc + (t1 - t0)
-      if (ifail /= 0) return
-      iflag(4) = 2
-
-      call system_clock(t0)
-      call y12md(nunknown, a, nn, rhs, pivot, snr, ha, iha, iflag, ifail)
-      call system_clock(t1)
-      t_y12md = t_y12md + (t1 - t0)
-   end subroutine solve_newton_system_y12m
-
-   subroutine integrate_radau_iia_fixed(u, t0, dt, nsteps, jac_nz_max, ctx, rhs_cb, jac_cb, &
-      newton_iters, final_residuals, t_y12mb, t_y12mc, t_y12md)
-      integer, intent(in) :: nsteps, jac_nz_max
-      real(dp), intent(in) :: t0, dt
+   ! Perform one fully implicit 2-stage Radau IIA step.
+   !
+   ! Newton is full Newton (not modified Newton): the Jacobian is rebuilt and
+   ! refactorized every Newton iteration.
+   subroutine integrate_radau_iia_step(u, t, dt, jac_nz_max, ipar, rpar, rhs_cb, jac_cb, linsolve, &
+      newton_iter, final_residual)
       real(dp), intent(inout) :: u(:)
-      class(*), intent(in) :: ctx
-      integer, intent(out) :: newton_iters(nsteps)
-      real(dp), intent(out) :: final_residuals(nsteps)
-      integer, intent(out) :: t_y12mb, t_y12mc, t_y12md
+      real(dp), intent(in) :: t, dt
+      integer, intent(in) :: jac_nz_max
+      integer, intent(in) :: ipar(*)
+      real(dp), intent(in) :: rpar(*)
       procedure(irk_rhs_callback) :: rhs_cb
       procedure(irk_jacobian_callback) :: jac_cb
+      class(linear_solver), intent(inout) :: linsolve
+      integer, intent(out) :: newton_iter
+      real(dp), intent(out) :: final_residual
 
-      integer :: ndof, nunknown, nz_max, nz, nn, nn1, iha
-      integer :: iflag(10), ifail
-      integer :: step, iter, iter_used
-      real(dp) :: aflag(8)
+      integer :: ndof, nunknown, nz_max, nz
+      integer :: iter, istat
       real(dp) :: t_stage(nstage), fnorm
       real(dp), allocatable :: y_stage(:, :), rhs_stage(:, :), residual(:, :)
-      real(dp), allocatable :: jac_val(:, :), a(:), pivot(:), delta(:)
+      real(dp), allocatable :: jac_val(:, :), a(:), delta(:)
       integer, allocatable :: jac_row(:, :), jac_col(:, :), jac_nz(:)
-      integer, allocatable :: snr(:), rnr(:), ha(:, :)
+      integer, allocatable :: snr(:), rnr(:)
       logical :: converged
 
       ndof = size(u)
       nunknown = nstage * ndof
       nz_max = nstage * nstage * jac_nz_max
-      nn = max(y12m_workspace_factor * nunknown, y12m_workspace_factor * nz_max)
-      nn1 = nn
-      iha = nunknown
 
       allocate(y_stage(ndof, nstage), rhs_stage(ndof, nstage), residual(ndof, nstage))
       allocate(jac_val(jac_nz_max, nstage), jac_row(jac_nz_max, nstage), jac_col(jac_nz_max, nstage))
-      allocate(jac_nz(nstage), a(nn), pivot(nunknown), delta(nunknown))
-      allocate(snr(nn), rnr(nn1), ha(nunknown, 11))
+      allocate(jac_nz(nstage), a(nz_max), delta(nunknown))
+      allocate(snr(nz_max), rnr(nz_max))
 
-      iflag = 0
-      iflag(2) = 3        ! Markowitz search width for pivot selection
-      iflag(3) = 1        ! enable column interchanges
-      iflag(4) = 1        ! compute ordering on the first Jacobian
-      iflag(5) = 1        ! each factorization solves one Newton RHS; no saved L solve phase
-      aflag(1) = y12m_growth_limit
-      aflag(2) = 1.0e-12_dp
-      aflag(3) = 1.0e+16_dp
-      aflag(4) = 1.0e-12_dp
-      aflag(5:8) = 0.0_dp
+      t_stage = t + rk_c * dt
+      y_stage(:, 1) = u
+      y_stage(:, 2) = u
+      converged = .false.
+      newton_iter = 0
+      final_residual = huge(1.0_dp)
 
-      t_y12mb = 0
-      t_y12mc = 0
-      t_y12md = 0
-
-      do step = 1, nsteps
-         t_stage = t0 + (real(step - 1, dp) + rk_c) * dt
-         y_stage(:, 1) = u
-         y_stage(:, 2) = u
-         converged = .false.
-         iter_used = 0
-
-         do iter = 1, max_newton
-            call compute_stage_residual(ndof, dt, t_stage, u, y_stage, rhs_stage, residual, fnorm, &
-               ctx, rhs_cb)
-            if (fnorm < newton_tol) then
-               converged = .true.
-               iter_used = iter - 1
-               exit
-            end if
-
-            delta = -reshape(residual, [nunknown])
-            call assemble_coupled_jacobian(ndof, dt, t_stage, y_stage, jac_val, jac_row, jac_col, &
-               jac_nz, a, rnr, snr, nz, ctx, jac_cb)
-            call solve_newton_system_y12m(nunknown, nz, a, snr, nn, rnr, nn1, pivot, delta, ha, iha, &
-               aflag, iflag, ifail, t_y12mb, t_y12mc, t_y12md)
-
-            if (ifail /= 0) then
-               write(error_unit, '(a,i0,a,i0)') &
-                  'ERROR: Y12M solve at time step ', step, ' returned IFAIL = ', ifail
-               stop 1
-            end if
-
-            y_stage = y_stage + reshape(delta, [ndof, nstage])
-         end do
-
-         if (.not. converged) then
-            call compute_stage_residual(ndof, dt, t_stage, u, y_stage, rhs_stage, residual, fnorm, &
-               ctx, rhs_cb)
-            if (fnorm < newton_tol) then
-               converged = .true.
-               iter_used = max_newton
-            end if
-         end if
-
-         if (.not. converged) then
-            write(error_unit, '(a,i0,a,es12.4)') &
-               'ERROR: Newton failed at time step ', step, ', residual = ', fnorm
+      do iter = 1, max_newton
+         istat = 0
+         call compute_stage_residual(ndof, dt, t_stage, u, y_stage, rhs_stage, residual, fnorm, &
+            ipar, rpar, rhs_cb, istat)
+         if (istat /= 0) then
+            write(error_unit, '(a,i0)') 'ERROR: RHS callback returned ISTAT = ', istat
             stop 1
          end if
 
-         newton_iters(step) = iter_used
-         final_residuals(step) = fnorm
-         u = u + dt * (rk_b(1) * rhs_stage(:, 1) + rk_b(2) * rhs_stage(:, 2))
+         if (fnorm < newton_tol) then
+            converged = .true.
+            newton_iter = iter - 1
+            final_residual = fnorm
+            exit
+         end if
+
+         delta = -reshape(residual, [nunknown])
+
+         istat = 0
+         call assemble_coupled_jacobian(ndof, dt, t_stage, y_stage, jac_nz_max, jac_val, jac_row, jac_col, &
+            jac_nz, a, rnr, snr, nz, ipar, rpar, jac_cb, istat)
+         if (istat /= 0) then
+            write(error_unit, '(a,i0)') 'ERROR: Jacobian callback returned ISTAT = ', istat
+            stop 1
+         end if
+
+         istat = 0
+         call linsolve%solve(nunknown, nz, a, rnr, snr, delta, istat)
+         if (istat /= 0) then
+            write(error_unit, '(a,i0)') 'ERROR: linear solve returned ISTAT = ', istat
+            stop 1
+         end if
+
+         y_stage = y_stage + reshape(delta, [ndof, nstage])
       end do
-   end subroutine integrate_radau_iia_fixed
 
-   subroutine reaction_diffusion_rhs(ctx, t, y, f)
-      class(*), intent(in) :: ctx
-      real(dp), intent(in) :: t
-      real(dp), intent(in) :: y(:)
-      real(dp), intent(out) :: f(:)
+      if (.not. converged) then
+         istat = 0
+         call compute_stage_residual(ndof, dt, t_stage, u, y_stage, rhs_stage, residual, fnorm, &
+            ipar, rpar, rhs_cb, istat)
+         if (istat /= 0) then
+            write(error_unit, '(a,i0)') 'ERROR: RHS callback returned ISTAT = ', istat
+            stop 1
+         end if
+         if (fnorm < newton_tol) then
+            converged = .true.
+            newton_iter = max_newton
+            final_residual = fnorm
+         end if
+      end if
 
-      integer :: k
-      real(dp) :: left_bc, right_bc
-
-      select type (problem => ctx)
-      type is (reaction_diffusion_problem)
-         left_bc = u_exact(x_left, t)
-         right_bc = u_exact(x_right, t)
-
-         do k = 1, problem%ndof
-            f(k) = (-2.0_dp * y(k)) * problem%h2inv + reaction(y(k))
-            if (k > 1) f(k) = f(k) + y(k - 1) * problem%h2inv
-            if (k < problem%ndof) f(k) = f(k) + y(k + 1) * problem%h2inv
-         end do
-
-         f(1) = f(1) + left_bc * problem%h2inv
-         f(problem%ndof) = f(problem%ndof) + right_bc * problem%h2inv
-      class default
-         write(error_unit, '(a)') 'ERROR: unsupported RHS callback context'
+      if (.not. converged) then
+         write(error_unit, '(a,es12.4)') 'ERROR: Newton failed, residual = ', fnorm
          stop 1
-      end select
+      end if
+
+      u = u + dt * (rk_b(1) * rhs_stage(:, 1) + rk_b(2) * rhs_stage(:, 2))
+   end subroutine integrate_radau_iia_step
+
+   subroutine reaction_diffusion_rhs(n, t, y, f, ipar, rpar, istat)
+      integer, intent(in) :: n
+      real(dp), intent(in) :: t
+      real(dp), intent(in) :: y(n)
+      real(dp), intent(out) :: f(n)
+      integer, intent(in) :: ipar(*)
+      real(dp), intent(in) :: rpar(*)
+      integer, intent(inout) :: istat
+
+      integer :: i
+      real(dp) :: left_bc, right_bc, h2inv
+
+      if (ipar(1) /= n) then
+         istat = 1
+         return
+      end if
+
+      h2inv = rpar(1)
+      left_bc = u_exact(x_left, t)
+      right_bc = u_exact(x_right, t)
+
+      if (n == 1) then
+         f(1) = (left_bc - 2.0_dp * y(1) + right_bc) * h2inv + reaction(y(1))
+         return
+      end if
+
+      f(1) = (left_bc - 2.0_dp * y(1) + y(2)) * h2inv + reaction(y(1))
+      do concurrent (i = 2:n - 1)
+         f(i) = (y(i - 1) - 2.0_dp * y(i) + y(i + 1)) * h2inv + reaction(y(i))
+      end do
+      f(n) = (y(n - 1) - 2.0_dp * y(n) + right_bc) * h2inv + reaction(y(n))
    end subroutine reaction_diffusion_rhs
 
-   subroutine reaction_diffusion_jacobian(ctx, t, y, a, row, col, nz)
-      class(*), intent(in) :: ctx
+   subroutine reaction_diffusion_jacobian(n, nrow, ncol, t, y, a, lda, row, col, ldc, nz, ipar, rpar, istat)
+      integer, intent(in) :: n, nrow, ncol, lda, ldc
       real(dp), intent(in) :: t
-      real(dp), intent(in) :: y(:)
-      real(dp), intent(out) :: a(:)
-      integer, intent(out) :: row(:), col(:)
+      real(dp), intent(in) :: y(n)
+      real(dp), intent(out) :: a(lda)
+      integer, intent(out) :: row(ldc), col(ldc)
       integer, intent(out) :: nz
+      integer, intent(in) :: ipar(*)
+      real(dp), intent(in) :: rpar(*)
+      integer, intent(inout) :: istat
 
       integer :: k
+      real(dp) :: h2inv
 
-      select type (problem => ctx)
-      type is (reaction_diffusion_problem)
-         ! This semidiscrete Jacobian is time-independent for the travelling
-         ! wave problem, so `t` is intentionally unused here even though the
-         ! callback follows the general J(t,y) signature.
-         nz = 0
-         do k = 1, problem%ndof
-            if (k > 1) then
-               nz = nz + 1
-               row(nz) = k
-               col(nz) = k - 1
-               a(nz) = problem%h2inv
-            end if
+      if (ipar(1) /= n) then
+         istat = 1
+         return
+      end if
 
+      if (nrow /= n .or. ncol /= n) then
+         istat = 2
+         return
+      end if
+
+      ! The semidiscrete Jacobian is time-independent for this travelling wave
+      ! setup. Keep t in the signature to preserve the generic J(t,y) callback API.
+      h2inv = rpar(1)
+      nz = 0
+      do k = 1, n
+         if (k > 1) then
             nz = nz + 1
-            row(nz) = k
-            col(nz) = k
-            a(nz) = -2.0_dp * problem%h2inv + reaction_prime(y(k))
-
-            if (k < problem%ndof) then
-               nz = nz + 1
-               row(nz) = k
-               col(nz) = k + 1
-               a(nz) = problem%h2inv
+            if (nz > min(lda, ldc)) then
+               istat = 3
+               return
             end if
-         end do
-      class default
-         write(error_unit, '(a)') 'ERROR: unsupported Jacobian callback context'
-         stop 1
-      end select
+            row(nz) = k
+            col(nz) = k - 1
+            a(nz) = h2inv
+         end if
+
+         nz = nz + 1
+         if (nz > min(lda, ldc)) then
+            istat = 3
+            return
+         end if
+         row(nz) = k
+         col(nz) = k
+         a(nz) = -2.0_dp * h2inv + reaction_prime(y(k))
+
+         if (k < n) then
+            nz = nz + 1
+            if (nz > min(lda, ldc)) then
+               istat = 3
+               return
+            end if
+            row(nz) = k
+            col(nz) = k + 1
+            a(nz) = h2inv
+         end if
+      end do
    end subroutine reaction_diffusion_jacobian
 
    subroutine write_solution(N, h, t, u, outfile)
@@ -386,25 +472,28 @@ contains
       real(dp), intent(in) :: u(:)
       character(len=*), intent(in) :: outfile
 
-      integer :: i, funit
-      real(dp) :: x
+      integer :: i
+      real(dp), allocatable :: x(:), u_num(:), u_ref(:)
+      character(len=80), dimension(2) :: header
 
-      open(newunit=funit, file=outfile, status='unknown', action='write')
-      write(funit, '(a)') '# 1D reaction-diffusion equation -- 2-stage Radau IIA'
-      write(funit, '(a,es10.3,a,i0)') '# T=', t, '  N=', N
-      write(funit, '(a)') '# Columns: x  u_numerical  u_exact'
+      allocate(x(N), u_num(N), u_ref(N))
 
-      x = x_left
-      write(funit, '(3(1x,es14.6))') x, u_exact(x, t), u_exact(x, t)
-
-      do i = 2, N - 1
-         x = x_left + real(i - 1, dp) * h
-         write(funit, '(3(1x,es14.6))') x, u(i - 1), u_exact(x, t)
+      do i = 1, N
+         x(i) = x_left + real(i - 1, dp) * h
+         u_ref(i) = u_exact(x(i), t)
       end do
 
-      x = x_right
-      write(funit, '(3(1x,es14.6))') x, u_exact(x, t), u_exact(x, t)
-      close(funit)
+      u_num(1) = u_ref(1)
+      u_num(N) = u_ref(N)
+      if (N > 2) then
+         u_num(2:N - 1) = u
+      end if
+
+      write(header(1), '(a)') '1D reaction-diffusion equation -- 2-stage Radau IIA'
+      write(header(2), '(a,es10.3,a,i0)') 'T=', t, '  N=', N
+
+      call write_three_column_output(x, u_num, u_ref, trim(outfile), header, size(header), &
+         'Columns: x  u_numerical  u_exact')
    end subroutine write_solution
 
    subroutine run(N, nsteps, T, outfile)
@@ -413,14 +502,14 @@ contains
       character(len=*), intent(in) :: outfile
 
       integer :: ndof, jac_nz_max
-      real(dp) :: h, dt, h2inv
+      real(dp) :: h, dt, t_now, h2inv
       real(dp), allocatable :: u(:), final_residuals(:)
       integer, allocatable :: newton_iters(:)
-      integer :: i, step, clock_rate
-      integer :: t_y12mb, t_y12mc, t_y12md
-      real(dp) :: s_y12mb, s_y12mc, s_y12md
+      integer :: i, step
       real(dp) :: err_max, err_rms, diff
-      type(reaction_diffusion_problem) :: problem
+      integer :: ipar(1)
+      real(dp) :: rpar(1)
+      type(y12m_linear_solver) :: y12m_solver
 
       ndof = N - 2
       h = (x_right - x_left) / real(N - 1, dp)
@@ -441,14 +530,17 @@ contains
          u(i) = u_exact(x_left + real(i, dp) * h, 0.0_dp)
       end do
 
-      problem%ndof = ndof
-      problem%h2inv = h2inv
-      jac_nz_max = 3 * ndof - 2   ! tridiagonal semidiscrete Jacobian
+      ipar(1) = ndof
+      rpar(1) = h2inv
+      jac_nz_max = 3 * ndof - 2
+      call y12m_solver%initialize(2 * ndof, 4 * jac_nz_max)
 
-      call system_clock(count_rate=clock_rate)
-      call integrate_radau_iia_fixed(u, 0.0_dp, dt, nsteps, jac_nz_max, problem, &
-         reaction_diffusion_rhs, reaction_diffusion_jacobian, newton_iters, final_residuals, &
-         t_y12mb, t_y12mc, t_y12md)
+      t_now = 0.0_dp
+      do step = 1, nsteps
+         call integrate_radau_iia_step(u, t_now, dt, jac_nz_max, ipar, rpar, reaction_diffusion_rhs, &
+            reaction_diffusion_jacobian, y12m_solver, newton_iters(step), final_residuals(step))
+         t_now = t_now + dt
+      end do
 
       write(output_unit, '(/,a)') 'Per-step Newton iteration counts:'
       write(output_unit, '(a)') '  step  iterations  final_stage_residual'
@@ -473,15 +565,6 @@ contains
 
       call write_solution(N, h, T, u, trim(outfile))
       write(output_unit, '(a)') 'Solution written to ' // trim(outfile)
-
-      s_y12mb = real(t_y12mb, dp) / real(clock_rate, dp)
-      s_y12mc = real(t_y12mc, dp) / real(clock_rate, dp)
-      s_y12md = real(t_y12md, dp) / real(clock_rate, dp)
-
-      write(output_unit, '(/,a)') 'Timing summary:'
-      write(output_unit, '(a,g14.6,a)') '  y12mb total           : ', s_y12mb, ' s'
-      write(output_unit, '(a,g14.6,a)') '  y12mc total           : ', s_y12mc, ' s'
-      write(output_unit, '(a,g14.6,a)') '  y12md total           : ', s_y12md, ' s'
    end subroutine run
 end module reaction_diffusion_radau_solver
 

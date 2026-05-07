@@ -356,9 +356,8 @@ semidiscrete right-hand side `F(t,y)` and one for the sparse Jacobian
 reaction-diffusion callbacks into that IRK driver while keeping the Y12M
 factor/solve path isolated in one helper.
 
-The code reports the per-step Newton iteration counts, final max/RMS error
-against the analytical solution, and timing totals for `y12mb`, `y12mc` and
-`y12md`.
+The code reports the per-step Newton iteration counts and final max/RMS error
+against the analytical solution.
 
 ```
 Usage: reaction_diffusion_radau [--help] [N] [nsteps] [T] [output_file]

@@ -130,3 +130,4 @@ add_pde_test(newton_bratu newton_bratu.f90)
 
 # Case (iii): fully implicit 2-stage Radau IIA for reaction-diffusion
 add_pde_test(reaction_diffusion_radau reaction_diffusion_radau.f90)
+target_link_libraries(reaction_diffusion_radau PRIVATE y12m_example_helpers)
