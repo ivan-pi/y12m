@@ -350,11 +350,11 @@ contains
 
       select type (problem => ctx)
       type is (reaction_diffusion_problem)
-         ! This example has a time-independent semidiscrete Jacobian, but keep a
-         ! reference to `t` here so the callback still matches the general
-         ! J(t,y) API used by the fixed-step Radau driver.
-         associate (unused_t => t)
-         end associate
+         ! The semidiscrete Jacobian is time-independent for this problem, but
+         ! the callback keeps the general J(t,y) signature used by the Radau
+         ! driver.  This guard is unreachable for finite t and marks the dummy
+         ! argument as intentionally unused.
+         if (t < -huge(t)) stop 1
          nz = 0
          do k = 1, problem%ndof
             if (k > 1) then
@@ -399,9 +399,9 @@ contains
       x = x_left
       write(funit, '(3(1x,es14.6))') x, u_exact(x, t), u_exact(x, t)
 
-      do i = 1, size(u)
-         x = x_left + real(i, kind=dp) * h
-         write(funit, '(3(1x,es14.6))') x, u(i), u_exact(x, t)
+      do i = 2, N - 1
+         x = x_left + real(i - 1, kind=dp) * h
+         write(funit, '(3(1x,es14.6))') x, u(i - 1), u_exact(x, t)
       end do
 
       x = x_right
