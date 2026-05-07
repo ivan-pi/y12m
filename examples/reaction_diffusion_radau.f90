@@ -401,18 +401,16 @@ contains
       left_bc = u_exact(x_left, t)
       right_bc = u_exact(x_right, t)
 
-      f = (-2.0_dp * y) * h2inv + reaction(y)
-      if (n >= 2) then
-         f(1) = f(1) + y(2) * h2inv
-         if (n > 2) then
-            do concurrent (i = 2:n - 1)
-               f(i) = f(i) + (y(i - 1) + y(i + 1)) * h2inv
-            end do
-         end if
-         f(n) = f(n) + y(n - 1) * h2inv
+      if (n == 1) then
+         f(1) = (left_bc - 2.0_dp * y(1) + right_bc) * h2inv + reaction(y(1))
+         return
       end if
-      f(1) = f(1) + left_bc * h2inv
-      f(n) = f(n) + right_bc * h2inv
+
+      f(1) = (left_bc - 2.0_dp * y(1) + y(2)) * h2inv + reaction(y(1))
+      do concurrent (i = 2:n - 1)
+         f(i) = (y(i - 1) - 2.0_dp * y(i) + y(i + 1)) * h2inv + reaction(y(i))
+      end do
+      f(n) = (y(n - 1) - 2.0_dp * y(n) + right_bc) * h2inv + reaction(y(n))
    end subroutine reaction_diffusion_rhs
 
    subroutine reaction_diffusion_jacobian(n, nrow, ncol, t, y, a, lda, row, col, ldc, nz, ipar, rpar, istat)
@@ -446,6 +444,9 @@ contains
       do k = 1, n
          if (k > 1) then
             nz = nz + 1
+            ! row/col share the same storage budget as values in this callback
+            ! (ldc tracks row/col capacity, lda tracks value capacity), so we
+            ! guard with the common usable length.
             if (nz > min(lda, ldc)) then
                istat = 3
                return
