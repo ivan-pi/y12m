@@ -37,7 +37,7 @@ module reaction_diffusion_radau_solver
    use, intrinsic :: iso_fortran_env, only: output_unit, error_unit, real64
    implicit none
    private
-   public :: run
+   public :: run, dp
 
    integer, parameter :: dp = real64
    integer, parameter :: nstage = 2
@@ -225,8 +225,8 @@ contains
 
       ndof = N - 2
       nunknown = nstage * ndof
-      h = (x_right - x_left) / real(N - 1, dp)
-      dt = T / real(nsteps, dp)
+      h = (x_right - x_left) / real(N - 1, kind=dp)
+      dt = T / real(nsteps, kind=dp)
       h2inv = 1.0_dp / h**2
 
       write(output_unit, '(a,i0,a,i0,a)') 'Grid points   : ', N, '  (', ndof, ' interior DOFs)'
@@ -268,7 +268,7 @@ contains
       write(output_unit, '(a)') '  step  iterations  final_stage_residual'
 
       do step = 1, nsteps
-         t_n = real(step - 1, dp) * dt
+         t_n = real(step - 1, kind=dp) * dt
          t_stage = t_n + rk_c * dt
          y_stage(:, 1) = u
          y_stage(:, 2) = u
@@ -348,7 +348,7 @@ contains
          err_max = max(err_max, abs(diff))
          err_rms = err_rms + diff**2
       end do
-      err_rms = sqrt(err_rms / real(ndof, dp))
+      err_rms = sqrt(err_rms / real(ndof, kind=dp))
 
       write(output_unit, '(/,a,es12.4)') 'Final max error : ', err_max
       write(output_unit, '(a,es12.4)') 'Final RMS error : ', err_rms
@@ -371,11 +371,10 @@ contains
 end module reaction_diffusion_radau_solver
 
 program reaction_diffusion_radau
-   use reaction_diffusion_radau_solver, only: run
-   use, intrinsic :: iso_fortran_env, only: error_unit, real64
+   use reaction_diffusion_radau_solver, only: run, dp
+   use, intrinsic :: iso_fortran_env, only: error_unit
    implicit none
 
-   integer, parameter :: dp = real64
    integer :: N, nsteps, ios, iarg, nargs, pos_count
    real(dp) :: T
    character(len=256) :: arg, outfile
