@@ -173,23 +173,23 @@ contains
       character(len=*), intent(in) :: header(nhr)
       character(len=*), intent(in) :: columns
 
-      integer :: funit, i, ih
+      integer :: file_unit, idx, header_idx
 
       if (size(x) /= size(y_num) .or. size(x) /= size(y_ex)) then
          write(error_unit, '(a)') 'Error: write_three_column_output size mismatch'
          stop 1
       end if
 
-      open(newunit=funit, file=filename, status='unknown', action='write')
-      do ih = 1, nhr
-         write(funit, '("# ",a)') trim(header(ih))
+      open(newunit=file_unit, file=filename, status='unknown', action='write')
+      do header_idx = 1, nhr
+         write(file_unit, '("# ",a)') trim(header(header_idx))
       end do
-      write(funit, '("# ",a)') trim(columns)
+      write(file_unit, '("# ",a)') trim(columns)
 
-      do i = 1, size(x)
-         write(funit, '(3(1x,es14.6))') x(i), y_num(i), y_ex(i)
+      do idx = 1, size(x)
+         write(file_unit, '(3(1x,es14.6))') x(idx), y_num(idx), y_ex(idx)
       end do
-      close(funit)
+      close(file_unit)
    end subroutine write_three_column_output
 
 

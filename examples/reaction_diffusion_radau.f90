@@ -402,11 +402,13 @@ contains
       right_bc = u_exact(x_right, t)
 
       f = (-2.0_dp * y) * h2inv + reaction(y)
-      if (n > 1) then
+      if (n >= 2) then
          f(1) = f(1) + y(2) * h2inv
-         do concurrent (i = 2:n - 1)
-            f(i) = f(i) + (y(i - 1) + y(i + 1)) * h2inv
-         end do
+         if (n > 2) then
+            do concurrent (i = 2:n - 1)
+               f(i) = f(i) + (y(i - 1) + y(i + 1)) * h2inv
+            end do
+         end if
          f(n) = f(n) + y(n - 1) * h2inv
       end if
       f(1) = f(1) + left_bc * h2inv
@@ -492,10 +494,9 @@ contains
          u_ref(i) = u_exact(x(i), t)
       end do
 
-      u_num = u_ref
-      if (N > 2) then
-         u_num(2:N - 1) = u
-      end if
+      u_num(1) = u_ref(1)
+      u_num(N) = u_ref(N)
+      if (N > 2) u_num(2:N - 1) = u
 
       write(header(1), '(a)') '1D reaction-diffusion equation -- 2-stage Radau IIA'
       write(header(2), '(a,es10.3,a,i0)') 'T=', t, '  N=', N
