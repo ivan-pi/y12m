@@ -350,6 +350,12 @@ changing values (structural reuse)**:
 * Subsequent Newton solves: `IFLAG(4) = 2`.  The ordering and fill-in data are
   reused while only the Jacobian values change.
 
+The fixed-step Radau routine is written around two callbacks: one for the
+semi-discrete right-hand side `F(t,y)` and one for the sparse Jacobian
+`J(t,y)` returned in coordinate format.  The example then plugs the
+reaction-diffusion callbacks into that IRK driver while keeping the Y12M
+factor/solve path isolated in one helper.
+
 The code reports the per-step Newton iteration counts, final max/RMS error
 against the analytical solution, and timing totals for `y12mb`, `y12mc` and
 `y12md`.
