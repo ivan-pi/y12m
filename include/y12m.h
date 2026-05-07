@@ -40,7 +40,6 @@
  * Override FNAME(name) before including this header when using a different
  * Fortran compiler mangling scheme, e.g.:
  *   #define FNAME(name) name
- *   #define FNAME(name) NAME
  *   #define FNAME(name) name ## __
  */
 #define FNAME(name) name ## _
