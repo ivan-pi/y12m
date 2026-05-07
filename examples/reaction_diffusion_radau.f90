@@ -218,8 +218,8 @@ contains
       integer :: iflag(10), ifail
       integer :: i, step, iter, iter_used
       integer :: t0, t1, clock_rate
-      integer :: t_setup, t_y12mb, t_y12mc, t_y12md
-      real(dp) :: s_setup, s_y12mb, s_y12mc, s_y12md
+      integer :: t_y12mb, t_y12mc, t_y12md
+      real(dp) :: s_y12mb, s_y12mc, s_y12md
       real(dp) :: fnorm, err_max, err_rms, diff
       real(dp) :: t_stage(nstage)
       logical :: converged
@@ -245,6 +245,8 @@ contains
       allocate(u(ndof), y_flat(nunknown), residual_flat(nunknown), rhs_flat(nunknown), delta(nunknown))
       allocate(a(nn), pivot(nunknown), snr(nn), rnr(nn1), ha(nunknown, 11), newton_iters(nsteps))
 
+      ! The flat storage keeps stage 1 first, then stage 2.  Pointer remapping
+      ! therefore exposes the same data as (space, stage) in column-major order.
       y_stage(1:ndof, 1:nstage) => y_flat(1:nunknown)
       residual(1:ndof, 1:nstage) => residual_flat(1:nunknown)
       rhs_stage(1:ndof, 1:nstage) => rhs_flat(1:nunknown)
@@ -265,7 +267,6 @@ contains
       aflag(5:8) = 0.0_dp
 
       call system_clock(count_rate=clock_rate)
-      t_setup = 0
       t_y12mb = 0
       t_y12mc = 0
       t_y12md = 0
@@ -344,10 +345,7 @@ contains
          newton_iters(step) = iter_used
          write(output_unit, '(2x,i4,2x,i4,4x,es12.4)') step, iter_used, fnorm
 
-         call system_clock(t0)
          u = u + dt * (rk_b(1) * rhs_stage(:, 1) + rk_b(2) * rhs_stage(:, 2))
-         call system_clock(t1)
-         t_setup = t_setup + (t1 - t0)
       end do
 
       err_max = 0.0_dp
@@ -368,13 +366,11 @@ contains
       call write_solution(N, h, T, u, trim(outfile))
       write(output_unit, '(a)') 'Solution written to ' // trim(outfile)
 
-      s_setup = real(t_setup, dp) / real(clock_rate, dp)
       s_y12mb = real(t_y12mb, dp) / real(clock_rate, dp)
       s_y12mc = real(t_y12mc, dp) / real(clock_rate, dp)
       s_y12md = real(t_y12md, dp) / real(clock_rate, dp)
 
       write(output_unit, '(/,a)') 'Timing summary:'
-      write(output_unit, '(a,g14.6,a)') '  Stage-to-step updates : ', s_setup, ' s'
       write(output_unit, '(a,g14.6,a)') '  y12mb total           : ', s_y12mb, ' s'
       write(output_unit, '(a,g14.6,a)') '  y12mc total           : ', s_y12mc, ' s'
       write(output_unit, '(a,g14.6,a)') '  y12md total           : ', s_y12md, ' s'
