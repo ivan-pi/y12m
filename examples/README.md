@@ -31,6 +31,7 @@ generators (`matrd1`, `matre1`, `matrf2`) and a wall-clock timing helper
   - [`heat_implicit.f90`](#heat_implicitf90)
   - [`multiple_loads.f90`](#multiple_loadsf90)
   - [`newton_bratu.f90`](#newton_bratuf90)
+  - [`reaction_diffusion_radau.f90`](#reaction_diffusion_radauf90)
   - [`euler_bernoulli_beam.f90`](#euler_bernoulli_beamf90)
 - [Legacy drivers](#legacy-drivers)
 
@@ -54,6 +55,7 @@ coverage grows.
 | `heat_implicit` | | ✓ | ✓ | ✓ | | |
 | `multiple_loads` | | ✓ | ✓ | ✓ | | |
 | `newton_bratu` | | ✓ | ✓ | ✓ | | |
+| `reaction_diffusion_radau` | | ✓ | ✓ | ✓ | | |
 | `euler_bernoulli_beam` | | ✓ | ✓ | ✓ | ✓ | ✓ |
 
 ---
@@ -314,6 +316,50 @@ Usage: newton_bratu [--help] [N] [lambda] [max_iter] [output_file]
        lambda      reaction parameter in (0, 6.808) (default 1.0)
        max_iter    max Newton iterations (default 20)
        output_file output file (default: newton_bratu.dat)
+```
+
+### `reaction_diffusion_radau.f90`
+
+Solves the **1-D reaction-diffusion equation**
+
+```
+  u_t = u_xx + (1 − u) u^2   on (0, 10),   t ∈ (0, T]
+```
+
+using a **fully implicit 2-stage Radau IIA Runge-Kutta method** in time and
+a **second-order centred finite-difference discretisation** in space.  The
+initial condition and both Dirichlet boundaries are imposed from the exact
+travelling-wave solution
+
+```
+  u(x,t) = 1 / (1 + exp(v (x − v t))),   v = sqrt(1/2).
+```
+
+At each time step the two Radau stages are solved simultaneously by Newton's
+method.  The Newton Jacobian is a **2×2 block sparse matrix** whose blocks are
+tridiagonal diffusion operators plus reaction diagonals.  This makes the
+example the first modern driver in the tree to exercise a **fully implicit
+Runge-Kutta stage coupling**.
+
+The block Jacobian has the same sparsity pattern at every Newton step and
+every time step, so the driver demonstrates **Case (iii) – same sparsity,
+changing values (structural reuse)**:
+
+* First Newton solve: `IFLAG(4) = 1`.  `y12mb` computes the Markowitz
+  ordering and `y12mc` stores the fill-in counts needed for later calls.
+* Subsequent Newton solves: `IFLAG(4) = 2`.  The ordering and fill-in data are
+  reused while only the Jacobian values change.
+
+The code reports the per-step Newton iteration counts, final max/RMS error
+against the analytical solution, and timing totals for `y12mb`, `y12mc` and
+`y12md`.
+
+```
+Usage: reaction_diffusion_radau [--help] [N] [nsteps] [T] [output_file]
+       N           total grid size (>= 3, default 41)
+       nsteps      number of time steps (default 20)
+       T           final time (default 1.0)
+       output_file output file (default: reaction_diffusion_radau.dat)
 ```
 
 ---

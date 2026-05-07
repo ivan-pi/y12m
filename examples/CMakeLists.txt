@@ -127,3 +127,6 @@ add_pde_test(multiple_loads multiple_loads.f90)
 
 # Case (iii): Newton iteration for Bratu -- reuse Markowitz ordering
 add_pde_test(newton_bratu newton_bratu.f90)
+
+# Case (iii): fully implicit 2-stage Radau IIA for reaction-diffusion
+add_pde_test(reaction_diffusion_radau reaction_diffusion_radau.f90)
