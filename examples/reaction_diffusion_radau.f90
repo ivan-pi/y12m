@@ -259,7 +259,7 @@ contains
       t_y12md = 0
 
       do step = 1, nsteps
-         t_stage = t0 + (real(step - 1, kind=dp) + rk_c) * dt
+         t_stage = t0 + (real(step - 1, dp) + rk_c) * dt
          y_stage(:, 1) = u
          y_stage(:, 2) = u
          converged = .false.
@@ -353,7 +353,6 @@ contains
          ! This semidiscrete Jacobian is time-independent for the travelling
          ! wave problem, so `t` is intentionally unused here even though the
          ! callback follows the general J(t,y) signature.
-         if (storage_size(t) < 0) stop 1
          nz = 0
          do k = 1, problem%ndof
             if (k > 1) then
@@ -399,7 +398,7 @@ contains
       write(funit, '(3(1x,es14.6))') x, u_exact(x, t), u_exact(x, t)
 
       do i = 2, N - 1
-         x = x_left + real(i - 1, kind=dp) * h
+         x = x_left + real(i - 1, dp) * h
          write(funit, '(3(1x,es14.6))') x, u(i - 1), u_exact(x, t)
       end do
 
@@ -424,8 +423,8 @@ contains
       type(reaction_diffusion_problem) :: problem
 
       ndof = N - 2
-      h = (x_right - x_left) / real(N - 1, kind=dp)
-      dt = T / real(nsteps, kind=dp)
+      h = (x_right - x_left) / real(N - 1, dp)
+      dt = T / real(nsteps, dp)
       h2inv = 1.0_dp / h**2
 
       write(output_unit, '(a,i0,a,i0,a)') 'Grid points   : ', N, '  (', ndof, ' interior DOFs)'
@@ -439,7 +438,7 @@ contains
       allocate(u(ndof), newton_iters(nsteps), final_residuals(nsteps))
 
       do i = 1, ndof
-         u(i) = u_exact(x_left + real(i, kind=dp) * h, 0.0_dp)
+         u(i) = u_exact(x_left + real(i, dp) * h, 0.0_dp)
       end do
 
       problem%ndof = ndof
@@ -460,24 +459,24 @@ contains
       err_max = 0.0_dp
       err_rms = 0.0_dp
       do i = 1, ndof
-         diff = u(i) - u_exact(x_left + real(i, kind=dp) * h, T)
+         diff = u(i) - u_exact(x_left + real(i, dp) * h, T)
          err_max = max(err_max, abs(diff))
          err_rms = err_rms + diff**2
       end do
-      err_rms = sqrt(err_rms / real(ndof, kind=dp))
+      err_rms = sqrt(err_rms / real(ndof, dp))
 
       write(output_unit, '(/,a,es12.4)') 'Final max error : ', err_max
       write(output_unit, '(a,es12.4)') 'Final RMS error : ', err_rms
       write(output_unit, '(a,f8.3)') 'Average Newton iterations per step : ', &
-         real(sum(newton_iters), kind=dp) / real(nsteps, kind=dp)
+         real(sum(newton_iters), dp) / real(nsteps, dp)
       write(output_unit, '(a,i0)') 'Maximum Newton iterations          : ', maxval(newton_iters)
 
       call write_solution(N, h, T, u, trim(outfile))
       write(output_unit, '(a)') 'Solution written to ' // trim(outfile)
 
-      s_y12mb = real(t_y12mb, kind=dp) / real(clock_rate, kind=dp)
-      s_y12mc = real(t_y12mc, kind=dp) / real(clock_rate, kind=dp)
-      s_y12md = real(t_y12md, kind=dp) / real(clock_rate, kind=dp)
+      s_y12mb = real(t_y12mb, dp) / real(clock_rate, dp)
+      s_y12mc = real(t_y12mc, dp) / real(clock_rate, dp)
+      s_y12md = real(t_y12md, dp) / real(clock_rate, dp)
 
       write(output_unit, '(/,a)') 'Timing summary:'
       write(output_unit, '(a,g14.6,a)') '  y12mb total           : ', s_y12mb, ' s'
