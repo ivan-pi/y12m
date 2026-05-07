@@ -15,11 +15,11 @@ module y12m_example_helpers
 
    integer, parameter :: dp = kind(1.0d0)
 
-    public :: parse_range
-    public :: rms_diff
-    public :: write_field_output
-    public :: write_three_column_output
-    public :: compress_matrix
+   public :: parse_range
+   public :: rms_diff
+   public :: write_field_output
+   public :: write_three_column_output
+   public :: compress_matrix
 
    !> Root-mean-square of element-wise differences.
    !> Overloaded for 1-D and 2-D assumed-shape real(dp) arrays.
@@ -155,42 +155,42 @@ contains
          write(funit, *)
       end do
       close(funit)
-    end subroutine write_field_output
+   end subroutine write_field_output
 
-    ! -----------------------------------------------------------------------
-    !> Write a three-column 1-D dataset to a text file.
-    !>
-    !> Arguments:
-    !>   x, y_num, y_ex  — vectors of equal length
-    !>   filename        — output file name
-    !>   header          — comment lines written at the top (prefix "# " is added)
-    !>   nhr             — number of header lines
-    !>   columns         — column description line (written with "# " prefix)
-    subroutine write_three_column_output(x, y_num, y_ex, filename, header, nhr, columns)
-       real(dp), intent(in) :: x(:), y_num(:), y_ex(:)
-       character(len=*), intent(in) :: filename
-       integer, intent(in) :: nhr
-       character(len=*), intent(in) :: header(nhr)
-       character(len=*), intent(in) :: columns
+   ! -----------------------------------------------------------------------
+   !> Write a three-column 1-D dataset to a text file.
+   !>
+   !> Arguments:
+   !>   x, y_num, y_ex  — vectors of equal length
+   !>   filename        — output file name
+   !>   header          — comment lines written at the top (prefix "# " is added)
+   !>   nhr             — number of header lines
+   !>   columns         — column description line (written with "# " prefix)
+   subroutine write_three_column_output(x, y_num, y_ex, filename, header, nhr, columns)
+      real(dp), intent(in) :: x(:), y_num(:), y_ex(:)
+      character(len=*), intent(in) :: filename
+      integer, intent(in) :: nhr
+      character(len=*), intent(in) :: header(nhr)
+      character(len=*), intent(in) :: columns
 
-       integer :: funit, i, ih
+      integer :: funit, i, ih
 
-       if (size(x) /= size(y_num) .or. size(x) /= size(y_ex)) then
-          write(error_unit, '(a)') 'Error: write_three_column_output size mismatch'
-          stop 1
-       end if
+      if (size(x) /= size(y_num) .or. size(x) /= size(y_ex)) then
+         write(error_unit, '(a)') 'Error: write_three_column_output size mismatch'
+         stop 1
+      end if
 
-       open(newunit=funit, file=filename, status='unknown', action='write')
-       do ih = 1, nhr
-          write(funit, '("# ",a)') trim(header(ih))
-       end do
-       write(funit, '("# ",a)') trim(columns)
+      open(newunit=funit, file=filename, status='unknown', action='write')
+      do ih = 1, nhr
+         write(funit, '("# ",a)') trim(header(ih))
+      end do
+      write(funit, '("# ",a)') trim(columns)
 
-       do i = 1, size(x)
-          write(funit, '(3(1x,es14.6))') x(i), y_num(i), y_ex(i)
-       end do
-       close(funit)
-    end subroutine write_three_column_output
+      do i = 1, size(x)
+         write(funit, '(3(1x,es14.6))') x(i), y_num(i), y_ex(i)
+      end do
+      close(funit)
+   end subroutine write_three_column_output
 
 
     ! -----------------------------------------------------------------------
