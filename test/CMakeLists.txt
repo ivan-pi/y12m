@@ -46,6 +46,12 @@ target_compile_options(test_y12ma_y12mf_bench_sp PRIVATE ${TEST_COMPILE_FLAGS})
 target_link_libraries(test_y12ma_y12mf_bench_sp PRIVATE y12m_legacy)
 add_test(NAME test_y12ma_y12mf_bench_sp COMMAND test_y12ma_y12mf_bench_sp)
 
+add_executable(test_y12m_c_api test_y12m_c_api.c)
+set_target_properties(test_y12m_c_api PROPERTIES C_STANDARD 99 C_STANDARD_REQUIRED YES)
+target_compile_options(test_y12m_c_api PRIVATE ${TEST_COMPILE_FLAGS})
+target_link_libraries(test_y12m_c_api PRIVATE y12m_legacy)
+add_test(NAME test_y12m_c_api COMMAND test_y12m_c_api)
+
 foreach(tname
     test_y12ma_5x5_sp
     test_y12ma_5x5_dp)

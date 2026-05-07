@@ -114,6 +114,9 @@ that dispatch automatically to the single-precision (`E`) or double-precision
 precision-specific external procedures (`y12mbe` / `y12mbf`, etc.) can also be
 called directly without the module.
 
+A C interface is provided in [`include/y12m.h`](include/y12m.h) as static
+inline wrappers over the Fortran entry points.
+
 ### High-level drivers
 
 | Subroutine | Purpose |
@@ -160,4 +163,3 @@ If you use Y12M in published work, please cite the accompanying book:
   doi       = {10.1007/3-540-10874-2}
 }
 ```
-

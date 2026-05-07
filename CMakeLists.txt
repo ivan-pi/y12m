@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.14)
 
 project(y12m
     DESCRIPTION "Sparse Direct Solver"
-    LANGUAGES Fortran)
+    LANGUAGES Fortran C)
 
 option(BUILD_EXAMPLES "Build the example programs" ON)
 option(WITH_NIST_MMIO "Build the Matrix Market driver (y12m_mm)" OFF)
@@ -27,6 +27,7 @@ set(FORTRAN_MOD_DIR "${CMAKE_BINARY_DIR}/include")
 set_target_properties(y12m_legacy PROPERTIES
     Fortran_MODULE_DIRECTORY "${FORTRAN_MOD_DIR}")
 target_include_directories(y12m_legacy INTERFACE "${FORTRAN_MOD_DIR}")
+target_include_directories(y12m_legacy INTERFACE "${CMAKE_SOURCE_DIR}/include")
 
 include(CTest)
 
