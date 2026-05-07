@@ -5,9 +5,9 @@
  * Tests the C binding declared in y12m.h by solving small tridiagonal
  * systems with the known solution x = [1, ..., 1]:
  *
- *   1) Single-precision black-box solve via y12mae_c.
- *   2) Double-precision black-box solve via y12maf_c.
- *   3) Double-precision three-step API: y12mbf_c -> y12mcf_c -> y12mdf_c.
+ *   1) Single-precision black-box solve via y12mae.
+ *   2) Double-precision black-box solve via y12maf.
+ *   3) Double-precision three-step API: y12mbf -> y12mcf -> y12mdf.
  *
  * Pass criteria: IFAIL == 0 and max|x_i - 1| < 1e-5 (float) or 1e-10 (double).
  */
@@ -123,9 +123,9 @@ static void test_y12mae(void)
     int    z, ifail;
 
     build_tridiag_sp(N, &z, a, snr, rnr, b);
-    ifail = y12mae_c(N, z, a, snr, NNP, rnr, NN1P,
+    ifail = y12mae(N, z, a, snr, NNP, rnr, NN1P,
                    pivot, ha, IHA, aflag, iflag, b);
-    check_sp("y12mae_c n=6 tridiag", N, b, ifail, 1e-5f);
+    check_sp("y12mae n=6 tridiag", N, b, ifail, 1e-5f);
 }
 
 /* 2. Double-precision black-box solve */
@@ -136,12 +136,12 @@ static void test_y12maf(void)
     int    z, ifail;
 
     build_tridiag_dp(N, &z, a, snr, rnr, b);
-    ifail = y12maf_c(N, z, a, snr, NNP, rnr, NN1P,
+    ifail = y12maf(N, z, a, snr, NNP, rnr, NN1P,
                    pivot, ha, IHA, aflag, iflag, b);
-    check_dp("y12maf_c n=6 tridiag", N, b, ifail, 1e-10);
+    check_dp("y12maf n=6 tridiag", N, b, ifail, 1e-10);
 }
 
-/* 3. Double-precision three-step API: y12mbf_c -> y12mcf_c -> y12mdf_c */
+/* 3. Double-precision three-step API: y12mbf -> y12mcf -> y12mdf */
 static void test_three_step_dp(void)
 {
     double a[NNP], pivot[IHA], b[N], aflag[8];
@@ -150,20 +150,20 @@ static void test_three_step_dp(void)
 
     build_tridiag_dp(N, &z, a, snr, rnr, b);
 
-    /* Initialise aflag and iflag to the same defaults y12maf_c would set. */
+    /* Initialise aflag and iflag to the same defaults y12maf would set. */
     memset(aflag, 0, sizeof(aflag));
     memset(iflag, 0, sizeof(iflag));
     aflag[0] = 16.0;  aflag[1] = 1e-12; aflag[2] = 1e16; aflag[3] = 1e-12;
     iflag[1] = 2;     iflag[2] = 1;     iflag[3] = 0;    iflag[4] = 1;
 
-    ifail = y12mbf_c(N, z, a, snr, NNP, rnr, NN1P, ha, IHA, aflag, iflag);
+    ifail = y12mbf(N, z, a, snr, NNP, rnr, NN1P, ha, IHA, aflag, iflag);
     if (ifail == 0)
-        ifail = y12mcf_c(N, z, a, snr, NNP, rnr, NN1P,
+        ifail = y12mcf(N, z, a, snr, NNP, rnr, NN1P,
                        pivot, b, ha, IHA, aflag, iflag);
     if (ifail == 0)
-        ifail = y12mdf_c(N, a, NNP, b, pivot, snr, ha, IHA, iflag);
+        ifail = y12mdf(N, a, NNP, b, pivot, snr, ha, IHA, iflag);
 
-    check_dp("y12mbf_c+y12mcf_c+y12mdf_c n=6 tridiag", N, b, ifail, 1e-10);
+    check_dp("y12mbf+y12mcf+y12mdf n=6 tridiag", N, b, ifail, 1e-10);
 }
 
 /* ----- main -------------------------------------------------------------- */

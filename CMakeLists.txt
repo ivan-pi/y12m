@@ -13,12 +13,10 @@ list(REMOVE_ITEM LEGACY_SOURCES
 list(APPEND LEGACY_SOURCES
     "${CMAKE_SOURCE_DIR}/compat/y12mhf.f")
 
-# Build a static library from the legacy routines, the Fortran module, and
-# the C-callable bind(c) wrappers.
+# Build a static library from the legacy routines and the Fortran module.
 # These sources are pre-existing; no extra diagnostic flags are applied.
 add_library(y12m_legacy STATIC ${LEGACY_SOURCES}
-    "${CMAKE_SOURCE_DIR}/src/y12m.f90"
-    "${CMAKE_SOURCE_DIR}/src/y12m_c.f90")
+    "${CMAKE_SOURCE_DIR}/src/y12m.f90")
 
 # Place generated .mod files in a dedicated directory and expose it to
 # any target that links against this library.
