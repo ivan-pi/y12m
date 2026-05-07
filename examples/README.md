@@ -351,7 +351,7 @@ changing values (structural reuse)**:
   reused while only the Jacobian values change.
 
 The fixed-step Radau routine is written around two callbacks: one for the
-semi-discrete right-hand side `F(t,y)` and one for the sparse Jacobian
+semidiscrete right-hand side `F(t,y)` and one for the sparse Jacobian
 `J(t,y)` returned in coordinate format.  The example then plugs the
 reaction-diffusion callbacks into that IRK driver while keeping the Y12M
 factor/solve path isolated in one helper.

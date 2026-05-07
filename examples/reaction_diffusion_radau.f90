@@ -306,7 +306,7 @@ contains
 
          newton_iters(step) = iter_used
          final_residuals(step) = fnorm
-         u = u + dt * matmul(rhs_stage, rk_b)
+         u = u + dt * (rk_b(1) * rhs_stage(:, 1) + rk_b(2) * rhs_stage(:, 2))
       end do
    end subroutine integrate_radau_iia_fixed
 
@@ -350,11 +350,10 @@ contains
 
       select type (problem => ctx)
       type is (reaction_diffusion_problem)
-         ! The semidiscrete Jacobian is time-independent for this problem, but
-         ! the callback keeps the general J(t,y) signature used by the Radau
-         ! driver.  This guard is unreachable for finite t and marks the dummy
-         ! argument as intentionally unused.
-         if (t < -huge(t)) stop 1
+         ! This semidiscrete Jacobian is time-independent for the travelling
+         ! wave problem, so `t` is intentionally unused here even though the
+         ! callback follows the general J(t,y) signature.
+         if (storage_size(t) < 0) stop 1
          nz = 0
          do k = 1, problem%ndof
             if (k > 1) then
