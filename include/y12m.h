@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
+/* Assisted-by: GitHub Copilot:claude-sonnet-4.5 */
 /*
  * y12m.h -- C interface for the y12m sparse solver library.
  *
@@ -35,6 +36,13 @@
 #define Y12M_H
 
 #ifndef FNAME
+/*
+ * Override FNAME(name) before including this header when using a different
+ * Fortran compiler mangling scheme, e.g.:
+ *   #define FNAME(name) name
+ *   #define FNAME(name) NAME
+ *   #define FNAME(name) name ## __
+ */
 #define FNAME(name) name ## _
 #endif
 
