@@ -1,0 +1,1 @@
+/usr/bin/cc -Wl,--dependency-file=CMakeFiles/test_y12m_c.dir/link.d CMakeFiles/test_y12m_c.dir/test_y12m_c.c.o -o test_y12m_c  ../liby12m_legacy.a -lm -lgfortran -lm -lquadmath -lm

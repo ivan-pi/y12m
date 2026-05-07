@@ -1,0 +1,11 @@
+test_y12ma_sp 1 0.0367468
+test_y12ma_dp 1 0.00144567
+test_y12mb_mc_md_sp 1 0.00125802
+test_y12mb_mc_md_dp 1 0.00137071
+test_y12mf_sp 1 0.00131852
+test_y12mg_mh 1 0.0011989
+test_y12mc_z_intent 1 0.00128505
+y12m_solve_mat0 1 0.00133213
+y12m_solve_mat2 1 0.00136961
+test_y12m_c 1 0.000875419
+---

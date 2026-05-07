@@ -1,0 +1,269 @@
+Start testing: May 07 07:21 UTC
+----------------------------------------------------------
+1/10 Testing: test_y12ma_sp
+1/10 Test: test_y12ma_sp
+Command: "/home/runner/work/y12m/y12m/build/test/test_y12ma_sp"
+Directory: /home/runner/work/y12m/y12m/build/test
+"test_y12ma_sp" start time: May 07 07:21 UTC
+Output:
+----------------------------------------------------------
+PASS y12ma_sp n=1 error-diag: ifail=12 (N<2) as expected
+PASS y12ma_sp n=2 tridiag max_err= 0.000E+00
+PASS y12ma_sp n=3 tridiag max_err= 0.000E+00
+PASS y12ma_sp n=4 tridiag max_err= 0.000E+00
+PASS y12ma_sp n=5 arrow max_err= 2.980E-06
+All test_y12ma_sp tests PASSED
+<end of output>
+Test time =   0.04 sec
+----------------------------------------------------------
+Test Passed.
+"test_y12ma_sp" end time: May 07 07:21 UTC
+"test_y12ma_sp" time elapsed: 00:00:00
+----------------------------------------------------------
+
+2/10 Testing: test_y12ma_dp
+2/10 Test: test_y12ma_dp
+Command: "/home/runner/work/y12m/y12m/build/test/test_y12ma_dp"
+Directory: /home/runner/work/y12m/y12m/build/test
+"test_y12ma_dp" start time: May 07 07:21 UTC
+Output:
+----------------------------------------------------------
+PASS y12ma_dp n=6 tridiag max_err= 0.00000E+00
+PASS y12ma_dp n=7 tridiag max_err= 0.00000E+00
+PASS y12ma_dp n=8 arrow max_err= 1.55431E-15
+PASS y12ma_dp n=9 tridiag max_err= 0.00000E+00
+PASS y12ma_dp n=10 tridiag max_err= 0.00000E+00
+All test_y12ma_dp tests PASSED
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_y12ma_dp" end time: May 07 07:21 UTC
+"test_y12ma_dp" time elapsed: 00:00:00
+----------------------------------------------------------
+
+3/10 Testing: test_y12mb_mc_md_sp
+3/10 Test: test_y12mb_mc_md_sp
+Command: "/home/runner/work/y12m/y12m/build/test/test_y12mb_mc_md_sp"
+Directory: /home/runner/work/y12m/y12m/build/test
+"test_y12mb_mc_md_sp" start time: May 07 07:21 UTC
+Output:
+----------------------------------------------------------
+PASS y12mb_mc_md_sp n=1 error-diag: ifail=12 as expected
+PASS y12mb_mc_md_sp n=2 full max_err= 0.000E+00
+PASS y12mb_mc_md_sp n=3 tridiag max_err= 0.000E+00
+PASS y12mb_mc_md_sp n=4 tridiag max_err= 0.000E+00
+PASS y12mb_mc_md_sp n=5 arrow max_err= 2.980E-06
+All test_y12mb_mc_md_sp tests PASSED
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_y12mb_mc_md_sp" end time: May 07 07:21 UTC
+"test_y12mb_mc_md_sp" time elapsed: 00:00:00
+----------------------------------------------------------
+
+4/10 Testing: test_y12mb_mc_md_dp
+4/10 Test: test_y12mb_mc_md_dp
+Command: "/home/runner/work/y12m/y12m/build/test/test_y12mb_mc_md_dp"
+Directory: /home/runner/work/y12m/y12m/build/test
+"test_y12mb_mc_md_dp" start time: May 07 07:21 UTC
+Output:
+----------------------------------------------------------
+PASS y12mb_mc_md_dp n=6 tridiag max_err= 0.00000E+00
+PASS y12mb_mc_md_dp n=7 arrow max_err= 1.99840E-15
+PASS y12mb_mc_md_dp n=8 tridiag max_err= 0.00000E+00
+PASS y12mb_mc_md_dp n=9 tridiag max_err= 0.00000E+00
+PASS y12mb_mc_md_dp n=10 pentadiag max_err= 2.22045E-16
+All test_y12mb_mc_md_dp tests PASSED
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_y12mb_mc_md_dp" end time: May 07 07:21 UTC
+"test_y12mb_mc_md_dp" time elapsed: 00:00:00
+----------------------------------------------------------
+
+5/10 Testing: test_y12mf_sp
+5/10 Test: test_y12mf_sp
+Command: "/home/runner/work/y12m/y12m/build/test/test_y12mf_sp"
+Directory: /home/runner/work/y12m/y12m/build/test
+"test_y12mf_sp" start time: May 07 07:21 UTC
+Output:
+----------------------------------------------------------
+PASS y12mf_sp n=3 tridiag max_err= 0.000E+00
+PASS y12mf_sp n=5 tridiag max_err= 0.000E+00
+PASS y12mf_sp n=7 tridiag max_err= 0.000E+00
+PASS y12mf_sp n=10 tridiag max_err= 0.000E+00
+All test_y12mf_sp tests PASSED
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_y12mf_sp" end time: May 07 07:21 UTC
+"test_y12mf_sp" time elapsed: 00:00:00
+----------------------------------------------------------
+
+6/10 Testing: test_y12mg_mh
+6/10 Test: test_y12mg_mh
+Command: "/home/runner/work/y12m/y12m/build/test/test_y12mg_mh"
+Directory: /home/runner/work/y12m/y12m/build/test
+"test_y12mg_mh" start time: May 07 07:21 UTC
+Output:
+----------------------------------------------------------
+PASS y12mhe n=5 anorm=   5.00000
+PASS y12mhf n=10 anorm=   5.0000000
+PASS y12mg_mh y12md n=5 max_err= 0.000E+00
+PASS y12mg n=5 rcond= 2.631E-01 cond= 3.800E+00
+All test_y12mg_mh tests PASSED
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_y12mg_mh" end time: May 07 07:21 UTC
+"test_y12mg_mh" time elapsed: 00:00:00
+----------------------------------------------------------
+
+7/10 Testing: test_y12mc_z_intent
+7/10 Test: test_y12mc_z_intent
+Command: "/home/runner/work/y12m/y12m/build/test/test_y12mc_z_intent"
+Directory: /home/runner/work/y12m/y12m/build/test
+"test_y12mc_z_intent" start time: May 07 07:21 UTC
+Output:
+----------------------------------------------------------
+PASS test1: z unchanged after successful factorization
+PASS test2: z unchanged after early-error exit
+PASS test3: z as literal, max_err= 0.000E+00
+All test_y12mc_z_intent tests PASSED
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_y12mc_z_intent" end time: May 07 07:21 UTC
+"test_y12mc_z_intent" time elapsed: 00:00:00
+----------------------------------------------------------
+
+8/10 Testing: y12m_solve_mat0
+8/10 Test: y12m_solve_mat0
+Command: "/home/runner/work/y12m/y12m/build/test/y12m_solve" "--verbose" "/home/runner/work/y12m/y12m/test/data/mat0.mtx"
+Directory: /home/runner/work/y12m/y12m/build/test
+"y12m_solve_mat0" start time: May 07 07:21 UTC
+Output:
+----------------------------------------------------------
+Matrix:  mat0  --  Simple 4x4 tridiagonal matrix.
+Size:    4 x 4,  nnz: 10,  kind: real (solved in double precision)
+
+Solution x:
+  x[1] =   2.10000000000000E+01
+  x[2] =   8.00000000000000E+00
+  x[3] =   3.00000000000000E+00
+  x[4] =   1.00000000000000E+00
+
+Residual r = b - A*x:
+  r[1] =   0.00000000000000E+00
+  r[2] =   0.00000000000000E+00
+  r[3] =   0.00000000000000E+00
+  r[4] =   0.00000000000000E+00
+
+||r||_1 =   0.000000E+00
+||r||_2 =   0.000000E+00
+
+Wall time:       0.000000 s
+
+Solver diagnostics (set by y12ma):
+  Stability factor   AFLAG(1) =   1.600000E+01
+  Drop tolerance     AFLAG(2) =   1.000000E-12
+  Growth limit       AFLAG(3) =   1.000000E+16
+  Pivot tolerance    AFLAG(4) =   1.000000E-12
+  Growth factor      AFLAG(5) =   1.000000E+00
+  Max element in A   AFLAG(6) =   3.000000E+00
+  Max element in LU  AFLAG(7) =   3.000000E+00
+  Min pivot          AFLAG(8) =   1.619048E+00
+  Row garbage coll.  IFLAG(6) = 0
+  Col garbage coll.  IFLAG(7) = 0
+  Max nnz in A       IFLAG(8) = 10
+IFAIL:     0
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"y12m_solve_mat0" end time: May 07 07:21 UTC
+"y12m_solve_mat0" time elapsed: 00:00:00
+----------------------------------------------------------
+
+9/10 Testing: y12m_solve_mat2
+9/10 Test: y12m_solve_mat2
+Command: "/home/runner/work/y12m/y12m/build/test/y12m_solve" "--verbose" "/home/runner/work/y12m/y12m/test/data/mat2.mtx"
+Directory: /home/runner/work/y12m/y12m/build/test
+"y12m_solve_mat2" start time: May 07 07:21 UTC
+Output:
+----------------------------------------------------------
+Matrix:  mat2  --  Typical circuit matrix.
+Size:    8 x 8,  nnz: 28,  kind: real (solved in double precision)
+
+Solution x:
+  x[1] =   7.74346066579958E-03
+  x[2] =  -2.08833822383850E-03
+  x[3] =   3.01334252086337E-04
+  x[4] =   5.82680059932908E-04
+  x[5] =   7.80886706505727E-03
+  x[6] =   2.29827183171152E-03
+  x[7] =  -1.89261984585499E-03
+  x[8] =   2.78723056974549E-04
+
+Residual r = b - A*x:
+  r[1] =  -1.32348898008484E-23
+  r[2] =   0.00000000000000E+00
+  r[3] =  -2.19037426204042E-21
+  r[4] =   0.00000000000000E+00
+  r[5] =  -2.38228016415272E-22
+  r[6] =   0.00000000000000E+00
+  r[7] =  -1.05879118406788E-22
+  r[8] =   0.00000000000000E+00
+
+||r||_1 =   2.547716E-21
+||r||_2 =   2.205873E-21
+
+Wall time:       0.000000 s
+
+Solver diagnostics (set by y12ma):
+  Stability factor   AFLAG(1) =   1.600000E+01
+  Drop tolerance     AFLAG(2) =   1.000000E-12
+  Growth limit       AFLAG(3) =   1.000000E+16
+  Pivot tolerance    AFLAG(4) =   1.000000E-12
+  Growth factor      AFLAG(5) =   1.003603E+00
+  Max element in A   AFLAG(6) =   3.088580E-03
+  Max element in LU  AFLAG(7) =   3.099709E-03
+  Min pivot          AFLAG(8) =   2.169215E-04
+  Row garbage coll.  IFLAG(6) = 0
+  Col garbage coll.  IFLAG(7) = 0
+  Max nnz in A       IFLAG(8) = 28
+IFAIL:     0
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"y12m_solve_mat2" end time: May 07 07:21 UTC
+"y12m_solve_mat2" time elapsed: 00:00:00
+----------------------------------------------------------
+
+10/10 Testing: test_y12m_c
+10/10 Test: test_y12m_c
+Command: "/home/runner/work/y12m/y12m/build/test/test_y12m_c"
+Directory: /home/runner/work/y12m/y12m/build/test
+"test_y12m_c" start time: May 07 07:21 UTC
+Output:
+----------------------------------------------------------
+PASS y12mae n=6 tridiag  max_err=0
+PASS y12maf n=6 tridiag  max_err=0
+PASS y12mbf+y12mcf+y12mdf n=6 tridiag  max_err=0
+All test_y12m_c tests PASSED
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_y12m_c" end time: May 07 07:21 UTC
+"test_y12m_c" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: May 07 07:21 UTC
