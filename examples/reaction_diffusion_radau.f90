@@ -351,8 +351,9 @@ contains
 
       select type (problem => ctx)
       type is (reaction_diffusion_problem)
-         ! The current semidiscrete Jacobian is t-independent, but the callback
-         ! signature keeps the general J(t,y) form for the Radau driver API.
+         ! This example has a time-independent semidiscrete Jacobian, but keep a
+         ! harmless `t` dependency here so the callback still matches the
+         ! general J(t,y) API used by the fixed-step Radau driver.
          time_shift = 0.0_dp * t
          nz = 0
          do k = 1, problem%ndof
@@ -398,9 +399,9 @@ contains
       x = x_left
       write(funit, '(3(1x,es14.6))') x, u_exact(x, t), u_exact(x, t)
 
-      do i = 2, N - 1
-         x = x_left + real(i - 1, kind=dp) * h
-         write(funit, '(3(1x,es14.6))') x, u(i - 1), u_exact(x, t)
+      do i = 1, size(u)
+         x = x_left + real(i, kind=dp) * h
+         write(funit, '(3(1x,es14.6))') x, u(i), u_exact(x, t)
       end do
 
       x = x_right
@@ -413,7 +414,7 @@ contains
       real(dp), intent(in) :: T
       character(len=*), intent(in) :: outfile
 
-      integer :: ndof
+      integer :: ndof, jac_nz_max
       real(dp) :: h, dt, h2inv
       real(dp), allocatable :: u(:), final_residuals(:)
       integer, allocatable :: newton_iters(:)
@@ -444,9 +445,10 @@ contains
 
       problem%ndof = ndof
       problem%h2inv = h2inv
+      jac_nz_max = 3 * ndof - 2   ! tridiagonal semidiscrete Jacobian
 
       call system_clock(count_rate=clock_rate)
-      call integrate_radau_iia_fixed(u, 0.0_dp, dt, nsteps, 3 * ndof - 2, problem, &
+      call integrate_radau_iia_fixed(u, 0.0_dp, dt, nsteps, jac_nz_max, problem, &
          reaction_diffusion_rhs, reaction_diffusion_jacobian, newton_iters, final_residuals, &
          t_y12mb, t_y12mc, t_y12md)
 
