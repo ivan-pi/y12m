@@ -98,6 +98,8 @@ module reaction_diffusion_radau_solver
       integer :: iflag(10) = 0
       real(dp) :: aflag(8) = 0.0_dp
       real(dp), allocatable :: pivot(:)
+      real(dp), allocatable :: work_a(:)
+      integer, allocatable :: work_snr(:), work_rnr(:)
       integer, allocatable :: ha(:, :)
    contains
       procedure :: initialize => y12m_initialize
@@ -138,7 +140,8 @@ contains
       self%nn1 = self%nn
       self%iha = n
 
-      allocate(self%pivot(n), self%ha(n, 11))
+      allocate(self%pivot(n), self%work_a(self%nn), self%work_snr(self%nn), self%work_rnr(self%nn1), &
+         self%ha(n, 11))
 
       self%iflag = 0
       self%iflag(2) = 3
@@ -162,14 +165,20 @@ contains
 
       integer :: ifail
 
+      self%work_a(1:nz) = a(1:nz)
+      self%work_snr(1:nz) = snr(1:nz)
+      self%work_rnr(1:nz) = rnr(1:nz)
+
       ifail = 0
-      call y12mb(n, nz, a, snr, self%nn, rnr, self%nn1, self%ha, self%iha, self%aflag, self%iflag, ifail)
+      call y12mb(n, nz, self%work_a, self%work_snr, self%nn, self%work_rnr, self%nn1, self%ha, self%iha, &
+         self%aflag, self%iflag, ifail)
       if (ifail /= 0) then
          istat = ifail
          return
       end if
 
-      call y12mc(n, nz, a, snr, self%nn, rnr, self%nn1, self%pivot, rhs, self%ha, self%iha, &
+      call y12mc(n, nz, self%work_a, self%work_snr, self%nn, self%work_rnr, self%nn1, self%pivot, rhs, self%ha, &
+         self%iha, &
          self%aflag, self%iflag, ifail)
       if (ifail /= 0) then
          istat = ifail
@@ -177,7 +186,7 @@ contains
       end if
 
       self%iflag(4) = 2
-      call y12md(n, a, self%nn, rhs, self%pivot, snr, self%ha, self%iha, self%iflag, ifail)
+      call y12md(n, self%work_a, self%nn, rhs, self%pivot, self%work_snr, self%ha, self%iha, self%iflag, ifail)
       if (ifail /= 0) then
          istat = ifail
       end if
