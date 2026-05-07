@@ -384,13 +384,14 @@ program reaction_diffusion_radau
    use, intrinsic :: iso_fortran_env, only: error_unit
    implicit none
 
+   integer, parameter :: dp = kind(1.0d0)
    integer :: N, nsteps, ios, iarg, nargs, pos_count
-   real(kind(1.0d0)) :: T
+   real(dp) :: T
    character(len=256) :: arg, outfile
 
    N = 41
    nsteps = 20
-   T = 1.0d0
+   T = 1.0_dp
    outfile = 'reaction_diffusion_radau.dat'
 
    nargs = command_argument_count()
@@ -424,7 +425,7 @@ program reaction_diffusion_radau
             end if
          case (3)
             read(arg, *, iostat=ios) T
-            if (ios /= 0 .or. T <= 0.0d0) then
+            if (ios /= 0 .or. T <= 0.0_dp) then
                write(error_unit, '(a)') 'ERROR: T must be a positive real'
                stop 1
             end if
