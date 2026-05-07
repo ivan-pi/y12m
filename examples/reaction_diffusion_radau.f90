@@ -407,7 +407,7 @@ contains
       end if
 
       f(1) = (left_bc - 2.0_dp * y(1) + y(2)) * h2inv + reaction(y(1))
-      do concurrent (i = 2:n - 1)
+      do i = 2, n - 1
          f(i) = (y(i - 1) - 2.0_dp * y(i) + y(i + 1)) * h2inv + reaction(y(i))
       end do
       f(n) = (y(n - 1) - 2.0_dp * y(n) + right_bc) * h2inv + reaction(y(n))
@@ -437,7 +437,7 @@ contains
          return
       end if
 
-      ! The semidiscrete Jacobian is time-independent for this travelling wave
+      ! The semidiscrete Jacobian is time-independent for this traveling-wave
       ! setup. Keep t in the signature to preserve the generic J(t,y) callback API.
       h2inv = rpar(1)
       nz = 0

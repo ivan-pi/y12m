@@ -191,9 +191,8 @@ contains
       end do
       close(file_unit)
    end subroutine write_three_column_output
-
-
-    ! -----------------------------------------------------------------------
+ 
+   ! -----------------------------------------------------------------------
    !> Sort and merge duplicate (row,col) entries in a COO sparse matrix.
    !>
    !> On entry, nz COO triplets (rnr, snr, a) may contain duplicate (i,j)
