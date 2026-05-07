@@ -210,8 +210,7 @@ contains
 
       integer :: ndof, nunknown, nz_max, nz, nn, nn1, iha
       real(dp) :: h, dt, h2inv, t_n
-      real(dp), allocatable, target :: u(:), y_flat(:), residual_flat(:), rhs_flat(:), delta(:)
-      real(dp), pointer :: y_stage(:, :) => null(), residual(:, :) => null(), rhs_stage(:, :) => null()
+      real(dp), allocatable :: u(:), y_stage(:, :), residual(:, :), rhs_stage(:, :), delta(:)
       real(dp), allocatable :: a(:), pivot(:)
       integer, allocatable :: snr(:), rnr(:), ha(:, :), newton_iters(:)
       real(dp) :: aflag(8)
@@ -242,15 +241,8 @@ contains
       nn = max(y12m_workspace_factor * nunknown, y12m_workspace_factor * nz_max)
       nn1 = nn
       iha = nunknown
-      allocate(u(ndof), y_flat(nunknown), residual_flat(nunknown), rhs_flat(nunknown), delta(nunknown))
+      allocate(u(ndof), y_stage(ndof, nstage), residual(ndof, nstage), rhs_stage(ndof, nstage), delta(nunknown))
       allocate(a(nn), pivot(nunknown), snr(nn), rnr(nn1), ha(nunknown, 11), newton_iters(nsteps))
-
-      ! These remapped pointers rely on Fortran column-major storage: the flat
-      ! arrays keep stage 1 first, then stage 2, so they can be viewed safely
-      ! as (space, stage) without copying.
-      y_stage(1:ndof, 1:nstage) => y_flat(1:nunknown)
-      residual(1:ndof, 1:nstage) => residual_flat(1:nunknown)
-      rhs_stage(1:ndof, 1:nstage) => rhs_flat(1:nunknown)
 
       do i = 1, ndof
          u(i) = u_exact(x_left + real(i, dp) * h, 0.0_dp)
@@ -291,7 +283,7 @@ contains
                exit
             end if
 
-            delta = -residual_flat
+            delta = -reshape(residual, [nunknown])
             call assemble_jacobian(ndof, dt, h2inv, y_stage, a, rnr, snr, nz)
 
             call system_clock(t0)
@@ -326,7 +318,7 @@ contains
                stop 1
             end if
 
-            y_flat = y_flat + delta
+            y_stage = y_stage + reshape(delta, [ndof, nstage])
          end do
 
          if (.not. converged) then
