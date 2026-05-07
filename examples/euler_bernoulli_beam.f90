@@ -268,7 +268,7 @@ contains
     integer, intent(in) :: N
     character(len=*), intent(in) :: outfile
     real(dp), intent(out) :: err_w, err_theta
-    real(dp), intent(out), optional :: cond_est
+    real(dp), intent(out) :: cond_est
 
     integer :: ndof, nz, nn, ifail, nd, funit
     real(dp) :: h, x, anorm, rcond, kappa
@@ -341,7 +341,7 @@ contains
     else
       kappa = huge(1.0_dp)
     end if
-    if (present(cond_est)) cond_est = kappa
+    cond_est = kappa
 
     ! Maximum nodal errors over free DOFs (nodes 2 to N+1).
     ! Clamped node 1 removed DOFs 1 and 2; reduced index = global_DOF - 2.
@@ -469,11 +469,12 @@ program euler_bernoulli_beam
     end block
   else
     block
-      real(dp) :: err_w, err_theta
-      call run(N, trim(outfile), err_w, err_theta)
+      real(dp) :: err_w, err_theta, cond_est
+      call run(N, trim(outfile), err_w, err_theta, cond_est)
       write(output_unit, '(a,i0,a)') 'N = ', N, ' Hermite cubic elements'
       write(output_unit, '(a,es12.4)') 'Max nodal error in deflection : ', err_w
       write(output_unit, '(a,es12.4)') 'Max nodal error in rotation   : ', err_theta
+      write(output_unit, '(a,es12.4)') 'Estimated condition number    : ', cond_est
     end block
   end if
 

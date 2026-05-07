@@ -42,19 +42,19 @@ The table below lists every modern (free-form Fortran 90+) driver together
 with the Y12M API routines it exercises.  Columns will be extended as
 coverage grows.
 
-| Driver | `Y12MA` | `Y12MB` | `Y12MC` | `Y12MD` |
-|--------|:-------:|:-------:|:-------:|:-------:|
-| `timings_de` | ✓ | | | |
-| `matf_bench` | ✓ | | | |
-| `poisson_2d` | ✓ | | | |
-| `poisson_3d` | ✓ | | | |
-| `biharmonic_13pt` | ✓ | | | |
-| `fem_anisotropic` | ✓ | | | |
-| `darcy_flow` | ✓ | | | |
-| `heat_implicit` | | ✓ | ✓ | ✓ |
-| `multiple_loads` | | ✓ | ✓ | ✓ |
-| `newton_bratu` | | ✓ | ✓ | ✓ |
-| `euler_bernoulli_beam` | ✓ | | | |
+| Driver | `Y12MA` | `Y12MB` | `Y12MC` | `Y12MD` | `Y12MG` | `Y12MH` |
+|--------|:-------:|:-------:|:-------:|:-------:|:-------:|:-------:|
+| `timings_de` | ✓ | | | | | |
+| `matf_bench` | ✓ | | | | | |
+| `poisson_2d` | ✓ | | | | | |
+| `poisson_3d` | ✓ | | | | | |
+| `biharmonic_13pt` | ✓ | | | | | |
+| `fem_anisotropic` | ✓ | | | | | |
+| `darcy_flow` | ✓ | | | | | |
+| `heat_implicit` | | ✓ | ✓ | ✓ | | |
+| `multiple_loads` | | ✓ | ✓ | ✓ | | |
+| `newton_bratu` | | ✓ | ✓ | ✓ | | |
+| `euler_bernoulli_beam` | | ✓ | ✓ | ✓ | ✓ | ✓ |
 
 ---
 
