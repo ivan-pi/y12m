@@ -263,15 +263,16 @@ contains
   !> On return, err_w and err_theta are the maximum absolute nodal errors
   !> in deflection and rotation, respectively.
   !> If outfile is non-empty the nodal solution is written there.
-  subroutine run(N, outfile, err_w, err_theta)
-    use y12m, only: y12ma
+  subroutine run(N, outfile, err_w, err_theta, cond_est)
+    use y12m, only: y12mb, y12mc, y12md, y12mg, y12mh
     integer, intent(in) :: N
     character(len=*), intent(in) :: outfile
     real(dp), intent(out) :: err_w, err_theta
+    real(dp), intent(out) :: cond_est
 
     integer :: ndof, nz, nn, ifail, nd, funit
-    real(dp) :: h, x
-    real(dp), allocatable :: a(:), b(:), pivot(:)
+    real(dp) :: h, x, anorm, rcond, kappa
+    real(dp), allocatable :: a(:), b(:), pivot(:), work(:)
     integer, allocatable :: snr(:), rnr(:), ha(:,:)
     real(dp) :: aflag(8)
     integer :: iflag(10)
@@ -279,26 +280,68 @@ contains
     h    = 1.0_dp / real(N, dp)
     ndof = 2 * N
 
-    ! Allocate arrays for y12ma.  The compressed stiffness matrix has at most
+    ! Allocate arrays for y12m low-level workflow.  The compressed stiffness
+    ! matrix has at most
     ! 12*N non-zeros (block-tridiagonal, 2x2 blocks, half-bandwidth 1 in blocks).
     ! A factor-of-10 buffer is sufficient headroom for LU fill-in on this
     ! narrow-band system.  The same buffer holds the raw (pre-compress) COO
     ! triplets during assembly, whose count is at most 16*N.
     nn = 10 * 12 * N
-    allocate(a(nn), pivot(ndof), b(ndof), snr(nn), rnr(nn), ha(ndof, 11))
+    allocate(a(nn), pivot(ndof), b(ndof), work(ndof), snr(nn), rnr(nn), ha(ndof, 11))
 
     aflag = 0.0_dp
     iflag = 0
     ifail = 0
 
     call assemble_system(N, h, ndof, nn, nz, rnr, snr, a, b)
+    ! anorm is required by y12mg and must be computed before y12mc overwrites a.
+    call y12mh(ndof, nz, a, snr, work, anorm)
 
-    call y12ma(ndof, nz, a, snr, nn, rnr, nn, pivot, ha, ndof, aflag, iflag, b, ifail)
+    iflag = 0
+    iflag(2) = 3        ! Markowitz search width
+    iflag(3) = 1        ! allow column interchanges for stability
+    iflag(4) = 0        ! no structural reuse between solves
+    iflag(5) = 2        ! retain L so y12mg can estimate condition number
+    aflag(1) = 16.0_dp  ! stability parameter for pivot acceptance
+    aflag(2) = 1.0e-12_dp
+    aflag(3) = 1.0e+16_dp
+    aflag(4) = 1.0e-12_dp
+    aflag(5:8) = 0.0_dp
 
+    call y12mb(ndof, nz, a, snr, nn, rnr, nn, ha, ndof, aflag, iflag, ifail)
     if (ifail /= 0) then
-      write(error_unit, '(a,i0)') 'ERROR: y12ma returned IFAIL = ', ifail
+      write(error_unit, '(a,i0)') 'ERROR: y12mb returned IFAIL = ', ifail
       stop 1
     end if
+
+    call y12mc(ndof, nz, a, snr, nn, rnr, nn, pivot, b, ha, ndof, aflag, iflag, ifail)
+    if (ifail /= 0) then
+      write(error_unit, '(a,i0)') 'ERROR: y12mc returned IFAIL = ', ifail
+      stop 1
+    end if
+
+    ! y12mg uses only metadata in ha(:,1:3) and control in iflag(1:5);
+    ! the full ha(:,1:11) / iflag(1:10) are still needed by y12mb/y12mc.
+    call y12mg(ndof, nn, a, snr, work, pivot, anorm, rcond, ndof, ha(:,1:3), iflag(1:5), ifail)
+    if (ifail /= 0) then
+      write(error_unit, '(a,i0)') 'ERROR: y12mg returned IFAIL = ', ifail
+      stop 1
+    end if
+
+    call y12md(ndof, a, nn, b, pivot, snr, ha, ndof, iflag, ifail)
+    if (ifail /= 0) then
+      write(error_unit, '(a,i0)') 'ERROR: y12md returned IFAIL = ', ifail
+      stop 1
+    end if
+
+    ! tiny() is used here as an overflow guard for 1/rcond (not as a rank test).
+    ! If rcond underflows to zero, report a saturated condition estimate.
+    if (rcond > tiny(1.0_dp)) then
+      kappa = 1.0_dp / rcond
+    else
+      kappa = huge(1.0_dp)
+    end if
+    cond_est = kappa
 
     ! Maximum nodal errors over free DOFs (nodes 2 to N+1).
     ! Clamped node 1 removed DOFs 1 and 2; reduced index = global_DOF - 2.
@@ -387,7 +430,7 @@ program euler_bernoulli_beam
 
   if (do_conv) then
     block
-      real(dp) :: err_w, err_theta, h, h_prev, err_w_prev, err_theta_prev
+      real(dp) :: err_w, err_theta, cond_est, h, h_prev, err_w_prev, err_theta_prev
       real(dp) :: rate_w, rate_theta
       integer :: i
 
@@ -399,25 +442,25 @@ program euler_bernoulli_beam
            'Exact: w=20x^2-10x^3+x^5,  theta=40x-30x^2+5x^4'
       write(output_unit, *)
       write(output_unit, '(a)') &
-           '   N        h        max|e_w|      max|e_t|     rate_w  rate_t'
+           '   N        h        max|e_w|      max|e_t|       cond(K)    rate_w  rate_t'
       write(output_unit, '(a)') &
-           '  ---  ----------  -----------  -----------  -------  -------'
+           '  ---  ----------  -----------  -----------  -----------  ------  ------'
 
       h_prev         = 0.0_dp
       err_w_prev     = 0.0_dp
       err_theta_prev = 0.0_dp
 
       do i = 1, n_refine
-        call run(ns(i), '', err_w, err_theta)
+        call run(ns(i), '', err_w, err_theta, cond_est)
         h = 1.0_dp / real(ns(i), dp)
         if (i == 1) then
-          write(output_unit, '(i5,f12.6,2(2x,es11.4),2(9x,a1))') &
-               ns(i), h, err_w, err_theta, '-', '-'
+          write(output_unit, '(i5,f12.6,3(2x,es11.4),2(9x,a1))') &
+               ns(i), h, err_w, err_theta, cond_est, '-', '-'
         else
           rate_w     = log(err_w_prev     / err_w)     / log(h_prev / h)
           rate_theta = log(err_theta_prev / err_theta) / log(h_prev / h)
-          write(output_unit, '(i5,f12.6,2(2x,es11.4),2f9.2)') &
-               ns(i), h, err_w, err_theta, rate_w, rate_theta
+          write(output_unit, '(i5,f12.6,3(2x,es11.4),2f9.2)') &
+               ns(i), h, err_w, err_theta, cond_est, rate_w, rate_theta
         end if
         h_prev         = h
         err_w_prev     = err_w
@@ -426,11 +469,12 @@ program euler_bernoulli_beam
     end block
   else
     block
-      real(dp) :: err_w, err_theta
-      call run(N, trim(outfile), err_w, err_theta)
+      real(dp) :: err_w, err_theta, cond_est
+      call run(N, trim(outfile), err_w, err_theta, cond_est)
       write(output_unit, '(a,i0,a)') 'N = ', N, ' Hermite cubic elements'
       write(output_unit, '(a,es12.4)') 'Max nodal error in deflection : ', err_w
       write(output_unit, '(a,es12.4)') 'Max nodal error in rotation   : ', err_theta
+      write(output_unit, '(a,es12.4)') 'Estimated condition number    : ', cond_est
     end block
   end if
 
