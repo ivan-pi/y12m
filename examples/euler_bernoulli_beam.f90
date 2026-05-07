@@ -294,14 +294,15 @@ contains
     ifail = 0
 
     call assemble_system(N, h, ndof, nn, nz, rnr, snr, a, b)
+    ! anorm is required by y12mg and must be computed before y12mc overwrites a.
     call y12mh(ndof, nz, a, snr, work, anorm)
 
     iflag = 0
-    iflag(2) = 3
-    iflag(3) = 1
-    iflag(4) = 0
-    iflag(5) = 2
-    aflag(1) = 16.0_dp
+    iflag(2) = 3        ! Markowitz search width
+    iflag(3) = 1        ! allow column interchanges for stability
+    iflag(4) = 0        ! no structural reuse between solves
+    iflag(5) = 2        ! retain L so y12mg can estimate condition number
+    aflag(1) = 16.0_dp  ! stability parameter for pivot acceptance
     aflag(2) = 1.0e-12_dp
     aflag(3) = 1.0e+16_dp
     aflag(4) = 1.0e-12_dp
@@ -319,6 +320,8 @@ contains
       stop 1
     end if
 
+    ! y12mg uses only metadata in ha(:,1:3) and control in iflag(1:5);
+    ! the full ha(:,1:11) / iflag(1:10) are still needed by y12mb/y12mc.
     call y12mg(ndof, nn, a, snr, work, pivot, anorm, rcond, ndof, ha(:,1:3), iflag(1:5), ifail)
     if (ifail /= 0) then
       write(error_unit, '(a,i0)') 'ERROR: y12mg returned IFAIL = ', ifail
@@ -331,6 +334,8 @@ contains
       stop 1
     end if
 
+    ! tiny() is used here as an overflow guard for 1/rcond (not as a rank test).
+    ! If rcond underflows to zero, report a saturated condition estimate.
     if (rcond > tiny(1.0_dp)) then
       kappa = 1.0_dp / rcond
     else
@@ -437,9 +442,9 @@ program euler_bernoulli_beam
            'Exact: w=20x^2-10x^3+x^5,  theta=40x-30x^2+5x^4'
       write(output_unit, *)
       write(output_unit, '(a)') &
-           '   N        h        max|e_w|      max|e_t|      cond(K)     rate_w  rate_t'
+           '   N        h        max|e_w|      max|e_t|       cond(K)    rate_w  rate_t'
       write(output_unit, '(a)') &
-           '  ---  ----------  -----------  -----------  -----------  -------  -------'
+           '  ---  ----------  -----------  -----------  -----------  ------  ------'
 
       h_prev         = 0.0_dp
       err_w_prev     = 0.0_dp
