@@ -444,9 +444,9 @@ contains
       do k = 1, n
          if (k > 1) then
             nz = nz + 1
-            ! row/col share the same storage budget as values in this callback
-            ! (ldc tracks row/col capacity, lda tracks value capacity), so we
-            ! guard with the common usable length.
+            ! Values (a) and indices (row/col) are provided as parallel COO
+            ! arrays; each nonzero consumes one slot in all three arrays.
+            ! Hence the usable capacity is limited by the smaller of lda/ldc.
             if (nz > min(lda, ldc)) then
                istat = 3
                return
@@ -543,6 +543,7 @@ contains
       ipar(1) = ndof
       rpar(1) = h2inv
       jac_nz_max = 3 * ndof - 2
+      ! 2x2 coupled-stage Jacobian: at most 4 semidiscrete Jacobian blocks.
       call y12m_solver%initialize(2 * ndof, 4 * jac_nz_max)
 
       t_now = 0.0_dp
