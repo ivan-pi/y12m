@@ -243,9 +243,9 @@ contains
       allocate(u(ndof), y_flat(nunknown), residual_flat(nunknown), rhs_flat(nunknown), delta(nunknown))
       allocate(a(nn), pivot(nunknown), snr(nn), rnr(nn1), ha(nunknown, 11), newton_iters(nsteps))
 
-      y_stage(1:ndof, 1:nstage) => y_flat
-      residual(1:ndof, 1:nstage) => residual_flat
-      rhs_stage(1:ndof, 1:nstage) => rhs_flat
+      y_stage(1:ndof, 1:nstage) => y_flat(1:nunknown)
+      residual(1:ndof, 1:nstage) => residual_flat(1:nunknown)
+      rhs_stage(1:ndof, 1:nstage) => rhs_flat(1:nunknown)
 
       do i = 1, ndof
          u(i) = u_exact(x_left + real(i, dp) * h, 0.0_dp)
@@ -297,7 +297,7 @@ contains
             if (ifail /= 0) then
                write(error_unit, '(a,i0,a,i0)') &
                   'ERROR: y12mb time step ', step, ' returned IFAIL = ', ifail
-               stop 1, quiet = .true.
+               stop 1
             end if
 
             call system_clock(t0)
@@ -308,7 +308,7 @@ contains
             if (ifail /= 0) then
                write(error_unit, '(a,i0,a,i0)') &
                   'ERROR: y12mc time step ', step, ' returned IFAIL = ', ifail
-               stop 1, quiet = .true.
+               stop 1
             end if
             iflag(4) = 2
 
@@ -319,7 +319,7 @@ contains
             if (ifail /= 0) then
                write(error_unit, '(a,i0,a,i0)') &
                   'ERROR: y12md time step ', step, ' returned IFAIL = ', ifail
-               stop 1, quiet = .true.
+               stop 1
             end if
 
             y_flat = y_flat + delta
@@ -336,7 +336,7 @@ contains
          if (.not. converged) then
             write(error_unit, '(a,i0,a,es12.4)') &
                'ERROR: Newton failed at time step ', step, ', residual = ', fnorm
-            stop 1, quiet = .true.
+            stop 1
          end if
 
          newton_iters(step) = iter_used

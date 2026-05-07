@@ -323,7 +323,7 @@ Usage: newton_bratu [--help] [N] [lambda] [max_iter] [output_file]
 Solves the **1-D reaction-diffusion equation**
 
 ```
-  u_t = u_xx + (1 − u) u^2   on (0, 10),   t ∈ (0, T]
+  u_t = u_xx + (1 - u) u^2   on (0, 10),   t ∈ (0, T]
 ```
 
 using a **fully implicit 2-stage Radau IIA Runge-Kutta method** in time and
@@ -332,7 +332,7 @@ initial condition and both Dirichlet boundaries are imposed from the exact
 travelling-wave solution
 
 ```
-  u(x,t) = 1 / (1 + exp(v (x − v t))),   v = sqrt(1/2).
+  u(x,t) = 1 / (1 + exp(v (x - v t))),   v = sqrt(1/2).
 ```
 
 At each time step the two Radau stages are solved simultaneously by Newton's
