@@ -263,15 +263,16 @@ contains
   !> On return, err_w and err_theta are the maximum absolute nodal errors
   !> in deflection and rotation, respectively.
   !> If outfile is non-empty the nodal solution is written there.
-  subroutine run(N, outfile, err_w, err_theta)
-    use y12m, only: y12ma
+  subroutine run(N, outfile, err_w, err_theta, cond_est)
+    use y12m, only: y12ma, y12mg, y12mh
     integer, intent(in) :: N
     character(len=*), intent(in) :: outfile
     real(dp), intent(out) :: err_w, err_theta
+    real(dp), intent(out), optional :: cond_est
 
     integer :: ndof, nz, nn, ifail, nd, funit
-    real(dp) :: h, x
-    real(dp), allocatable :: a(:), b(:), pivot(:)
+    real(dp) :: h, x, anorm, rcond, kappa
+    real(dp), allocatable :: a(:), b(:), pivot(:), work(:)
     integer, allocatable :: snr(:), rnr(:), ha(:,:)
     real(dp) :: aflag(8)
     integer :: iflag(10)
@@ -285,13 +286,14 @@ contains
     ! narrow-band system.  The same buffer holds the raw (pre-compress) COO
     ! triplets during assembly, whose count is at most 16*N.
     nn = 10 * 12 * N
-    allocate(a(nn), pivot(ndof), b(ndof), snr(nn), rnr(nn), ha(ndof, 11))
+    allocate(a(nn), pivot(ndof), b(ndof), work(ndof), snr(nn), rnr(nn), ha(ndof, 11))
 
     aflag = 0.0_dp
     iflag = 0
     ifail = 0
 
     call assemble_system(N, h, ndof, nn, nz, rnr, snr, a, b)
+    call y12mh(ndof, nz, a, snr, work, anorm)
 
     call y12ma(ndof, nz, a, snr, nn, rnr, nn, pivot, ha, ndof, aflag, iflag, b, ifail)
 
@@ -299,6 +301,19 @@ contains
       write(error_unit, '(a,i0)') 'ERROR: y12ma returned IFAIL = ', ifail
       stop 1
     end if
+
+    call y12mg(ndof, nn, a, snr, work, pivot, anorm, rcond, ndof, ha(:,1:3), iflag(1:5), ifail)
+    if (ifail /= 0) then
+      write(error_unit, '(a,i0)') 'ERROR: y12mg returned IFAIL = ', ifail
+      stop 1
+    end if
+
+    if (rcond > tiny(1.0_dp)) then
+      kappa = 1.0_dp / rcond
+    else
+      kappa = huge(1.0_dp)
+    end if
+    if (present(cond_est)) cond_est = kappa
 
     ! Maximum nodal errors over free DOFs (nodes 2 to N+1).
     ! Clamped node 1 removed DOFs 1 and 2; reduced index = global_DOF - 2.
@@ -387,7 +402,7 @@ program euler_bernoulli_beam
 
   if (do_conv) then
     block
-      real(dp) :: err_w, err_theta, h, h_prev, err_w_prev, err_theta_prev
+      real(dp) :: err_w, err_theta, cond_est, h, h_prev, err_w_prev, err_theta_prev
       real(dp) :: rate_w, rate_theta
       integer :: i
 
@@ -399,25 +414,25 @@ program euler_bernoulli_beam
            'Exact: w=20x^2-10x^3+x^5,  theta=40x-30x^2+5x^4'
       write(output_unit, *)
       write(output_unit, '(a)') &
-           '   N        h        max|e_w|      max|e_t|     rate_w  rate_t'
+           '   N        h        max|e_w|      max|e_t|      cond(K)     rate_w  rate_t'
       write(output_unit, '(a)') &
-           '  ---  ----------  -----------  -----------  -------  -------'
+           '  ---  ----------  -----------  -----------  -----------  -------  -------'
 
       h_prev         = 0.0_dp
       err_w_prev     = 0.0_dp
       err_theta_prev = 0.0_dp
 
       do i = 1, n_refine
-        call run(ns(i), '', err_w, err_theta)
+        call run(ns(i), '', err_w, err_theta, cond_est)
         h = 1.0_dp / real(ns(i), dp)
         if (i == 1) then
-          write(output_unit, '(i5,f12.6,2(2x,es11.4),2(9x,a1))') &
-               ns(i), h, err_w, err_theta, '-', '-'
+          write(output_unit, '(i5,f12.6,3(2x,es11.4),2(9x,a1))') &
+               ns(i), h, err_w, err_theta, cond_est, '-', '-'
         else
           rate_w     = log(err_w_prev     / err_w)     / log(h_prev / h)
           rate_theta = log(err_theta_prev / err_theta) / log(h_prev / h)
-          write(output_unit, '(i5,f12.6,2(2x,es11.4),2f9.2)') &
-               ns(i), h, err_w, err_theta, rate_w, rate_theta
+          write(output_unit, '(i5,f12.6,3(2x,es11.4),2f9.2)') &
+               ns(i), h, err_w, err_theta, cond_est, rate_w, rate_theta
         end if
         h_prev         = h
         err_w_prev     = err_w

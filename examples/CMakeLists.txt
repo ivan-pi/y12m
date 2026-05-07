@@ -111,6 +111,9 @@ add_pde_test(elasticity elasticity.f90)
 target_link_libraries(elasticity PRIVATE y12m_example_helpers)
 add_pde_test(euler_bernoulli_beam euler_bernoulli_beam.f90)
 target_link_libraries(euler_bernoulli_beam PRIVATE y12m_example_helpers)
+add_test(NAME euler_bernoulli_beam_conv
+         COMMAND euler_bernoulli_beam --conv
+         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
 
 # --------------------------------------------------------------------------
 # LU-reuse examples: demonstrate the low-level y12mb / y12mc / y12md API
