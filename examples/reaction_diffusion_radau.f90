@@ -347,14 +347,14 @@ contains
       integer, intent(out) :: nz
 
       integer :: k
-      real(dp) :: time_shift
 
       select type (problem => ctx)
       type is (reaction_diffusion_problem)
          ! This example has a time-independent semidiscrete Jacobian, but keep a
-         ! harmless `t` dependency here so the callback still matches the
-         ! general J(t,y) API used by the fixed-step Radau driver.
-         time_shift = 0.0_dp * t
+         ! reference to `t` here so the callback still matches the general
+         ! J(t,y) API used by the fixed-step Radau driver.
+         associate (unused_t => t)
+         end associate
          nz = 0
          do k = 1, problem%ndof
             if (k > 1) then
@@ -367,7 +367,7 @@ contains
             nz = nz + 1
             row(nz) = k
             col(nz) = k
-            a(nz) = -2.0_dp * problem%h2inv + reaction_prime(y(k)) + time_shift
+            a(nz) = -2.0_dp * problem%h2inv + reaction_prime(y(k))
 
             if (k < problem%ndof) then
                nz = nz + 1
