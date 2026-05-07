@@ -50,6 +50,8 @@ module reaction_diffusion_radau_solver
    real(dp), parameter :: rk_b(nstage) = [3.0_dp / 4.0_dp, 1.0_dp / 4.0_dp]
    real(dp), parameter :: rk_c(nstage) = [1.0_dp / 3.0_dp, 1.0_dp]
    real(dp), parameter :: newton_tol = 1.0e-10_dp
+   real(dp), parameter :: y12m_growth_limit = 16.0_dp
+   integer, parameter :: y12m_workspace_factor = 20
    integer, parameter :: max_newton = 12
 
 contains
@@ -237,7 +239,7 @@ contains
       write(output_unit, '(a,i0)') 'Max Newton it : ', max_newton
 
       nz_max = 6 * nunknown
-      nn = max(20 * nunknown, 20 * nz_max)
+      nn = max(y12m_workspace_factor * nunknown, y12m_workspace_factor * nz_max)
       nn1 = nn
       iha = nunknown
       allocate(u(ndof), y_flat(nunknown), residual_flat(nunknown), rhs_flat(nunknown), delta(nunknown))
@@ -256,7 +258,7 @@ contains
       iflag(3) = 1
       iflag(4) = 1
       iflag(5) = 1
-      aflag(1) = 16.0_dp
+      aflag(1) = y12m_growth_limit
       aflag(2) = 1.0e-12_dp
       aflag(3) = 1.0e+16_dp
       aflag(4) = 1.0e-12_dp
