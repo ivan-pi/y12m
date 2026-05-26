@@ -1,5 +1,28 @@
 # Fortran AGENT Guidelines
 
+## Licensing
+
+- All contributions must be compatible with **GPL-2.0-only**.
+- Every new source file (Fortran, C, CMake, shell) must start with an SPDX
+  license header on the first line:
+  - Fortran / shell: `! SPDX-License-Identifier: GPL-2.0-only`
+  - C: `// SPDX-License-Identifier: GPL-2.0-only`
+  - CMake / script: `# SPDX-License-Identifier: GPL-2.0-only`
+
+## Attribution
+
+When an AI tool contributes code, include an attribution comment near the top
+of each new file (after the SPDX header):
+
+```
+! Assisted-by: AGENT_NAME:MODEL_VERSION
+```
+
+For example: `! Assisted-by: GitHub Copilot:claude-sonnet-4.5`
+
+Do **not** add any "Signed-off-by" tags; only the human reviewer can certify
+authorship.
+
 ## Fortran Style preferences
 
 - Separate statements on different lines; do not use semi-colons (;).
@@ -16,5 +39,40 @@
 - Modules should use `private` attribute and use explicit `public` statements to export only the minimum necessary.
 - Any new code should use free-form Fortran and the `.f90`/`.F90` file extensions.
 
+## Repository conventions
+
+- **Preserve the legacy/fixed-form boundary.** Do not rewrite files under
+  `src/legacy/*.f` to free-form unless explicitly requested; keep new code in
+  separate `.f90`/`.F90` files.
+- **Prefer module wrappers over changing legacy entry points.** Put modern
+  interface improvements in `src/y12m.f90` or helper modules; only edit a
+  legacy routine when the bug genuinely lives there.
+- **Keep single- and double-precision support aligned.** If a new helper,
+  test, or interface is meant to be generic, add both `sp` and `dp` variants
+  unless there is a documented reason not to.
+- **Reuse shared helpers.** Extend `test/y12m_test_helpers.f90` and
+  `examples/y12m_example_helpers.f90` before adding ad-hoc local copies of
+  the same functionality.
+- **Use absolute paths in CMake tests** that refer to source-tree data files
+  (e.g. `.mtx` inputs), so tests work regardless of the build directory.
+
+## Documentation
+
+- When adding or changing public APIs, update `README.md`, `docs/API.md`, and
+  `examples/README.md` (API usage table) in the same change.
+- Keep comments high-value and technical: prefer notes that explain solver
+  usage constraints, API ordering requirements, or numerical assumptions rather
+  than line-by-line restatements of obvious code.
+
 ## Testing instructions
+
 - Add or update tests for the code you change, even if nobody asked.
+- Any bug fix must include a regression test that fails before the fix and
+  passes after.
+- Build and run the suite with:
+  ```sh
+  cmake -B build && cmake --build build && ctest --test-dir build
+  ```
+- Prefer self-checking example programs (manufactured solutions, known exact
+  solutions, or explicit error metrics) over programs that merely run without
+  crashing.
