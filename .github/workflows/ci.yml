@@ -28,3 +28,24 @@ jobs:
 
       - name: Test
         run: ctest --test-dir build --output-on-failure
+
+  flang:
+    name: macos-latest / flang
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install flang
+        run: |
+          brew install flang
+          flang-new --version
+
+      - name: Configure
+        run: cmake -B build -DCMAKE_Fortran_COMPILER=$(brew --prefix flang)/bin/flang-new -DCMAKE_Fortran_FLAGS="-pedantic"
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
