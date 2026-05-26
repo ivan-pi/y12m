@@ -1,0 +1,42 @@
+name: Coverage
+
+on:
+  workflow_dispatch:
+
+jobs:
+  coverage:
+    name: Test Coverage
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Configure with coverage flags
+        run: |
+          cmake -B build \
+            -DCMAKE_Fortran_COMPILER=gfortran-14 \
+            -DCMAKE_Fortran_FLAGS="--coverage" \
+            -DCMAKE_C_FLAGS="--coverage" \
+            -DCMAKE_EXE_LINKER_FLAGS="--coverage"
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Generate coverage report
+        run: |
+          cd build
+          gcda_files=$(find . -name '*.gcda' -path '*/src/*')
+          if [ -z "$gcda_files" ]; then
+            echo "Error: No .gcda files found for src/" >&2
+            exit 1
+          fi
+          gcov $gcda_files
+
+      - name: Upload coverage artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: build/*.gcov
