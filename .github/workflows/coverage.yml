@@ -28,8 +28,12 @@ jobs:
       - name: Generate coverage report
         run: |
           cd build
-          gcov --source-prefix "${{ github.workspace }}/src" \
-               $(find . -name '*.gcda' -path '*/src/*')
+          gcda_files=$(find . -name '*.gcda' -path '*/src/*')
+          if [ -z "$gcda_files" ]; then
+            echo "Error: No .gcda files found for src/" >&2
+            exit 1
+          fi
+          gcov $gcda_files
 
       - name: Upload coverage artifacts
         uses: actions/upload-artifact@v4
