@@ -1,0 +1,38 @@
+name: Coverage
+
+on:
+  workflow_dispatch:
+
+jobs:
+  coverage:
+    name: Test Coverage
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Configure with coverage flags
+        run: |
+          cmake -B build \
+            -DCMAKE_Fortran_COMPILER=gfortran-14 \
+            -DCMAKE_Fortran_FLAGS="--coverage" \
+            -DCMAKE_C_FLAGS="--coverage" \
+            -DCMAKE_EXE_LINKER_FLAGS="--coverage"
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Generate coverage report
+        run: |
+          cd build
+          gcov --source-prefix "${{ github.workspace }}/src" \
+               $(find . -name '*.gcda' -path '*/src/*')
+
+      - name: Upload coverage artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: build/*.gcov
