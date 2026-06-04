@@ -73,6 +73,7 @@ static void rbf_eval_der(rbfpoly_t rbf, derivative_t der,
 {
     int k = 0;
     const int ord = der.qx + der.qy;
+    assert(ord <= 2);  // caller must validate; higher orders are not implemented
     const double dq = (double)rbf.q;
 
     for (int i = 0; i < n; i++) {
@@ -178,6 +179,9 @@ int rbf_derivative_weights(
     const int nt = rbf_system_size(rbf, n);
 
     if (ldw < nt) return -10;
+    for (int q = 0; q < num_ops; q++) {
+        if (ops[q].qx + ops[q].qy > 2) return -9;
+    }
 
     for (int q = 0; q < num_ops; q++) {
         rbf_eval_der(rbf, ops[q], n, x, y, &weights[q * ldw]);
@@ -197,6 +201,10 @@ int rbf_operator_weights(
     double weights[])
 {
     const int nt = rbf_system_size(rbf, n);
+
+    for (int t = 0; t < num_terms; t++) {
+        if (ders[t].qx + ders[t].qy > 2) return -9;
+    }
 
     for (int i = 0; i < nt; i++) weights[i] = 0.0;
 
