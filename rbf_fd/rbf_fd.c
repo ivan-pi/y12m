@@ -169,6 +169,8 @@ int rbf_derivative_weights(
 {
     const int nt = rbf_system_size(rbf, n);
 
+    if (ldw < nt) return -10;
+
     for (int q = 0; q < num_ops; q++) {
         rbf_eval_der(rbf, ops[q], n, x, y, &weights[q * ldw]);
     }
@@ -212,6 +214,8 @@ int rbf_interpolation_weights(
     int ldw, double weights[])
 {
     const int nt = rbf_system_size(rbf, n);
+
+    if (ldw < nt) return -11;
 
     for (int q = 0; q < np; q++) {
         rbf_basis(rbf, xp[q], yp[q], n, x, y, &weights[q * ldw]);
