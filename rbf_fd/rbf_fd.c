@@ -62,13 +62,17 @@ static void rbf_basis(rbfpoly_t rbf, double xc, double yc,
 // Supported derivative orders: (0,0), (1,0), (0,1), (2,0), (1,1), (0,2).
 // Higher-order derivatives write 0 (not implemented).
 //
-// The identity r^(q-2) = r^q / r^2 avoids negative exponents in phs_kernel
-// for any valid odd q, including q=1.
+// Chain rule for a radial function phi(r):
+//   dphi/dx   = phi' * dr/dx
+//   d^2phi/dx^2 = phi'' * (dr/dx)^2 + phi' * d^2r/dx^2
+// where phi' = q*r^(q-1), phi'' = q*(q-1)*r^(q-2),
+// dr/dx = -xi/r, d^2r/dx^2 = (r^2 - xi^2)/r^3, d^2r/dxdy = -xi*yi/r^3.
 static void rbf_eval_der(rbfpoly_t rbf, derivative_t der,
     int n, const double x[], const double y[], double b[])
 {
     int k = 0;
-    double dq = (double)rbf.q;
+    const int ord = der.qx + der.qy;
+    const double dq = (double)rbf.q;
 
     for (int i = 0; i < n; i++) {
         double xi = x[i], yi = y[i];
@@ -78,27 +82,28 @@ static void rbf_eval_der(rbfpoly_t rbf, derivative_t der,
         if (rsqr == 0.0) {
             val = 0.0;
         } else {
-            double phi  = phs_kernel(rsqr, rbf.q);  // r^q
-            double phi2 = phi / rsqr;               // r^(q-2)
+            double r    = sqrt(rsqr);
+            double phi  = ipow(rsqr, (rbf.q - 1) / 2) * r;  // r^q
+            double phi1 = dq * phi / r;                       // phi' = q*r^(q-1)
 
-            if      (der.qx == 0 && der.qy == 0) {
+            if (ord == 0) {
                 val = phi;
-            } else if (der.qx == 1 && der.qy == 0) {
-                // d/dx r^q at origin = -q * xi * r^(q-2)
-                val = -dq * xi * phi2;
-            } else if (der.qx == 0 && der.qy == 1) {
-                val = -dq * yi * phi2;
-            } else if (der.qx == 2 && der.qy == 0) {
-                // d^2/dx^2 r^q = q * r^(q-2) * (1 + (q-2)*xi^2/r^2)
-                val = dq * phi2 * (1.0 + (dq - 2.0) * xi*xi / rsqr);
-            } else if (der.qx == 0 && der.qy == 2) {
-                val = dq * phi2 * (1.0 + (dq - 2.0) * yi*yi / rsqr);
-            } else if (der.qx == 1 && der.qy == 1) {
-                // d^2/dxdy r^q = q*(q-2)*xi*yi * r^(q-4)
-                //              = q*(q-2)*xi*yi * phi2/rsqr
-                val = dq * (dq - 2.0) * xi * yi * phi2 / rsqr;
+            } else if (ord == 1) {
+                // dr/dx = -xi/r,  dr/dy = -yi/r
+                val = phi1 * (der.qx ? -xi : -yi) / r;
             } else {
-                val = 0.0;  // higher order not implemented
+                double phi2 = (dq - 1.0) * phi1 / r;  // phi'' = q*(q-1)*r^(q-2)
+                double rx = -xi / r, ry = -yi / r;
+                if (der.qx == 2) {
+                    // d^2r/dx^2 = (r^2 - xi^2) / r^3
+                    val = phi2*rx*rx + phi1*(rsqr - xi*xi)/(rsqr*r);
+                } else if (der.qy == 2) {
+                    // d^2r/dy^2 = (r^2 - yi^2) / r^3
+                    val = phi2*ry*ry + phi1*(rsqr - yi*yi)/(rsqr*r);
+                } else {
+                    // d^2r/dxdy = -xi*yi / r^3
+                    val = phi2*rx*ry - phi1*xi*yi/(rsqr*r);
+                }
             }
         }
         b[k++] = val;
