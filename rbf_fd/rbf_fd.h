@@ -37,7 +37,7 @@ int rbf_factorize(
 //
 // weights is column-major with leading dimension ldw >= rbf_system_size(rbf, n).
 // After the call, weights[q*ldw + i] for i < n are the stencil weights for ops[q].
-// Returns -9 if any operator has order x+y > 2.
+// Returns 0 on success, -9 if any operator has order x+y > 2, -10 if ldw < nt.
 int rbf_stencil_weights(
     rbf_poly_t rbf,
     int n, const double x[], const double y[],
@@ -50,7 +50,7 @@ int rbf_stencil_weights(
 //
 // If coeffs is NULL every coefficient defaults to 1.0.
 // weights must hold at least rbf_system_size(rbf, n) doubles.
-// Returns -9 if any derivative has order x+y > 2.
+// Returns 0 on success, -9 if any derivative has order x+y > 2.
 int rbf_operator_weights(
     rbf_poly_t rbf,
     int n, const double x[], const double y[],
@@ -62,6 +62,7 @@ int rbf_operator_weights(
 //
 // weights is column-major with leading dimension ldw >= rbf_system_size(rbf, n).
 // The stencil coordinates (x, y) must match those used to build M.
+// Returns 0 on success, -11 if ldw < nt.
 int rbf_interpolation_weights(
     rbf_poly_t rbf,
     int n, const double x[], const double y[],
@@ -72,6 +73,7 @@ int rbf_interpolation_weights(
 // Convenience wrapper: weights for dx, dy, dxx, dxy, dyy (in that column order).
 //
 // weights must hold at least 5 * ldw doubles.
+// Returns 0 on success, -10 if ldw < nt.
 int rbf_diff12_weights(
     rbf_poly_t rbf,
     int n, const double x[], const double y[],
