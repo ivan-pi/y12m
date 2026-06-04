@@ -172,7 +172,7 @@ int rbf_factorize(
 int rbf_stencil_weights(
     rbf_poly_t rbf,
     int n, const double x[], const double y[],
-    int ldm, const double M[], const int *ipiv,
+    int ldm, const double M[], const int ipiv[],
     int num_ops, const rbf_deriv_t ops[],
     int ldw, double weights[])
 {
@@ -193,7 +193,7 @@ int rbf_stencil_weights(
 int rbf_operator_weights(
     rbf_poly_t rbf,
     int n, const double x[], const double y[],
-    int ldm, const double M[], const int *ipiv,
+    int ldm, const double M[], const int ipiv[],
     int num_terms, const rbf_deriv_t ders[], const double *coeffs,
     double weights[])
 {
@@ -219,7 +219,7 @@ int rbf_operator_weights(
 int rbf_interpolation_weights(
     rbf_poly_t rbf,
     int n, const double x[], const double y[],
-    int ldm, const double M[], const int *ipiv,
+    int ldm, const double M[], const int ipiv[],
     int np, const double xp[], const double yp[],
     int ldw, double weights[])
 {
@@ -240,7 +240,7 @@ int rbf_interpolation_weights(
 int rbf_diff12_weights(
     rbf_poly_t rbf,
     int n, const double x[], const double y[],
-    int ldm, const double M[], const int *ipiv,
+    int ldm, const double M[], const int ipiv[],
     int ldw, double weights[])
 {
     static const rbf_deriv_t ops[5] = {{1,0}, {0,1}, {2,0}, {1,1}, {0,2}};
