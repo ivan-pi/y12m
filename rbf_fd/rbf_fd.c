@@ -13,29 +13,34 @@
 // All return 0 on success, > 0 on singular matrix, < 0 on argument error.
 // ---------------------------------------------------------------------------
 #ifdef RBF_USE_ACCELERATE
+#  define ACCELERATE_NEW_LAPACK
 #  include <Accelerate/Accelerate.h>
 static inline int rbf__dgetrf(int n, double *A, int lda, int *ipiv) {
-    __CLPK_integer n_ = n, lda_ = lda, info;
-    dgetrf_(&n_, &n_, A, &lda_, (__CLPK_integer *)ipiv, &info);
-    return (int)info;
+    int info;
+    dgetrf_(&n, &n, A, &lda, ipiv, &info);
+    return info;
 }
 static inline int rbf__dgetrs(int n, int nrhs, const double *A, int lda,
                                const int *ipiv, double *B, int ldb) {
     char trans = 'N';
-    __CLPK_integer n_ = n, nrhs_ = nrhs, lda_ = lda, ldb_ = ldb, info;
+    int info;
     // Fortran interface has no const; casts are safe (routine does not modify A or ipiv).
-    dgetrs_(&trans, &n_, &nrhs_, (double *)A, &lda_,
-            (__CLPK_integer *)ipiv, B, &ldb_, &info);
-    return (int)info;
+    dgetrs_(&trans, &n, &nrhs, (double *)A, &lda, (int *)ipiv, B, &ldb, &info);
+    return info;
 }
 static inline int rbf__dgecon(int n, const double *A, int lda,
                                double anorm, double *rcond) {
     char norm = '1';
-    __CLPK_integer n_ = n, lda_ = lda, info;
-    double work[4*n];           // VLA; n is typically small (< 200)
-    __CLPK_integer iwork[n];    // VLA
-    dgecon_(&norm, &n_, (double *)A, &lda_, &anorm, rcond, work, iwork, &info);
-    return (int)info;
+    int info;
+    double work[4*n];   // VLA; n is typically small (< 200)
+    int    iwork[n];    // VLA
+    dgecon_(&norm, &n, (double *)A, &lda, &anorm, rcond, work, iwork, &info);
+    return info;
+}
+static inline double rbf__dlange(int n, const double *A, int lda) {
+    char norm = '1';
+    double work;  // not referenced for 1-norm
+    return dlange_(&norm, &n, &n, (double *)A, &lda, &work);
 }
 #else
 #  include <lapacke.h>
@@ -49,6 +54,9 @@ static inline int rbf__dgetrs(int n, int nrhs, const double *A, int lda,
 static inline int rbf__dgecon(int n, const double *A, int lda,
                                double anorm, double *rcond) {
     return LAPACKE_dgecon(LAPACK_COL_MAJOR, '1', n, A, lda, anorm, rcond);
+}
+static inline double rbf__dlange(int n, const double *A, int lda) {
+    return LAPACKE_dlange(LAPACK_COL_MAJOR, '1', n, n, A, lda);
 }
 #endif
 
@@ -175,19 +183,12 @@ static void rbf_eval_der(rbf_poly_t rbf, rbf_deriv_t der,
     }
 }
 
-int rbf_factorize(
+static void rbf_build_matrix(
     rbf_poly_t rbf,
     int n, const double x[], const double y[],
-    int ldm, double M[], int ipiv[],
-    double *rcond)
+    int ldm, double M[])
 {
-    const int m  = rbf_poly_terms(rbf.p);
-    const int nt = n + m;
-
-    if (rbf.q < 1 || rbf.q % 2 == 0) return -1;
-    if (rbf.p < 0 || rbf.p > MAX_P)  return -1;
-    if (n < m)                        return -3;
-    if (ldm < nt)                     return -5;
+    const int m = rbf_poly_terms(rbf.p);
 
 #define IDX(i, j) ((i) + (j) * ldm)
 
@@ -213,27 +214,53 @@ int rbf_factorize(
     }
 
 #undef IDX
+}
 
-    // Compute 1-norm before factorization; needed by dgecon afterwards.
-    double anorm = 0.0;
-    if (rcond) {
-        for (int j = 0; j < nt; j++) {
-            double col = 0.0;
-            for (int i = 0; i < nt; i++) col += fabs(M[i + j * ldm]);
-            if (col > anorm) anorm = col;
-        }
-    }
+int rbf_factorize(
+    rbf_poly_t rbf,
+    int n, const double x[], const double y[],
+    int ldm, double M[], int ipiv[])
+{
+    const int m  = rbf_poly_terms(rbf.p);
+    const int nt = n + m;
+
+    if (rbf.q < 1 || rbf.q % 2 == 0) return -1;
+    if (rbf.p < 0 || rbf.p > MAX_P)  return -1;
+    if (n < m)                        return -3;
+    if (ldm < nt)                     return -5;
+
+    rbf_build_matrix(rbf, n, x, y, ldm, M);
 
     int info = rbf__dgetrf(nt, M, ldm, ipiv);
     assert(info >= 0);  // info < 0 is a LAPACK argument error
-    if (info != 0) {
-        if (rcond) *rcond = 0.0;
-        return info;
-    }
+    return info;
+}
 
-    if (rcond)
-        info = rbf__dgecon(nt, M, ldm, anorm, rcond);
+int rbf_factorize_rcond(
+    rbf_poly_t rbf,
+    int n, const double x[], const double y[],
+    int ldm, double M[], int ipiv[],
+    double *rcond, double *anorm)
+{
+    const int m  = rbf_poly_terms(rbf.p);
+    const int nt = n + m;
 
+    if (rbf.q < 1 || rbf.q % 2 == 0) return -1;
+    if (rbf.p < 0 || rbf.p > MAX_P)  return -1;
+    if (n < m)                        return -3;
+    if (ldm < nt)                     return -5;
+
+    rbf_build_matrix(rbf, n, x, y, ldm, M);
+
+    // Compute 1-norm before dgetrf overwrites M.
+    double norm = rbf__dlange(nt, M, ldm);
+    if (anorm) *anorm = norm;
+
+    int info = rbf__dgetrf(nt, M, ldm, ipiv);
+    assert(info >= 0);
+    if (info != 0) { *rcond = 0.0; return info; }
+
+    info = rbf__dgecon(nt, M, ldm, norm, rcond);
     return info;
 }
 

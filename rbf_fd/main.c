@@ -19,7 +19,7 @@ int main(void)
     double M[nt * nt];
     int    ipiv[nt];
 
-    int ierr = rbf_factorize(rbf, n, x, y, nt, M, ipiv, NULL);
+    int ierr = rbf_factorize(rbf, n, x, y, nt, M, ipiv);
     if (ierr != 0) {
         fprintf(stderr, "rbf_factorize failed: %d\n", ierr);
         return 1;
