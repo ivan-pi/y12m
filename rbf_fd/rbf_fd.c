@@ -31,7 +31,7 @@ static inline double phs_kernel(double rsqr, int q) {
     return ipow(rsqr, (q - 1) / 2) * sqrt(rsqr);
 }
 
-static void rbf_basis(rbfpoly_t rbf, double xc, double yc,
+static void rbf_eval_basis(rbf_poly_t rbf, double xc, double yc,
     int n, const double x[], const double y[], double b[])
 {
     int k = 0;
@@ -68,11 +68,11 @@ static void rbf_basis(rbfpoly_t rbf, double xc, double yc,
 //
 // Supported derivative orders: (0,0), (1,0), (0,1), (2,0), (1,1), (0,2).
 // Higher-order entries are not implemented and write 0.
-static void rbf_eval_der(rbfpoly_t rbf, derivative_t der,
+static void rbf_eval_der(rbf_poly_t rbf, rbf_deriv_t der,
     int n, const double x[], const double y[], double b[])
 {
     int k = 0;
-    const int ord = der.qx + der.qy;
+    const int ord = der.x + der.y;
     assert(ord <= 2);  // caller must validate; higher orders are not implemented
     const double dq = (double)rbf.q;
 
@@ -93,14 +93,14 @@ static void rbf_eval_der(rbfpoly_t rbf, derivative_t der,
                 val = phi;
             } else if (ord == 1) {
                 // dr/dx = -xi/r,  dr/dy = -yi/r
-                val = phi1 * (der.qx ? -xi : -yi) / r;
+                val = phi1 * (der.x ? -xi : -yi) / r;
             } else {
                 double phi2 = (dq - 1.0) * phi1 / r;  // phi'' = q*(q-1)*r^(q-2)
                 double rx = -xi / r, ry = -yi / r;
-                if (der.qx == 2) {
+                if (der.x == 2) {
                     // d^2r/dx^2 = (r^2 - xi^2) / r^3
                     val = phi2*rx*rx + phi1*(rsqr - xi*xi)/(rsqr*r);
-                } else if (der.qy == 2) {
+                } else if (der.y == 2) {
                     // d^2r/dy^2 = (r^2 - yi^2) / r^3
                     val = phi2*ry*ry + phi1*(rsqr - yi*yi)/(rsqr*r);
                 } else {
@@ -112,22 +112,22 @@ static void rbf_eval_der(rbfpoly_t rbf, derivative_t der,
         b[k++] = val;
     }
 
-    // Polynomial part: D^der (x^a * y^b) at (0,0) = qx! * qy! if (a,b)==(qx,qy), else 0.
+    // Polynomial part: D^der (x^a * y^b) at (0,0) is non-zero only when (a,b)==(der.x,der.y).
     // Monomial x^a * y^b with a+b = d occupies flat index d*(d+1)/2 + a.
     const int m = rbf_poly_terms(rbf.p);
     for (int j = 0; j < m; j++) b[k + j] = 0.0;
 
-    const int d = der.qx + der.qy;
+    const int d = der.x + der.y;
     if (d <= rbf.p) {
         double fac = 1.0;
-        for (int i = 1; i <= der.qx; i++) fac *= i;
-        for (int i = 1; i <= der.qy; i++) fac *= i;
-        b[k + d*(d+1)/2 + der.qx] = fac;
+        for (int i = 1; i <= der.x; i++) fac *= i;
+        for (int i = 1; i <= der.y; i++) fac *= i;
+        b[k + d*(d+1)/2 + der.x] = fac;
     }
 }
 
 int rbf_factorize(
-    rbfpoly_t rbf,
+    rbf_poly_t rbf,
     int n, const double x[], const double y[],
     int ldm, double M[], int ipiv[])
 {
@@ -145,7 +145,7 @@ int rbf_factorize(
     // Rows 0..n-1   -> A block (RBF kernel matrix, symmetric)
     // Rows n..n+m-1 -> P block (polynomial Vandermonde)
     for (int i = 0; i < n; i++) {
-        rbf_basis(rbf, x[i], y[i], n, x, y, &M[IDX(0, i)]);
+        rbf_eval_basis(rbf, x[i], y[i], n, x, y, &M[IDX(0, i)]);
     }
 
     // Transpose P into the top-right P^T block (columns n..n+m-1, rows 0..n-1).
@@ -169,18 +169,18 @@ int rbf_factorize(
     return info;
 }
 
-int rbf_derivative_weights(
-    rbfpoly_t rbf,
+int rbf_stencil_weights(
+    rbf_poly_t rbf,
     int n, const double x[], const double y[],
     int ldm, const double M[], const int *ipiv,
-    int num_ops, const derivative_t ops[],
+    int num_ops, const rbf_deriv_t ops[],
     int ldw, double weights[])
 {
     const int nt = rbf_system_size(rbf, n);
 
     if (ldw < nt) return -10;
     for (int q = 0; q < num_ops; q++) {
-        if (ops[q].qx + ops[q].qy > 2) return -9;
+        if (ops[q].x + ops[q].y > 2) return -9;
         rbf_eval_der(rbf, ops[q], n, x, y, &weights[q * ldw]);
     }
 
@@ -191,10 +191,10 @@ int rbf_derivative_weights(
 }
 
 int rbf_operator_weights(
-    rbfpoly_t rbf,
+    rbf_poly_t rbf,
     int n, const double x[], const double y[],
     int ldm, const double M[], const int *ipiv,
-    int num_terms, const derivative_t ders[], const double *coeffs,
+    int num_terms, const rbf_deriv_t ders[], const double *coeffs,
     double weights[])
 {
     const int nt = rbf_system_size(rbf, n);
@@ -203,7 +203,7 @@ int rbf_operator_weights(
 
     double wrk[nt];  // VLA; nt is typically small (< 200)
     for (int t = 0; t < num_terms; t++) {
-        if (ders[t].qx + ders[t].qy > 2) return -9;
+        if (ders[t].x + ders[t].y > 2) return -9;
         rbf_eval_der(rbf, ders[t], n, x, y, wrk);
         double c = coeffs ? coeffs[t] : 1.0;
         for (int i = 0; i < nt; i++) {
@@ -217,7 +217,7 @@ int rbf_operator_weights(
 }
 
 int rbf_interpolation_weights(
-    rbfpoly_t rbf,
+    rbf_poly_t rbf,
     int n, const double x[], const double y[],
     int ldm, const double M[], const int *ipiv,
     int np, const double xp[], const double yp[],
@@ -228,7 +228,7 @@ int rbf_interpolation_weights(
     if (ldw < nt) return -11;
 
     for (int q = 0; q < np; q++) {
-        rbf_basis(rbf, xp[q], yp[q], n, x, y, &weights[q * ldw]);
+        rbf_eval_basis(rbf, xp[q], yp[q], n, x, y, &weights[q * ldw]);
     }
 
     int info = LAPACKE_dgetrs(LAPACK_COL_MAJOR, 'N', nt, np,
@@ -237,12 +237,12 @@ int rbf_interpolation_weights(
     return info;
 }
 
-int rbf_standard_weights(
-    rbfpoly_t rbf,
+int rbf_diff12_weights(
+    rbf_poly_t rbf,
     int n, const double x[], const double y[],
     int ldm, const double M[], const int *ipiv,
     int ldw, double weights[])
 {
-    static const derivative_t ops[5] = {{1,0}, {0,1}, {2,0}, {1,1}, {0,2}};
-    return rbf_derivative_weights(rbf, n, x, y, ldm, M, ipiv, 5, ops, ldw, weights);
+    static const rbf_deriv_t ops[5] = {{1,0}, {0,1}, {2,0}, {1,1}, {0,2}};
+    return rbf_stencil_weights(rbf, n, x, y, ldm, M, ipiv, 5, ops, ldw, weights);
 }

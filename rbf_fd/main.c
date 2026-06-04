@@ -3,7 +3,7 @@
 
 int main(void)
 {
-    rbfpoly_t rbf = {.q = 3, .p = 2};
+    rbf_poly_t rbf = {.q = 3, .p = 2};
 
     // 3x3 uniform stencil in local coordinates (center at origin).
     // n=9, p=2 gives m=6 polynomial terms and nt=15.
@@ -26,11 +26,11 @@ int main(void)
     }
 
     // --- Gradient weights: dx, dy ---
-    derivative_t grad[2] = {{1, 0}, {0, 1}};
+    rbf_deriv_t grad[2] = {{1, 0}, {0, 1}};
     double W[nt * 2];
 
-    ierr = rbf_derivative_weights(rbf, n, x, y, nt, M, ipiv, 2, grad, nt, W);
-    if (ierr != 0) { fprintf(stderr, "rbf_derivative_weights failed\n"); return 1; }
+    ierr = rbf_stencil_weights(rbf, n, x, y, nt, M, ipiv, 2, grad, nt, W);
+    if (ierr != 0) { fprintf(stderr, "rbf_stencil_weights failed\n"); return 1; }
 
     printf("dx weights:");
     for (int i = 0; i < n; i++) printf(" %7.4f", W[i]);
@@ -39,7 +39,7 @@ int main(void)
     printf("\n\n");
 
     // --- Laplacian via rbf_operator_weights (coeffs = NULL => all 1.0) ---
-    derivative_t lap_ders[2] = {{2, 0}, {0, 2}};
+    rbf_deriv_t lap_ders[2] = {{2, 0}, {0, 2}};
     double wlap[nt];
 
     ierr = rbf_operator_weights(rbf, n, x, y, nt, M, ipiv, 2, lap_ders, NULL, wlap);

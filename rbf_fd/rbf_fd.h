@@ -9,15 +9,16 @@ static inline int rbf_poly_terms(int p) {
 typedef struct {
     int q;  // PHS exponent, must be odd and >= 1
     int p;  // Maximum polynomial degree
-} rbfpoly_t;
+} rbf_poly_t;
 
+// Derivative operator d^(x+y) / dx^x dy^y.
 typedef struct {
-    int qx;
-    int qy;
-} derivative_t;
+    int x;
+    int y;
+} rbf_deriv_t;
 
 // Returns the total system size n + rbf_poly_terms(rbf.p).
-static inline int rbf_system_size(rbfpoly_t rbf, int n) {
+static inline int rbf_system_size(rbf_poly_t rbf, int n) {
     return n + rbf_poly_terms(rbf.p);
 }
 
@@ -28,7 +29,7 @@ static inline int rbf_system_size(rbfpoly_t rbf, int n) {
 //
 // Returns 0 on success, < 0 on argument error, > 0 if the matrix is singular.
 int rbf_factorize(
-    rbfpoly_t rbf,
+    rbf_poly_t rbf,
     int n, const double x[], const double y[],
     int ldm, double M[], int ipiv[]);
 
@@ -36,11 +37,12 @@ int rbf_factorize(
 //
 // weights is column-major with leading dimension ldw >= rbf_system_size(rbf, n).
 // After the call, weights[q*ldw + i] for i < n are the stencil weights for ops[q].
-int rbf_derivative_weights(
-    rbfpoly_t rbf,
+// Returns -9 if any operator has order x+y > 2.
+int rbf_stencil_weights(
+    rbf_poly_t rbf,
     int n, const double x[], const double y[],
     int ldm, const double M[], const int *ipiv,
-    int num_ops, const derivative_t ops[],
+    int num_ops, const rbf_deriv_t ops[],
     int ldw, double weights[]);
 
 // Computes RBF-FD weights for a general linear differential operator
@@ -48,11 +50,12 @@ int rbf_derivative_weights(
 //
 // If coeffs is NULL every coefficient defaults to 1.0.
 // weights must hold at least rbf_system_size(rbf, n) doubles.
+// Returns -9 if any derivative has order x+y > 2.
 int rbf_operator_weights(
-    rbfpoly_t rbf,
+    rbf_poly_t rbf,
     int n, const double x[], const double y[],
     int ldm, const double M[], const int *ipiv,
-    int num_terms, const derivative_t ders[], const double *coeffs,
+    int num_terms, const rbf_deriv_t ders[], const double *coeffs,
     double weights[]);
 
 // Computes interpolation weights at np evaluation points (xp, yp).
@@ -60,18 +63,17 @@ int rbf_operator_weights(
 // weights is column-major with leading dimension ldw >= rbf_system_size(rbf, n).
 // The stencil coordinates (x, y) must match those used to build M.
 int rbf_interpolation_weights(
-    rbfpoly_t rbf,
+    rbf_poly_t rbf,
     int n, const double x[], const double y[],
     int ldm, const double M[], const int *ipiv,
     int np, const double xp[], const double yp[],
     int ldw, double weights[]);
 
-// Convenience wrapper: weights for the standard five operators
-// dx, dy, dxx, dxy, dyy (in that column order).
+// Convenience wrapper: weights for dx, dy, dxx, dxy, dyy (in that column order).
 //
 // weights must hold at least 5 * ldw doubles.
-int rbf_standard_weights(
-    rbfpoly_t rbf,
+int rbf_diff12_weights(
+    rbf_poly_t rbf,
     int n, const double x[], const double y[],
     int ldm, const double M[], const int *ipiv,
     int ldw, double weights[]);
