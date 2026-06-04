@@ -97,24 +97,66 @@ int rbf_diff12_weights(
 // Assembly
 // ---------------------------------------------------------------------------
 
+// Leading-dimension alignment in doubles: ldm is always a multiple of this,
+// keeping each matrix column on a SIMD-friendly boundary.
+// Override at compile time: -DRBF_LD_ALIGN=16 for AVX-512, =1 to disable.
+#ifndef RBF_LD_ALIGN
+#  define RBF_LD_ALIGN 8
+#endif
+
 // Fills x[n] and y[n] with the stencil coordinates for stencil i in its
 // local frame (evaluation centre at the origin).
 typedef void (*rbf_gather_fn)(int i, int n, double *x, double *y, void *data);
 
-// Stores the computed weights W (column-major, 5 columns of length ldw) for
-// stencil i into user storage.  Column order matches rbf_diff12_weights:
-// dx, dy, dxx, dxy, dyy.  W must be treated as read-only.
+// Stores the computed weights W (column-major, nops columns of length ldw)
+// for stencil i into user storage.  W must be treated as read-only.
 typedef void (*rbf_pack_fn)(int i, int n, int nops,
                             const double *W, int ldw, void *data);
 
-// Assembles first- and second-derivative RBF-FD weights for all stencils.
+// Computes nops columns of weights into W[ldw * nops] given a factored system.
+// params carries any extra data (operator specs, eval points, etc.).
+typedef void (*rbf_weights_fn)(rbf_poly_t rbf, int n,
+                               const double *x, const double *y,
+                               int ldm, const double *M, const int *ipiv,
+                               int ldw, double *W, void *params);
+
+// Generic assembly loop: factorizes each stencil, calls weights_fn to fill W,
+// then calls pack to store results.  nops is the number of weight columns
+// (determines the width of the W buffer passed to weights_fn and pack).
 //
 // Uses one thread per OpenMP thread (or one thread if OpenMP is absent).
 // If elapsed is non-NULL, *elapsed receives the wall-clock time in seconds.
 // Returns 0 on success; aborts via assert if any stencil matrix is singular.
+int rbf_assemble(
+    int nstencils, rbf_poly_t rbf, int n,
+    rbf_gather_fn gather, void *gather_data,
+    int nops, rbf_weights_fn weights_fn, void *weights_params,
+    rbf_pack_fn pack, void *pack_data,
+    double *elapsed);
+
+// Convenience wrappers around rbf_assemble for the three standard weight modes.
+
+// Weights for dx, dy, dxx, dxy, dyy (nops = 5).
 int rbf_assemble_diff12(
     int nstencils, rbf_poly_t rbf, int n,
     rbf_gather_fn gather, void *gather_data,
+    rbf_pack_fn pack, void *pack_data,
+    double *elapsed);
+
+// Weights for num_ops arbitrary derivative operators (nops = num_ops).
+int rbf_assemble_stencil(
+    int nstencils, rbf_poly_t rbf, int n,
+    rbf_gather_fn gather, void *gather_data,
+    int num_ops, const rbf_deriv_t ops[],
+    rbf_pack_fn pack, void *pack_data,
+    double *elapsed);
+
+// Weights for a single linear operator L = sum_t coeffs[t] * D^{ders[t]} (nops = 1).
+// If coeffs is NULL every coefficient defaults to 1.0.
+int rbf_assemble_operator(
+    int nstencils, rbf_poly_t rbf, int n,
+    rbf_gather_fn gather, void *gather_data,
+    int num_terms, const rbf_deriv_t ders[], const double *coeffs,
     rbf_pack_fn pack, void *pack_data,
     double *elapsed);
 
