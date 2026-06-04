@@ -93,4 +93,29 @@ int rbf_diff12_weights(
     int ldm, const double M[], const int ipiv[],
     int ldw, double weights[]);
 
+// ---------------------------------------------------------------------------
+// Assembly
+// ---------------------------------------------------------------------------
+
+// Fills x[n] and y[n] with the stencil coordinates for stencil i in its
+// local frame (evaluation centre at the origin).
+typedef void (*rbf_gather_fn)(int i, int n, double *x, double *y, void *data);
+
+// Stores the computed weights W (column-major, 5 columns of length ldw) for
+// stencil i into user storage.  Column order matches rbf_diff12_weights:
+// dx, dy, dxx, dxy, dyy.  W must be treated as read-only.
+typedef void (*rbf_pack_fn)(int i, int n, int nops,
+                            const double *W, int ldw, void *data);
+
+// Assembles first- and second-derivative RBF-FD weights for all stencils.
+//
+// Uses one thread per OpenMP thread (or one thread if OpenMP is absent).
+// If elapsed is non-NULL, *elapsed receives the wall-clock time in seconds.
+// Returns 0 on success; aborts via assert if any stencil matrix is singular.
+int rbf_assemble_diff12(
+    int nstencils, rbf_poly_t rbf, int n,
+    rbf_gather_fn gather, void *gather_data,
+    rbf_pack_fn pack, void *pack_data,
+    double *elapsed);
+
 #endif // RBF_FD_H
