@@ -1,7 +1,42 @@
 #include "rbf_fd.h"
 #include <assert.h>
-#include <lapacke.h>
 #include <math.h>
+
+// ---------------------------------------------------------------------------
+// LAPACK backend
+// Compile with -DRBF_USE_ACCELERATE to use Apple Accelerate (no LAPACKE).
+// Default: LAPACKE interface (OpenBLAS, MKL, LAPACKE standalone, ...).
+//
+// rbf__dgetrf: LU factorize an n*n matrix (overwrites A, fills ipiv).
+// rbf__dgetrs: solve A*X = B using a prior LU factorization (overwrites B).
+// Both return 0 on success, > 0 on singular matrix, < 0 on argument error.
+// ---------------------------------------------------------------------------
+#ifdef RBF_USE_ACCELERATE
+#  include <Accelerate/Accelerate.h>
+static inline int rbf__dgetrf(int n, double *A, int lda, int *ipiv) {
+    __CLPK_integer n_ = n, lda_ = lda, info;
+    dgetrf_(&n_, &n_, A, &lda_, (__CLPK_integer *)ipiv, &info);
+    return (int)info;
+}
+static inline int rbf__dgetrs(int n, int nrhs, const double *A, int lda,
+                               const int *ipiv, double *B, int ldb) {
+    char trans = 'N';
+    __CLPK_integer n_ = n, nrhs_ = nrhs, lda_ = lda, ldb_ = ldb, info;
+    // Fortran interface has no const; casts are safe (routine does not modify A or ipiv).
+    dgetrs_(&trans, &n_, &nrhs_, (double *)A, &lda_,
+            (__CLPK_integer *)ipiv, B, &ldb_, &info);
+    return (int)info;
+}
+#else
+#  include <lapacke.h>
+static inline int rbf__dgetrf(int n, double *A, int lda, int *ipiv) {
+    return LAPACKE_dgetrf(LAPACK_COL_MAJOR, n, n, A, lda, ipiv);
+}
+static inline int rbf__dgetrs(int n, int nrhs, const double *A, int lda,
+                               const int *ipiv, double *B, int ldb) {
+    return LAPACKE_dgetrs(LAPACK_COL_MAJOR, 'N', n, nrhs, A, lda, ipiv, B, ldb);
+}
+#endif
 
 #define MAX_P 10  // Maximum supported polynomial degree
 
@@ -164,7 +199,7 @@ int rbf_factorize(
 
 #undef IDX
 
-    int info = LAPACKE_dgetrf(LAPACK_COL_MAJOR, nt, nt, M, ldm, ipiv);
+    int info = rbf__dgetrf(nt, M, ldm, ipiv);
     assert(info >= 0);  // info < 0 is a LAPACK argument error
     return info;
 }
@@ -184,8 +219,7 @@ int rbf_stencil_weights(
         rbf_eval_der(rbf, ops[q], n, x, y, &weights[q * ldw]);
     }
 
-    int info = LAPACKE_dgetrs(LAPACK_COL_MAJOR, 'N', nt, num_ops,
-                              M, ldm, ipiv, weights, ldw);
+    int info = rbf__dgetrs(nt, num_ops, M, ldm, ipiv, weights, ldw);
     assert(info == 0);
     return info;
 }
@@ -211,7 +245,7 @@ int rbf_operator_weights(
         }
     }
 
-    int info = LAPACKE_dgetrs(LAPACK_COL_MAJOR, 'N', nt, 1, M, ldm, ipiv, weights, nt);
+    int info = rbf__dgetrs(nt, 1, M, ldm, ipiv, weights, nt);
     assert(info == 0);
     return info;
 }
@@ -231,8 +265,7 @@ int rbf_interpolation_weights(
         rbf_eval_basis(rbf, xp[q], yp[q], n, x, y, &weights[q * ldw]);
     }
 
-    int info = LAPACKE_dgetrs(LAPACK_COL_MAJOR, 'N', nt, np,
-                              M, ldm, ipiv, weights, ldw);
+    int info = rbf__dgetrs(nt, np, M, ldm, ipiv, weights, ldw);
     assert(info == 0);
     return info;
 }
