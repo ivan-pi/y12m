@@ -9,7 +9,8 @@
 //
 // rbf__dgetrf: LU factorize an n*n matrix (overwrites A, fills ipiv).
 // rbf__dgetrs: solve A*X = B using a prior LU factorization (overwrites B).
-// Both return 0 on success, > 0 on singular matrix, < 0 on argument error.
+// rbf__dgecon: estimate rcond = 1/(||A||_1 * ||A^-1||_1) from LU factors.
+// All return 0 on success, > 0 on singular matrix, < 0 on argument error.
 // ---------------------------------------------------------------------------
 #ifdef RBF_USE_ACCELERATE
 #  include <Accelerate/Accelerate.h>
@@ -27,6 +28,15 @@ static inline int rbf__dgetrs(int n, int nrhs, const double *A, int lda,
             (__CLPK_integer *)ipiv, B, &ldb_, &info);
     return (int)info;
 }
+static inline int rbf__dgecon(int n, const double *A, int lda,
+                               double anorm, double *rcond) {
+    char norm = '1';
+    __CLPK_integer n_ = n, lda_ = lda, info;
+    double work[4*n];           // VLA; n is typically small (< 200)
+    __CLPK_integer iwork[n];    // VLA
+    dgecon_(&norm, &n_, (double *)A, &lda_, &anorm, rcond, work, iwork, &info);
+    return (int)info;
+}
 #else
 #  include <lapacke.h>
 static inline int rbf__dgetrf(int n, double *A, int lda, int *ipiv) {
@@ -35,6 +45,10 @@ static inline int rbf__dgetrf(int n, double *A, int lda, int *ipiv) {
 static inline int rbf__dgetrs(int n, int nrhs, const double *A, int lda,
                                const int *ipiv, double *B, int ldb) {
     return LAPACKE_dgetrs(LAPACK_COL_MAJOR, 'N', n, nrhs, A, lda, ipiv, B, ldb);
+}
+static inline int rbf__dgecon(int n, const double *A, int lda,
+                               double anorm, double *rcond) {
+    return LAPACKE_dgecon(LAPACK_COL_MAJOR, '1', n, A, lda, anorm, rcond);
 }
 #endif
 
@@ -164,7 +178,8 @@ static void rbf_eval_der(rbf_poly_t rbf, rbf_deriv_t der,
 int rbf_factorize(
     rbf_poly_t rbf,
     int n, const double x[], const double y[],
-    int ldm, double M[], int ipiv[])
+    int ldm, double M[], int ipiv[],
+    double *rcond)
 {
     const int m  = rbf_poly_terms(rbf.p);
     const int nt = n + m;
@@ -199,8 +214,26 @@ int rbf_factorize(
 
 #undef IDX
 
+    // Compute 1-norm before factorization; needed by dgecon afterwards.
+    double anorm = 0.0;
+    if (rcond) {
+        for (int j = 0; j < nt; j++) {
+            double col = 0.0;
+            for (int i = 0; i < nt; i++) col += fabs(M[i + j * ldm]);
+            if (col > anorm) anorm = col;
+        }
+    }
+
     int info = rbf__dgetrf(nt, M, ldm, ipiv);
     assert(info >= 0);  // info < 0 is a LAPACK argument error
+    if (info != 0) {
+        if (rcond) *rcond = 0.0;
+        return info;
+    }
+
+    if (rcond)
+        info = rbf__dgecon(nt, M, ldm, anorm, rcond);
+
     return info;
 }
 

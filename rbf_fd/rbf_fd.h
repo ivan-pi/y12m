@@ -27,11 +27,15 @@ static inline int rbf_system_size(rbf_poly_t rbf, int n) {
 // The stencil coordinates (x, y) must be in the local frame with the
 // evaluation center at the origin.
 //
+// If rcond is non-NULL the reciprocal 1-norm condition number is written
+// there on success (0.0 if the matrix is singular).
+//
 // Returns 0 on success, < 0 on argument error, > 0 if the matrix is singular.
 int rbf_factorize(
     rbf_poly_t rbf,
     int n, const double x[], const double y[],
-    int ldm, double M[], int ipiv[]);
+    int ldm, double M[], int ipiv[],
+    double *rcond);
 
 // Computes RBF-FD weights for num_ops derivative operators simultaneously.
 //
