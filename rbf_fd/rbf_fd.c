@@ -56,17 +56,18 @@ static void rbf_basis(rbfpoly_t rbf, double xc, double yc,
 
 // Evaluates the derivative D^der of the augmented basis at the origin (0,0).
 //
-// The stencil coordinates (x, y) must be in the local frame with the
-// evaluation center at the origin.
+// x[i], y[i] are stencil point positions in the local frame (xc = 0), so the
+// displacement from stencil point i to the center is (0 - x[i], 0 - y[i]),
+// which is why dr/dx = (xc - x[i])/r = -x[i]/r.
+//
+// Chain rule for a radial function phi(r), r = ||(xc,yc) - (x[i],y[i])||:
+//   dphi/dx_k   = phi' * dr/dx_k
+//   d^2phi/dx_k dx_l = phi'' * (dr/dx_k)*(dr/dx_l) + phi' * d^2r/dx_k dx_l
+// where phi' = q*r^(q-1), phi'' = q*(q-1)*r^(q-2),
+// dr/dx = -xi/r, d^2r/dx^2 = (r^2-xi^2)/r^3, d^2r/dxdy = -xi*yi/r^3.
 //
 // Supported derivative orders: (0,0), (1,0), (0,1), (2,0), (1,1), (0,2).
-// Higher-order derivatives write 0 (not implemented).
-//
-// Chain rule for a radial function phi(r):
-//   dphi/dx   = phi' * dr/dx
-//   d^2phi/dx^2 = phi'' * (dr/dx)^2 + phi' * d^2r/dx^2
-// where phi' = q*r^(q-1), phi'' = q*(q-1)*r^(q-2),
-// dr/dx = -xi/r, d^2r/dx^2 = (r^2 - xi^2)/r^3, d^2r/dxdy = -xi*yi/r^3.
+// Higher-order entries are not implemented and write 0.
 static void rbf_eval_der(rbfpoly_t rbf, derivative_t der,
     int n, const double x[], const double y[], double b[])
 {
@@ -75,6 +76,7 @@ static void rbf_eval_der(rbfpoly_t rbf, derivative_t der,
     const double dq = (double)rbf.q;
 
     for (int i = 0; i < n; i++) {
+        // xi, yi: displacement from stencil point to center (= -stencil position)
         double xi = x[i], yi = y[i];
         double rsqr = xi*xi + yi*yi;
         double val;
@@ -109,16 +111,17 @@ static void rbf_eval_der(rbfpoly_t rbf, derivative_t der,
         b[k++] = val;
     }
 
-    // Polynomial part: D^der (x^a * y^b) at (0,0).
-    // Non-zero only for the monomial (a,b) == (qx,qy); value is qx! * qy!.
-    double fac = 1.0;
-    for (int i = 1; i <= der.qx; i++) fac *= i;
-    for (int i = 1; i <= der.qy; i++) fac *= i;
+    // Polynomial part: D^der (x^a * y^b) at (0,0) = qx! * qy! if (a,b)==(qx,qy), else 0.
+    // Monomial x^a * y^b with a+b = d occupies flat index d*(d+1)/2 + a.
+    const int m = rbf_poly_terms(rbf.p);
+    for (int j = 0; j < m; j++) b[k + j] = 0.0;
 
-    for (int d = 0; d <= rbf.p; d++) {
-        for (int i = 0; i <= d; i++) {
-            b[k++] = (i == der.qx && (d - i) == der.qy) ? fac : 0.0;
-        }
+    const int d = der.qx + der.qy;
+    if (d <= rbf.p) {
+        double fac = 1.0;
+        for (int i = 1; i <= der.qx; i++) fac *= i;
+        for (int i = 1; i <= der.qy; i++) fac *= i;
+        b[k + d*(d+1)/2 + der.qx] = fac;
     }
 }
 
