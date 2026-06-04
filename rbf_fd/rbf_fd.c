@@ -1,5 +1,6 @@
 #include "rbf_fd.h"
 #include <assert.h>
+#include <lapacke.h>
 #include <math.h>
 
 #define MAX_P 10  // Maximum supported polynomial degree

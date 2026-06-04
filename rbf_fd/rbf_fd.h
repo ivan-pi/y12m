@@ -1,8 +1,6 @@
 #ifndef RBF_FD_H
 #define RBF_FD_H
 
-#include <lapacke.h>
-
 // Returns the number of 2D polynomial basis terms up to degree p: (p+1)(p+2)/2.
 static inline int rbf_poly_terms(int p) {
     return ((p + 1) * (p + 2)) / 2;
