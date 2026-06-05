@@ -142,3 +142,35 @@ int rbf_assemble_operator(
         1, cb_operator, &p,
         pack, pack_data, elapsed);
 }
+
+// ---- interpolation weights -------------------------------------------------
+
+typedef struct {
+    int np;
+    const double *xp;
+    const double *yp;
+} interp_params_t;
+
+static void cb_interp(rbf_poly_t rbf, int n,
+    const double *x, const double *y,
+    int ldm, const double *M, const int *ipiv,
+    int ldw, double *W, void *params)
+{
+    interp_params_t *p = params;
+    rbf_interpolation_weights(rbf, n, x, y, ldm, M, ipiv,
+                              p->np, p->xp, p->yp, ldw, W);
+}
+
+int rbf_assemble_interp(
+    int nstencils, rbf_poly_t rbf, int n,
+    rbf_gather_fn gather, void *gather_data,
+    int np, const double xp[], const double yp[],
+    rbf_pack_fn pack, void *pack_data,
+    double *elapsed)
+{
+    interp_params_t p = {np, xp, yp};
+    return rbf_assemble(nstencils, rbf, n,
+        gather, gather_data,
+        np, cb_interp, &p,
+        pack, pack_data, elapsed);
+}

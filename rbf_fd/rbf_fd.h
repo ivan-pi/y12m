@@ -175,4 +175,15 @@ int rbf_assemble_operator(
     rbf_pack_fn pack, void *pack_data,
     double *elapsed);
 
+// Interpolation weights at np fixed evaluation points (xp, yp) (nops = np).
+// The evaluation points are in the same local frame as the stencil coordinates.
+// Note: the per-thread stack buffer scales with np; prefer small np or use
+// rbf_assemble directly with a heap-backed scratch for large np.
+int rbf_assemble_interp(
+    int nstencils, rbf_poly_t rbf, int n,
+    rbf_gather_fn gather, void *gather_data,
+    int np, const double xp[], const double yp[],
+    rbf_pack_fn pack, void *pack_data,
+    double *elapsed);
+
 #endif // RBF_FD_H
