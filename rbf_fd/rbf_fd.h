@@ -19,8 +19,27 @@ static inline int rbf_poly_terms(int p) {
 
 typedef struct {
     int q;  // PHS exponent, must be odd and >= 1
-    int p;  // Maximum polynomial degree, 0 <= p <= RBF_MAX_POLY_DEGREE
+    int p;  // polynomial augmentation degree, 0 <= p <= RBF_MAX_P
 } rbf_poly_t;
+
+// Supported RBF kernel types.
+typedef enum {
+    RBF_PHS,   // phi(r) = r^q,            q odd >= 1  (no shape parameter)
+    RBF_MQ,    // phi(r) = sqrt(r^2+eps^2)             (requires eps > 0)
+    RBF_IMQ,   // phi(r) = 1/sqrt(r^2+eps^2)           (requires eps > 0)
+} rbf_type_t;
+
+// Kernel descriptor for the assembly layer.  Pass by const pointer.
+// Low-level functions (rbf_factorize, *_weights) remain PHS-only for now.
+typedef struct {
+    rbf_type_t type;
+    int        p;    // polynomial augmentation degree
+    union {
+        struct { int    q;   } phs;   // PHS exponent
+        struct { double eps; } mq;    // shape parameter
+        struct { double eps; } imq;   // shape parameter
+    };
+} rbf_kernel_t;
 
 // Derivative operator d^(x+y) / dx^x dy^y.
 typedef struct {
@@ -117,7 +136,10 @@ int rbf_diff12_weights(
 
 // Fills x[n] and y[n] with the stencil coordinates for stencil i in its
 // local frame (evaluation centre at the origin).
-typedef void (*rbf_gather_fn)(int i, int n, double *x, double *y, void *data);
+// *eps receives the per-stencil shape parameter; ignored for PHS kernels.
+typedef void (*rbf_gather_fn)(int i, int n,
+                              double *x, double *y, double *eps,
+                              void *data);
 
 // Stores the computed weights W (column-major, nops columns of length ldw)
 // for stencil i into user storage.  W must be treated as read-only.
@@ -138,12 +160,12 @@ typedef void (*rbf_weights_fn)(rbf_poly_t rbf, int n,
 // Uses one thread per OpenMP thread (or one thread if OpenMP is absent).
 // If elapsed is non-NULL, *elapsed receives the wall-clock time in seconds.
 // Returns 0 on success.
-// Returns -1 if rbf.q is not a positive odd integer or rbf.p is out of range.
-// Returns -3 if n < rbf_poly_terms(rbf.p) (too few stencil points for the
-//   polynomial degree; the system would be underdetermined).
+// Returns -1 if kernel parameters are invalid (q, p out of range).
+// Returns -2 if kernel->type is not yet implemented (only RBF_PHS supported).
+// Returns -3 if n < rbf_poly_terms(kernel->p) (underdetermined system).
 // Aborts via assert if a stencil matrix is singular (ill-conditioned points).
 int rbf_assemble(
-    int nstencils, rbf_poly_t rbf, int n,
+    int nstencils, const rbf_kernel_t *kernel, int n,
     rbf_gather_fn gather, void *gather_data,
     int nops, rbf_weights_fn weights_fn, void *weights_params,
     rbf_pack_fn pack, void *pack_data,
@@ -153,14 +175,14 @@ int rbf_assemble(
 
 // Weights for dx, dy, dxx, dxy, dyy (nops = 5).
 int rbf_assemble_diff12(
-    int nstencils, rbf_poly_t rbf, int n,
+    int nstencils, const rbf_kernel_t *kernel, int n,
     rbf_gather_fn gather, void *gather_data,
     rbf_pack_fn pack, void *pack_data,
     double *elapsed);
 
 // Weights for num_ops arbitrary derivative operators (nops = num_ops).
 int rbf_assemble_stencil(
-    int nstencils, rbf_poly_t rbf, int n,
+    int nstencils, const rbf_kernel_t *kernel, int n,
     rbf_gather_fn gather, void *gather_data,
     int num_ops, const rbf_deriv_t ops[],
     rbf_pack_fn pack, void *pack_data,
@@ -169,7 +191,7 @@ int rbf_assemble_stencil(
 // Weights for a single linear operator L = sum_t coeffs[t] * D^{ders[t]} (nops = 1).
 // If coeffs is NULL every coefficient defaults to 1.0.
 int rbf_assemble_operator(
-    int nstencils, rbf_poly_t rbf, int n,
+    int nstencils, const rbf_kernel_t *kernel, int n,
     rbf_gather_fn gather, void *gather_data,
     int num_terms, const rbf_deriv_t ders[], const double *coeffs,
     rbf_pack_fn pack, void *pack_data,
@@ -180,7 +202,7 @@ int rbf_assemble_operator(
 // Note: the per-thread stack buffer scales with np; prefer small np or use
 // rbf_assemble directly with a heap-backed scratch for large np.
 int rbf_assemble_interp(
-    int nstencils, rbf_poly_t rbf, int n,
+    int nstencils, const rbf_kernel_t *kernel, int n,
     rbf_gather_fn gather, void *gather_data,
     int np, const double xp[], const double yp[],
     rbf_pack_fn pack, void *pack_data,

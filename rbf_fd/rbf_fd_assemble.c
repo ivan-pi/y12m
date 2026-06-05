@@ -22,15 +22,19 @@ static double walltime(void) {
 // ---------------------------------------------------------------------------
 
 int rbf_assemble(
-    int nstencils, rbf_poly_t rbf, int n,
+    int nstencils, const rbf_kernel_t *kernel, int n,
     rbf_gather_fn gather, void *gather_data,
     int nops, rbf_weights_fn weights_fn, void *weights_params,
     rbf_pack_fn pack, void *pack_data,
     double *elapsed)
 {
-    if (rbf.q < 1 || rbf.q % 2 == 0)              return -1;
-    if (rbf.p < 0 || rbf.p > RBF_MAX_P) return -1;
-    if (n < rbf_poly_terms(rbf.p))                 return -3;
+    if (kernel->type != RBF_PHS)                       return -2;
+    if (kernel->phs.q < 1 || kernel->phs.q % 2 == 0)  return -1;
+    if (kernel->p < 0 || kernel->p > RBF_MAX_P)        return -1;
+
+    rbf_poly_t rbf = { .q = kernel->phs.q, .p = kernel->p };
+
+    if (n < rbf_poly_terms(rbf.p))                     return -3;
 
     const int nt  = rbf_system_size(rbf, n);
     const int ldm = ((nt + RBF_LD_ALIGN - 1) / RBF_LD_ALIGN) * RBF_LD_ALIGN;
@@ -43,10 +47,11 @@ int rbf_assemble(
         double M[ldm * nt], W[ldw * nops];
         int    ipiv[nt];
         double x[n], y[n];
+        double eps;   // per-stencil shape parameter; ignored for PHS
 
 #pragma omp for schedule(static)
         for (int i = 0; i < nstencils; i++) {
-            gather(i, n, x, y, gather_data);
+            gather(i, n, x, y, &eps, gather_data);
             int ierr = rbf_factorize(rbf, n, x, y, ldm, M, ipiv);
             assert(ierr == 0);
             weights_fn(rbf, n, x, y, ldm, M, ipiv, ldw, W, weights_params);
@@ -72,12 +77,12 @@ static void cb_diff12(rbf_poly_t rbf, int n,
 }
 
 int rbf_assemble_diff12(
-    int nstencils, rbf_poly_t rbf, int n,
+    int nstencils, const rbf_kernel_t *kernel, int n,
     rbf_gather_fn gather, void *gather_data,
     rbf_pack_fn pack, void *pack_data,
     double *elapsed)
 {
-    return rbf_assemble(nstencils, rbf, n,
+    return rbf_assemble(nstencils, kernel, n,
         gather, gather_data,
         5, cb_diff12, NULL,
         pack, pack_data, elapsed);
@@ -97,14 +102,14 @@ static void cb_stencil(rbf_poly_t rbf, int n,
 }
 
 int rbf_assemble_stencil(
-    int nstencils, rbf_poly_t rbf, int n,
+    int nstencils, const rbf_kernel_t *kernel, int n,
     rbf_gather_fn gather, void *gather_data,
     int num_ops, const rbf_deriv_t ops[],
     rbf_pack_fn pack, void *pack_data,
     double *elapsed)
 {
     stencil_params_t p = {num_ops, ops};
-    return rbf_assemble(nstencils, rbf, n,
+    return rbf_assemble(nstencils, kernel, n,
         gather, gather_data,
         num_ops, cb_stencil, &p,
         pack, pack_data, elapsed);
@@ -130,14 +135,14 @@ static void cb_operator(rbf_poly_t rbf, int n,
 }
 
 int rbf_assemble_operator(
-    int nstencils, rbf_poly_t rbf, int n,
+    int nstencils, const rbf_kernel_t *kernel, int n,
     rbf_gather_fn gather, void *gather_data,
     int num_terms, const rbf_deriv_t ders[], const double *coeffs,
     rbf_pack_fn pack, void *pack_data,
     double *elapsed)
 {
     operator_params_t p = {num_terms, ders, coeffs};
-    return rbf_assemble(nstencils, rbf, n,
+    return rbf_assemble(nstencils, kernel, n,
         gather, gather_data,
         1, cb_operator, &p,
         pack, pack_data, elapsed);
@@ -162,14 +167,14 @@ static void cb_interp(rbf_poly_t rbf, int n,
 }
 
 int rbf_assemble_interp(
-    int nstencils, rbf_poly_t rbf, int n,
+    int nstencils, const rbf_kernel_t *kernel, int n,
     rbf_gather_fn gather, void *gather_data,
     int np, const double xp[], const double yp[],
     rbf_pack_fn pack, void *pack_data,
     double *elapsed)
 {
     interp_params_t p = {np, xp, yp};
-    return rbf_assemble(nstencils, rbf, n,
+    return rbf_assemble(nstencils, kernel, n,
         gather, gather_data,
         np, cb_interp, &p,
         pack, pack_data, elapsed);
