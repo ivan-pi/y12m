@@ -63,6 +63,11 @@ static inline double rbf__dlange(int n, const double *A, int lda) {
 // Use the public constant; keeps internal limit in sync with the header.
 #define MAX_P RBF_MAX_P
 
+// Force emission of an out-of-line definition of rbf_max_p so that FFI
+// callers (Fortran, Julia ccall) have a symbol to link against.
+// C/C++ callers still get the inlined version from the header.
+extern int rbf_max_p(void);
+
 // Integer power by repeated squaring: x^n, n >= 0.
 static inline double ipow(double x, int n) {
     double result = 1.0;

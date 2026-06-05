@@ -10,7 +10,7 @@
 
 // Returns RBF_MAX_P as a runtime value.  Useful for FFI callers (Fortran,
 // Python ctypes, Julia ccall) that cannot access C preprocessor macros.
-static inline int rbf_max_p(void) { return RBF_MAX_P; }
+inline int rbf_max_p(void) { return RBF_MAX_P; }
 
 // Returns the number of 2D polynomial basis terms up to degree p: (p+1)(p+2)/2.
 static inline int rbf_poly_terms(int p) {
