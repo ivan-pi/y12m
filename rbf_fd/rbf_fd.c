@@ -60,7 +60,8 @@ static inline double rbf__dlange(int n, const double *A, int lda) {
 }
 #endif
 
-#define MAX_P 10  // Maximum supported polynomial degree
+// Use the public constant; keeps internal limit in sync with the header.
+#define MAX_P RBF_MAX_POLY_DEGREE
 
 // Integer power by repeated squaring: x^n, n >= 0.
 static inline double ipow(double x, int n) {

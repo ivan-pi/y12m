@@ -28,6 +28,10 @@ int rbf_assemble(
     rbf_pack_fn pack, void *pack_data,
     double *elapsed)
 {
+    if (rbf.q < 1 || rbf.q % 2 == 0)              return -1;
+    if (rbf.p < 0 || rbf.p > RBF_MAX_POLY_DEGREE) return -1;
+    if (n < rbf_poly_terms(rbf.p))                 return -3;
+
     const int nt  = rbf_system_size(rbf, n);
     const int ldm = ((nt + RBF_LD_ALIGN - 1) / RBF_LD_ALIGN) * RBF_LD_ALIGN;
     const int ldw = ldm;

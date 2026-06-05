@@ -1,6 +1,13 @@
 #ifndef RBF_FD_H
 #define RBF_FD_H
 
+// Maximum supported polynomial augmentation degree.
+// Can be raised at compile time (-DRBF_MAX_POLY_DEGREE=12), but larger values
+// increase the VLA sizes in the implementation.
+#ifndef RBF_MAX_POLY_DEGREE
+#  define RBF_MAX_POLY_DEGREE 10
+#endif
+
 // Returns the number of 2D polynomial basis terms up to degree p: (p+1)(p+2)/2.
 static inline int rbf_poly_terms(int p) {
     return ((p + 1) * (p + 2)) / 2;
@@ -8,7 +15,7 @@ static inline int rbf_poly_terms(int p) {
 
 typedef struct {
     int q;  // PHS exponent, must be odd and >= 1
-    int p;  // Maximum polynomial degree
+    int p;  // Maximum polynomial degree, 0 <= p <= RBF_MAX_POLY_DEGREE
 } rbf_poly_t;
 
 // Derivative operator d^(x+y) / dx^x dy^y.
@@ -126,7 +133,11 @@ typedef void (*rbf_weights_fn)(rbf_poly_t rbf, int n,
 //
 // Uses one thread per OpenMP thread (or one thread if OpenMP is absent).
 // If elapsed is non-NULL, *elapsed receives the wall-clock time in seconds.
-// Returns 0 on success; aborts via assert if any stencil matrix is singular.
+// Returns 0 on success.
+// Returns -1 if rbf.q is not a positive odd integer or rbf.p is out of range.
+// Returns -3 if n < rbf_poly_terms(rbf.p) (too few stencil points for the
+//   polynomial degree; the system would be underdetermined).
+// Aborts via assert if a stencil matrix is singular (ill-conditioned points).
 int rbf_assemble(
     int nstencils, rbf_poly_t rbf, int n,
     rbf_gather_fn gather, void *gather_data,
