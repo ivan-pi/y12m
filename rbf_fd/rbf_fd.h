@@ -2,11 +2,15 @@
 #define RBF_FD_H
 
 // Maximum supported polynomial augmentation degree.
-// Can be raised at compile time (-DRBF_MAX_POLY_DEGREE=12), but larger values
+// Can be raised at compile time (-DRBF_MAX_P=12), but larger values
 // increase the VLA sizes in the implementation.
-#ifndef RBF_MAX_POLY_DEGREE
-#  define RBF_MAX_POLY_DEGREE 10
+#ifndef RBF_MAX_P
+#  define RBF_MAX_P 10
 #endif
+
+// Returns RBF_MAX_P as a runtime value.  Useful for FFI callers (Fortran,
+// Python ctypes, Julia ccall) that cannot access C preprocessor macros.
+static inline int rbf_max_p(void) { return RBF_MAX_P; }
 
 // Returns the number of 2D polynomial basis terms up to degree p: (p+1)(p+2)/2.
 static inline int rbf_poly_terms(int p) {

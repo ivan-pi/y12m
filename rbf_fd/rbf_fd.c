@@ -61,7 +61,7 @@ static inline double rbf__dlange(int n, const double *A, int lda) {
 #endif
 
 // Use the public constant; keeps internal limit in sync with the header.
-#define MAX_P RBF_MAX_POLY_DEGREE
+#define MAX_P RBF_MAX_P
 
 // Integer power by repeated squaring: x^n, n >= 0.
 static inline double ipow(double x, int n) {

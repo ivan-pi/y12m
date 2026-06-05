@@ -69,7 +69,7 @@ static double rbf__dlange(int n, const double* A, int lda) noexcept {
 // ---------------------------------------------------------------------------
 // Internal helpers
 // ---------------------------------------------------------------------------
-constexpr int max_poly_degree = RBF_MAX_POLY_DEGREE;
+constexpr int max_poly_degree = RBF_MAX_P;
 
 // Non-owning column-major matrix view.
 struct ColMajorView {

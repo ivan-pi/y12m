@@ -29,7 +29,7 @@ int rbf_assemble(
     double *elapsed)
 {
     if (rbf.q < 1 || rbf.q % 2 == 0)              return -1;
-    if (rbf.p < 0 || rbf.p > RBF_MAX_POLY_DEGREE) return -1;
+    if (rbf.p < 0 || rbf.p > RBF_MAX_P) return -1;
     if (n < rbf_poly_terms(rbf.p))                 return -3;
 
     const int nt  = rbf_system_size(rbf, n);
