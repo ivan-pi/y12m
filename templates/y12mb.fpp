@@ -1,4 +1,15 @@
-      subroutine y12mbf(n, z, a, snr, nn, rnr, nn1, ha, iha, aflag,
+#! SPDX-License-Identifier: GPL-2.0-only
+#! Assisted-by: Claude Code:claude-fable-5
+#:set postfix = ['e', 'f']
+#:set type = ['real', 'double precision']
+#:set zero = ['0.0e0', '0.0d0']
+c  =================================================================
+c  GENERATED FILE -- DO NOT EDIT.
+c  Produced from templates/y12mb.fpp by Fypp.
+c  To change it, edit the template and run `make -C templates`.
+c  =================================================================
+#:for pf, real_t, zero in zip(postfix,type,zero)
+      subroutine y12mb${pf}$(n, z, a, snr, nn, rnr, nn1, ha, iha, aflag,
      1 iflag,ifail)
 c
 c
@@ -6,8 +17,8 @@ c  the non-zero elements of a sparse matrix a are prepared  in order to
 c  solve the system ax=b by use of sparse matrix technique/
 c
 c
-      implicit double precision(a-b,g,p,t-y),integer(c,f,h-n,r-s,z)
-      double precision a(nn), aflag(8)
+      implicit ${real_t}$(a-b,g,p,t-y),integer(c,f,h-n,r-s,z)
+      ${real_t}$ a(nn), aflag(8)
       integer snr(nn), rnr(nn1), ha(iha,11), iflag(10)
       mode=iflag(4)
       ifail=0
@@ -20,7 +31,7 @@ c
       if(mode.lt.0)ifail=16
       if(mode.gt.2)ifail=16
       if(ifail.ne.0) go to 22
-      gt1=0.0d0
+      gt1=${zero}$
       do 10 i=1,n
       ha(i,2)=0
       ha(i,3)=0
@@ -31,7 +42,7 @@ c  the non-zero elements in the end of the arrays a and snr;find the
 c  largest non-zero element in a(in absolute value).
 c
       do 20 i=1,z
-      t=dabs(a(i))
+      t=abs(a(i))
       l3=rnr(i)
       l4=snr(i)
       if(l4.gt.n.or.l4.lt.1)ifail=24
@@ -122,3 +133,5 @@ c
       iflag(1)=-1
 22    return
       end
+c
+#:endfor

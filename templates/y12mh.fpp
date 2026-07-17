@@ -2,6 +2,11 @@
 #:set type = ['real', 'double precision']
 #:set literal_zero = ['0.0e0', '0.0d0']
 #:set abs_func = ['abs','dabs']
+c  =================================================================
+c  GENERATED FILE -- DO NOT EDIT.
+c  Produced from templates/y12mh.fpp by Fypp.
+c  To change it, edit the template and run `make -C templates`.
+c  =================================================================
 #:for pf, real_t, zero, abs in zip(postfix,type,literal_zero,abs_func)
       subroutine y12mh${pf}$(n,nz,a,snr,work,anorm)
 c

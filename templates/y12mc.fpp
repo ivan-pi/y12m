@@ -1,11 +1,25 @@
-      subroutine y12mce(n,z,a,snr,nn,rnr,nn1,pivot,b,ha,iha,aflag,iflag
+#! SPDX-License-Identifier: GPL-2.0-only
+#! Assisted-by: Claude Code:claude-fable-5
+#:set postfix = ['e', 'f']
+#:set type = ['real', 'double precision']
+#:set zero = ['0.0', '0.0d0']
+#:set one = ['1.0', '1.0d0']
+#:set stab = ['1.0005', '1.0005d0']
+#:set grow = ['1.0e+5', '1.0d+5']
+c  =================================================================
+c  GENERATED FILE -- DO NOT EDIT.
+c  Produced from templates/y12mc.fpp by Fypp.
+c  To change it, edit the template and run `make -C templates`.
+c  =================================================================
+#:for pf, real_t, zero, one, stab, grow in zip(postfix,type,zero,one,stab,grow)
+      subroutine y12mc${pf}$(n,z,a,snr,nn,rnr,nn1,pivot,b,ha,iha,aflag,iflag
      1,ifail)
 c
 c  systems of linear equations are solved by use of sparse matrix tech-
 c  nique and by gaussian elimination.
 c
-      implicit real(a-b,g,p,t-y),integer(c,f,h-n,r-s,z)
-      real a(nn),b(n),pivot(n),aflag(8)
+      implicit ${real_t}$(a-b,g,p,t-y),integer(c,f,h-n,r-s,z)
+      ${real_t}$ a(nn),b(n),pivot(n),aflag(8)
       integer snr(nn),rnr(nn1),ha(iha,11), iflag(10)
 c
 c  information which is necessary to begin the elimination is stored.
@@ -15,9 +29,9 @@ c
       zz=z
       ifail=0
       if(iflag(1).ne.-1)ifail=2
-      if(aflag(1).lt.1.0)aflag(1)=1.0005
-      if(aflag(3).lt.1.0e+5)aflag(3)=1.0e+5
-      if(aflag(4).lt.0.0)aflag(4)=-aflag(4)
+      if(aflag(1).lt.${one}$)aflag(1)=${stab}$
+      if(aflag(3).lt.${grow}$)aflag(3)=${grow}$
+      if(aflag(4).lt.${zero}$)aflag(4)=-aflag(4)
       if(iflag(2).lt.1)ifail=19
       if(iflag(3).lt.0.or.iflag(3).gt.2)ifail=20
       if(iflag(5).lt.1.or.iflag(5).gt.3)ifail=21
@@ -78,14 +92,14 @@ c
       aflag(7)=aflag(6)
       aflag(8)=aflag(6)
       do 110 i=1,n
-      pivot(i)=0.0
+      pivot(i)=${zero}$
       ha(i,2)=ha(i,1)
   110 ha(i,5)=ha(i,4)
       index=ha(n,8)
-      slut=ha(index,3)-ha(index,2)+1
 c
 c  start of gaussian elimination.
 c
+      slut=ha(index,3)-ha(index,2)+1
       do 950 i=1,n7
       rr3=ha(i,2)
       rr4=ha(i,3)
@@ -103,7 +117,7 @@ c
       rpivot=i
       go to 170
   130 r=nr
-      v=0.0
+      v=${zero}$
       index=iflag(2)
       do 160 kk=1,index
       l1=i-1+kk
@@ -112,7 +126,7 @@ c
       r7=ha(j,2)
       r8=ha(j,3)
       r9=r8-r7
-      t=0.0
+      t=${zero}$
       do 140 k=r7,r8
       td=abs(a(k))
   140 if(t.lt.td)t=td
@@ -137,11 +151,11 @@ c
       ha(i,10)=r3
       r3=ha(rrow,9)
       ha(rrow,9)=ha(i,9)
-      ha(i,9)=r3
 c
 c  remove the pivot row of the list where the rows are ordered by
 c  increasing numbers of non-zero elements.
 c
+      ha(i,9)=r3
       l1=0
       l=i
       l2=ha(l4,3)-ha(l4,2)+1
@@ -166,10 +180,10 @@ c
       ha(l5,8)=rrow
       ha(rrow,7)=l5
   210 ha(i,7)=rrow
-      ha(i,8)=rcoll
 c
 c  row interchanges.
 c
+      ha(i,8)=rcoll
   220 if(rrow.eq.i)go to 290
       t=b(rrow)
       b(rrow)=b(i)
@@ -193,10 +207,10 @@ c
       do 280 j=1,3
       r3=ha(rrow,j)
       ha(rrow,j)=ha(i,j)
-  280 ha(i,j)=r3
 c
 c  column interchanges.
 c
+  280 ha(i,j)=r3
   290 if(rcoll.eq.i)go to 350
       do 310 j=c1,cr4
       l1=rnr(j)
@@ -220,12 +234,12 @@ c
       do 340 j=4,6
       r3=ha(rcoll,j)
       ha(rcoll,j)=ha(i,j)
-  340 ha(i,j)=r3
 c
 c end of the interchanges.
 c the row ordered list and the column ordered list are prepared to
 c begin step i of the elimination.
 c
+  340 ha(i,j)=r3
   350 r9=rr4-rr3
       do 360 rr=rr3,rr4
       if(snr(rr).eq.i)go to 370
@@ -288,16 +302,16 @@ c
       do 460 l=r,rr2
       l1=snr(l)
       td=pivot(l1)
-      if(td.eq.0.0)go to 450
-      pivot(l1)=0.0
+      if(td.eq.${zero}$)go to 450
+      pivot(l1)=${zero}$
       td=a(l)-td*t
       a(l)=td
       td1=abs(td)
       if(td1.gt.aflag(7))aflag(7)=td1
-      if(td1.gt.aflag(2))go to 450
 c
 c  too small element is created.remove it from the lists.
 c
+      if(td1.gt.aflag(2))go to 450
       zz=zz-1
       a(l)=a(rr1)
       snr(l)=snr(rr1)
@@ -328,7 +342,7 @@ c
       r2=snr(r)
       tol2=pivot(r2)
       pivot(r2)=a(r)
-      if(tol2.eq.0.0)go to 740
+      if(tol2.eq.${zero}$)go to 740
       tol3=-tol2*t
       tol1=abs(tol3)
       if(tol1.lt.aflag(2))go to 740
@@ -344,13 +358,13 @@ c
       if(snr(i1-1).eq.0)go to 600
   490 if(rr2.eq.nn)go to 500
       if(snr(rr2+1).eq.0)go to 580
-  500 r10=nn-lfr
 c
 c  collection in row ordered list.
 c
+  500 r10=nn-lfr
       if(r10.ge.r4)go to 560
       iflag(6)=iflag(6)+1
-      do 520  jj=1,n
+      do 520 jj=1,n
       l1=ha(jj,3)
       if(l1.lt.ha(jj,1))go to 510
       ha(jj,3)=snr(l1)
@@ -359,7 +373,7 @@ c
   520 continue
       l3=0
       l4=1
-      do 550  jj=1,r4
+      do 550 jj=1,r4
       if(snr(jj).eq.0)go to 540
       l3=l3+1
       if(snr(jj).gt.0)go to 530
@@ -383,10 +397,10 @@ c
       r=rr3-1+j
       if(r10.ge.r4)go to 560
       ifail=5
-      go to 1110
 c
 c fill-in takes place in the row ordered list.
 c
+      go to 1110
   560 r8=lfr-1
       rr2=r4+lfr
       if(r8.le.0)go to 579
@@ -423,24 +437,24 @@ c
       td=abs(a(l1))
       if(td.gt.aflag(7))aflag(7)=td
       zz=zz+1
-      if(iflag(8).lt.zz)      iflag(8)=zz
+      if(iflag(8).lt.zz) iflag(8)=zz
       if(c2.eq.1)go to 620
       if(rnr(c2-1).eq.0)go to 720
   620 if(cr2.eq.nn1)go to 630
       if(rnr(cr2+1).eq.0)go to 700
-  630 r10=nn1-lfc
 c
 c  collection in column ordered list.
 c
+  630 r10=nn1-lfc
       if(r10.ge.r5)go to 680
       iflag(7)=iflag(7)+1
-      do 640  jj=i,n
+      do 640 jj=i,n
       l1=ha(jj,6)
       ha(jj,6)=rnr(l1)
   640 rnr(l1)=-jj
       l3=0
       l4=1
-      do 670  jj=1,r5
+      do 670 jj=1,r5
       if(rnr(jj).eq.0)go to 660
       l3=l3+1
       if(rnr(jj).gt.0)go to 650
@@ -462,10 +476,10 @@ c
       cr1=ha(r2,5)
       if(r10.ge.r5)go to 680
       ifail=6
-      go to 1110
 c
 c fill-in takes place in the column ordered list.
 c
+      go to 1110
   680 r8=lfc-1
       cr2=r5+lfc
       if(r8.le.0)go to 699
@@ -500,11 +514,11 @@ c
   750 continue
   669 if(rr1.le.rr2)go to 760
       ifail=7
-      go to 1110
 c
 c  update the information in the list where the rows are ordered by
 c  increasing numbers of the non-zero elements.
 c
+      go to 1110
   760 if(iflag(4).eq.2)go to 870
       if(iflag(3).eq.0)go to 870
       l1=rr2-rr1+1
@@ -563,7 +577,7 @@ c
       if(r9.le.0)go to 882
       do 881 j=rr3,rr4
       index=snr(j)
-  881 pivot(index)=0.0
+  881 pivot(index)=${zero}$
   882 continue
       cr3=ha(i,4)
       do 890 j=cr3,cr4
@@ -588,13 +602,13 @@ c
       ifail=4
       go to 1110
   940 continue
-  950 continue
 c
 c  preparation to begin the back substitution.
 c
+  950 continue
       index=ha(n,2)
       pivot(n)=a(index)
-      a(index)=0.0
+      a(index)=${zero}$
       td=abs(pivot(n))
       if(td.gt.aflag(7))aflag(7)=td
       if(td.lt.aflag(8))aflag(8)=td
@@ -622,3 +636,5 @@ c
  1110 continue
       return
       end
+c
+#:endfor

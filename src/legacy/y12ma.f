@@ -1,0 +1,51 @@
+c  =================================================================
+c  GENERATED FILE -- DO NOT EDIT.
+c  Produced from templates/y12ma.fpp by Fypp.
+c  To change it, edit the template and run `make -C templates`.
+c  =================================================================
+      subroutine y12mae(n, z, a, snr, nn, rnr, nn1, pivot, ha,
+     1iha,aflag,iflag,b,ifail)
+      implicit real (a-b,g,p,t-y), integer (c,f,h-n,r-s,z)
+      real a(nn), pivot(n), aflag(8), b(n)
+      integer snr(nn), rnr(nn1), ha(iha,11), iflag(10)
+      external y12mbe, y12mce, y12mde
+      aflag(1)=16.0e0
+      aflag(2)=1.0e-12
+      aflag(3)=1.0e+16
+      aflag(4)=1.0e-12
+      iflag(2)=2
+      iflag(3)=1
+      iflag(4)=0
+      iflag(5)=1
+      call y12mbe(n,z,a,snr,nn,rnr,nn1,ha,iha,aflag,iflag,ifail)
+      if(ifail.ne.0)go to 1
+      call y12mce(n,z,a,snr,nn,rnr,nn1,pivot,b,ha,iha,aflag,iflag,
+     1 ifail)
+      if(ifail.ne.0)go to 1
+      call y12mde(n,a,nn,b,pivot,snr,ha,iha,iflag,ifail)
+1     return
+      end
+c
+      subroutine y12maf(n, z, a, snr, nn, rnr, nn1, pivot, ha,
+     1iha,aflag,iflag,b,ifail)
+      implicit double precision (a-b,g,p,t-y), integer (c,f,h-n,r-s,z)
+      double precision a(nn), pivot(n), aflag(8), b(n)
+      integer snr(nn), rnr(nn1), ha(iha,11), iflag(10)
+      external y12mbf, y12mcf, y12mdf
+      aflag(1)=16.0d0
+      aflag(2)=1.0d-12
+      aflag(3)=1.0d+16
+      aflag(4)=1.0d-12
+      iflag(2)=2
+      iflag(3)=1
+      iflag(4)=0
+      iflag(5)=1
+      call y12mbf(n,z,a,snr,nn,rnr,nn1,ha,iha,aflag,iflag,ifail)
+      if(ifail.ne.0)go to 1
+      call y12mcf(n,z,a,snr,nn,rnr,nn1,pivot,b,ha,iha,aflag,iflag,
+     1 ifail)
+      if(ifail.ne.0)go to 1
+      call y12mdf(n,a,nn,b,pivot,snr,ha,iha,iflag,ifail)
+1     return
+      end
+c

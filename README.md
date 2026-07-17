@@ -104,6 +104,17 @@ The build produces a static library `liby12m_legacy` and, optionally, the
 example programs.  The `y12m` Fortran module (`.mod` file) is placed in
 `build/include/`.
 
+The library (without tests and examples) can also be built with
+[fpm](https://fpm.fortran-lang.org): `fpm build`.
+
+> **Note for contributors:** most fixed-form sources in `src/legacy/` are
+> generated from the [Fypp](https://github.com/aradi/fypp) templates in
+> `templates/`; each template expands to both the single- (`E`) and
+> double-precision (`F`) variant of a routine.  The generated files are
+> committed, so building the package does **not** require Fypp.  After
+> editing a template, regenerate with `make -C templates` and commit the
+> result; CI verifies that templates and generated sources stay in sync.
+
 ---
 
 ## API overview

@@ -8,5 +8,20 @@ description = "Solution of Large and Sparse Systems of Linear Algebraic Equation
 [library]
 source-dir = "src"
 
+# The test suite and example programs are built with CMake; they do not
+# follow the fpm layout conventions (shared helper modules, preprocessor
+# double-compilation), so only the library is exposed to fpm.
 [build]
 auto-tests = false
+auto-examples = false
+auto-executables = false
+
+# Opt out of fpm's modern-Fortran defaults (free form, no implicit typing,
+# no implicit interfaces): the legacy fixed-form routines in src/legacy/
+# rely on implicit typing and are called through implicit interfaces.
+# "default" lets the compiler infer the source form from the file
+# extension (.f fixed-form, .f90 free-form).
+[fortran]
+implicit-typing = true
+implicit-external = true
+source-form = "default"

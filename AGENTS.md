@@ -44,6 +44,14 @@ authorship.
 - **Preserve the legacy/fixed-form boundary.** Do not rewrite files under
   `src/legacy/*.f` to free-form unless explicitly requested; keep new code in
   separate `.f90`/`.F90` files.
+- **Edit templates, not generated sources.** The files `y12ma.f`, `y12mb.f`,
+  `y12mc.f`, `y12md.f`, `y12mg.f`, and `y12mh.f` in `src/legacy/` are
+  generated from the Fypp templates in `templates/`.  Never edit these `.f`
+  files directly: change the corresponding `.fpp` template, regenerate with
+  `make -C templates` (requires `pip install fypp`), and commit the template
+  together with the regenerated source.  CI fails if the two diverge.  Only
+  `y12mfe.f` (iterative refinement, single precision only) is maintained by
+  hand.
 - **Prefer module wrappers over changing legacy entry points.** Put modern
   interface improvements in `src/y12m.f90` or helper modules; only edit a
   legacy routine when the bug genuinely lives there.
