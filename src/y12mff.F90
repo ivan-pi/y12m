@@ -56,6 +56,20 @@
 ! variant); when compiling the double-double path by other means, apply
 ! the equivalent flags yourself.
 !
+! References:
+!
+!   T. J. Dekker, "A floating-point technique for extending the available
+!   precision", Numerische Mathematik 18, 224-242 (1971).
+!   https://doi.org/10.1007/BF01397083
+!   (exact product of two floating-point numbers via factor splitting;
+!   the default TwoProd in residual_dd)
+!
+!   T. Ogita, S. M. Rump and S. Oishi, "Accurate sum and dot product",
+!   SIAM Journal on Scientific Computing 26(6), 1955-1988 (2005).
+!   https://doi.org/10.1137/030601818
+!   (the Dot2 compensated dot product that residual_dd follows, built
+!   from TwoProd and the branch-free TwoSum, which is due to Knuth)
+!
 #if defined(Y12M_ACCUM_QUAD) && defined(Y12M_ACCUM_DD)
 #error "Y12M_ACCUM_QUAD and Y12M_ACCUM_DD are mutually exclusive"
 #endif
@@ -262,12 +276,13 @@ contains
 
 #ifndef Y12M_ACCUM_QUAD
    !> Row residual b1i - sum_j a1(j)*x(sn(j)), j = l1..l2, accumulated in
-   !> double-double arithmetic (compensated dot product, Ogita/Rump/Oishi
-   !> "Dot2").  Each product is split exactly into p + pe (TwoProd); the
-   !> subtraction from the high word er_hi is made exact with a TwoSum,
-   !> and both error terms are collected in the low word er_lo.  The
-   !> result is as accurate as a residual computed in twice double
-   !> precision.
+   !> double-double arithmetic: the Dot2 compensated dot product of Ogita,
+   !> Rump and Oishi (2005); see the references in the file header.  Each
+   !> product is split exactly into p + pe (TwoProd, by default Dekker's
+   !> 1971 technique); the subtraction from the high word er_hi is made
+   !> exact with a TwoSum, and both error terms are collected in the low
+   !> word er_lo.  The result is as accurate as a residual computed in
+   !> twice double precision.
    !>
    !> Correctness relies on IEEE-compliant evaluation; see the file
    !> header note on -ffast-math and -ffp-contract.
