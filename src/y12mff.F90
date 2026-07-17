@@ -198,17 +198,19 @@ subroutine y12mff(n, a, snr, nn, rnr, nn1, a1, sn, nz, &
          d = dd
          dres = 0.0_dp
          do i = 1, n
+            ! Row i of the saved matrix in compressed form: values
+            ! a1(l1:l2), column indices sn(l1:l2).
             l1 = ha(i,12)
             l2 = ha(i,13)
 #if defined(Y12M_ACCUM_DD)
-            er = residual_dd(b1(i), l1, l2)
+            er = residual_dd(l2-l1+1, a1(l1:l2), sn(l1:l2), x, b1(i))
 #elif defined(Y12M_ACCUM_QUAD)
-            er = residual_quad(b1(i), l1, l2)
+            er = residual_quad(l2-l1+1, a1(l1:l2), sn(l1:l2), x, b1(i))
 #else
             if (use_quad) then
-               er = residual_quad(b1(i), l1, l2)
+               er = residual_quad(l2-l1+1, a1(l1:l2), sn(l1:l2), x, b1(i))
             else
-               er = residual_dd(b1(i), l1, l2)
+               er = residual_dd(l2-l1+1, a1(l1:l2), sn(l1:l2), x, b1(i))
             end if
 #endif
             ! Store residuals rounded to working (double) precision.
@@ -257,76 +259,95 @@ subroutine y12mff(n, a, snr, nn, rnr, nn1, a1, sn, nz, &
 contains
 
 #ifndef Y12M_ACCUM_DD
-   !> Row residual b1i - sum_j a1(j)*x(sn(j)), j = l1..l2, accumulated in
-   !> quad precision and rounded once to double.
-   pure function residual_quad(b1i, l1, l2) result(er)
-      real(dp), intent(in) :: b1i
-      integer, intent(in) :: l1, l2
-      real(dp) :: er
-      real(hp) :: er_hp
-      integer :: j, l3
-      er_hp = real(b1i, hp)
-      do j = l1, l2
-         l3 = sn(j)
-         er_hp = er_hp - real(a1(j), hp)*real(x(l3), hp)
+   !> Sparse row residual
+   !>
+   !>    r = bi - sum(val(1:nnz) * x(col(1:nnz)))
+   !>
+   !> accumulated in quad precision with a single final rounding to
+   !> double.  val/col hold one matrix row in compressed (gather) form and
+   !> x is the full solution vector -- the access pattern of the sparse
+   !> BLAS DOTI kernel.
+   pure function residual_quad(nnz, val, col, x, bi) result(r)
+      integer, intent(in) :: nnz       ! number of stored elements in the row
+      real(dp), intent(in) :: val(nnz) ! row values
+      integer, intent(in) :: col(nnz)  ! column indices of val
+      real(dp), intent(in) :: x(*)     ! dense solution vector, gathered via col
+      real(dp), intent(in) :: bi       ! right-hand side entry of the row
+      real(dp) :: r
+
+      real(hp) :: r_hp
+      integer :: k
+
+      r_hp = real(bi, hp)
+      do k = 1, nnz
+         r_hp = r_hp - real(val(k), hp)*real(x(col(k)), hp)
       end do
-      er = real(er_hp, dp)
+      r = real(r_hp, dp)
    end function residual_quad
 #endif
 
 #ifndef Y12M_ACCUM_QUAD
-   !> Row residual b1i - sum_j a1(j)*x(sn(j)), j = l1..l2, accumulated in
-   !> double-double arithmetic: the Dot2 compensated dot product of Ogita,
-   !> Rump and Oishi (2005); see the references in the file header.  Each
-   !> product is split exactly into p + pe (TwoProd, by default Dekker's
-   !> 1971 technique); the subtraction from the high word er_hi is made
-   !> exact with a TwoSum, and both error terms are collected in the low
-   !> word er_lo.  The result is as accurate as a residual computed in
-   !> twice double precision.
+   !> Sparse row residual
+   !>
+   !>    r = bi - sum(val(1:nnz) * x(col(1:nnz)))
+   !>
+   !> accumulated in double-double arithmetic: the Dot2 compensated dot
+   !> product of Ogita, Rump and Oishi (2005); see the references in the
+   !> file header.  Each product is split exactly into p + pe (TwoProd, by
+   !> default Dekker's 1971 technique); the subtraction from the high word
+   !> r_hi is made exact with a TwoSum, and both error terms are collected
+   !> in the low word r_lo.  The result is as accurate as a residual
+   !> computed in twice double precision.  val/col hold one matrix row in
+   !> compressed (gather) form and x is the full solution vector -- the
+   !> access pattern of the sparse BLAS DOTI kernel.
    !>
    !> Correctness relies on IEEE-compliant evaluation; see the file
    !> header note on -ffast-math and -ffp-contract.
-   pure function residual_dd(b1i, l1, l2) result(er)
-      real(dp), intent(in) :: b1i
-      integer, intent(in) :: l1, l2
-      real(dp) :: er
+   pure function residual_dd(nnz, val, col, x, bi) result(r)
+      integer, intent(in) :: nnz       ! number of stored elements in the row
+      real(dp), intent(in) :: val(nnz) ! row values
+      integer, intent(in) :: col(nnz)  ! column indices of val
+      real(dp), intent(in) :: x(*)     ! dense solution vector, gathered via col
+      real(dp), intent(in) :: bi       ! right-hand side entry of the row
+      real(dp) :: r
+
 #ifndef Y12M_USE_IEEE_FMA
       real(dp), parameter :: splitter = 134217729.0_dp  ! 2**27 + 1
       real(dp) :: t, a_hi, a_lo, x_hi, x_lo
 #endif
-      real(dp) :: er_hi, er_lo, aj, xj, p, pe, s, z, e
-      integer :: j, l3
-      er_hi = b1i
-      er_lo = 0.0_dp
-      do j = l1, l2
-         l3 = sn(j)
-         aj = a1(j)
-         xj = x(l3)
-         ! TwoProd: p + pe = aj*xj exactly
-         p = aj*xj
+      real(dp) :: r_hi, r_lo, ak, xk, p, pe, s, z, e
+      integer :: k
+
+      r_hi = bi
+      r_lo = 0.0_dp
+      do k = 1, nnz
+         ak = val(k)
+         xk = x(col(k))
+         ! TwoProd: p + pe = ak*xk exactly
+         p = ak*xk
 #ifdef Y12M_USE_IEEE_FMA
-         pe = ieee_fma(aj, xj, -p)
+         pe = ieee_fma(ak, xk, -p)
 #else
          ! Dekker splitting: both factors are cut into 26-bit halves whose
          ! four partial products are exact, recovering the rounding error
-         ! of p.  Overflows for |aj| or |xj| >= 2**996; residuals of such
+         ! of p.  Overflows for |ak| or |xk| >= 2**996; residuals of such
          ! magnitude are far outside the solver's working range.
-         t = splitter*aj
-         a_hi = t - (t - aj)
-         a_lo = aj - a_hi
-         t = splitter*xj
-         x_hi = t - (t - xj)
-         x_lo = xj - x_hi
+         t = splitter*ak
+         a_hi = t - (t - ak)
+         a_lo = ak - a_hi
+         t = splitter*xk
+         x_hi = t - (t - xk)
+         x_lo = xk - x_hi
          pe = ((a_hi*x_hi - p) + a_hi*x_lo + a_lo*x_hi) + a_lo*x_lo
 #endif
-         ! TwoSum: s + e = er_hi - p exactly
-         s = er_hi - p
-         z = s - er_hi
-         e = (er_hi - (s - z)) - (p + z)
-         er_hi = s
-         er_lo = er_lo + (e - pe)
+         ! TwoSum: s + e = r_hi - p exactly
+         s = r_hi - p
+         z = s - r_hi
+         e = (r_hi - (s - z)) - (p + z)
+         r_hi = s
+         r_lo = r_lo + (e - pe)
       end do
-      er = er_hi + er_lo
+      r = r_hi + r_lo
    end function residual_dd
 #endif
 
