@@ -50,10 +50,13 @@ authorship.
   files directly: change the corresponding `.fpp` template, regenerate with
   `make -C templates` (requires `pip install fypp`), and commit the template
   together with the regenerated source.  CI fails if the two diverge.  Only
-  `y12mfe.f` (iterative refinement, single precision only) is maintained by
-  hand.
+  the iterative-refinement pair is maintained by hand: `y12mfe.f` (single
+  precision, fixed-form) and `src/y12mff.F90` (double precision, free-form;
+  excluded from the template pattern because its residual accumulator —
+  quad precision or double-double — cannot be expressed as a simple kind
+  substitution).
 - **Prefer module wrappers over changing legacy entry points.** Put modern
-  interface improvements in `src/y12m.f90` or helper modules; only edit a
+  interface improvements in `src/y12m.F90` or helper modules; only edit a
   legacy routine when the bug genuinely lives there.
 - **Keep single- and double-precision support aligned.** If a new helper,
   test, or interface is meant to be generic, add both `sp` and `dp` variants

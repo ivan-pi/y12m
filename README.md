@@ -48,7 +48,9 @@ reordering.
   `Y12MC` / `Y12MD`) lets you reuse an LU factorization or a sparsity
   ordering across multiple solves (see [docs/multiple_rhs.md](docs/multiple_rhs.md)).
 - **Iterative refinement.** `Y12MF` provides built-in iterative refinement for
-  extra accuracy.
+  extra accuracy.  Residuals are accumulated in extended precision: double
+  precision in `Y12MFE`, and quad precision (or a double-double software
+  emulation when the compiler lacks quad support) in `Y12MFF`.
 
 ### Limitations
 
@@ -106,6 +108,23 @@ example programs.  The `y12m` Fortran module (`.mod` file) is placed in
 
 The library (without tests and examples) can also be built with
 [fpm](https://fpm.fortran-lang.org): `fpm build`.
+
+At configure time CMake detects whether the Fortran compiler supports quad
+precision (`selected_real_kind(33)`) and reports which residual accumulator
+the double-precision iterative-refinement routine `Y12MFF` will use: native
+quad precision, or a double-double emulation (Dekker's product splitting by
+default; pass `-DY12M_USE_IEEE_FMA=ON` to use the Fortran 2018 `IEEE_FMA`
+intrinsic instead, worthwhile only when the compiler inlines it to a
+hardware instruction).  Pass `-DY12M_FORCE_DOUBLE_DOUBLE=ON` to force the
+double-double path even when quad precision is available — useful for
+bit-reproducible results across compilers and for testing the fallback.
+The module constants `y12mff_uses_quad` and `y12mff_accumulator_kind`
+expose the compiled-in choice to user code.  Note that the double-double
+arithmetic requires IEEE-compliant evaluation; the CMake build compiles
+`src/y12mff.F90` with the appropriate flags (for gfortran:
+`-fno-unsafe-math-optimizations -ffp-contract=off`) so that a global
+`-ffast-math`/`-Ofast` — or FMA contraction on fma-capable hardware —
+cannot silently break it (see `cmake/Y12mffAccumulator.cmake`).
 
 > **Note for contributors:** most fixed-form sources in `src/legacy/` are
 > generated from the [Fypp](https://github.com/aradi/fypp) templates in
