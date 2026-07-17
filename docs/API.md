@@ -561,11 +561,11 @@ The following issues were found by cross-checking the original `doc` file
 against the source files in `src/legacy/`.
 
 1. **`aflag(3)` default in Y12MA — doc says 1.0×10⁶, code sets 1.0×10¹⁶.**
-   Both `y12mae.f` and `y12maf.f` assign `aflag(3) = 1.0e+16` / `1.0d+16`.
+   Both `y12mae` and `y12maf` (see `y12ma.f`) assign `aflag(3) = 1.0e+16` / `1.0d+16`.
    This document uses the value found in the source.
 
 2. **`iflag(2)` default in Y12MA — doc says 3, code sets 2.**
-   Both `y12mae.f` and `y12maf.f` assign `iflag(2) = 2`.  This document uses
+   Both `y12mae` and `y12maf` (see `y12ma.f`) assign `iflag(2) = 2`.  This document uses
    the value found in the source.
 
 3. **`ifail = 26` absent from the original error-diagnostics section.**
@@ -593,8 +593,9 @@ against the source files in `src/legacy/`.
 8. **`IFAIL = 22` — Y12MB does not check `iflag(5) = 3`.**
    The original documentation (and the problem description) states that both
    Y12MB and Y12MC return `IFAIL = 22` when called with `iflag(5) = 3`.
-   However, in the source code only Y12MC (`y12mce.f`, `y12mcf.f`) performs
-   this check; Y12MB (`y12mbe.f`, `y12mbf.f`) contains no such guard.
+   However, in the source code only Y12MC (`y12mce`/`y12mcf` in `y12mc.f`)
+   performs this check; Y12MB (`y12mbe`/`y12mbf` in `y12mb.f`) contains no
+   such guard.
    Consequently, calling Y12MB with `iflag(5) = 3` will silently proceed
    rather than return `IFAIL = 22`.  The description of `IFAIL = 22` in this
    document reflects what the code actually does.

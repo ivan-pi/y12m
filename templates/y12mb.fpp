@@ -1,4 +1,10 @@
-      subroutine y12mbf(n, z, a, snr, nn, rnr, nn1, ha, iha, aflag,
+#! SPDX-License-Identifier: GPL-2.0-only
+#! Assisted-by: Claude Code
+#:set postfix = ['e', 'f']
+#:set type = ['real', 'double precision']
+#:set zero = ['0.0e0', '0.0d0']
+#:for pf, real_t, zero in zip(postfix,type,zero)
+      subroutine y12mb${pf}$(n, z, a, snr, nn, rnr, nn1, ha, iha, aflag,
      1 iflag,ifail)
 c
 c
@@ -6,8 +12,8 @@ c  the non-zero elements of a sparse matrix a are prepared  in order to
 c  solve the system ax=b by use of sparse matrix technique/
 c
 c
-      implicit double precision(a-b,g,p,t-y),integer(c,f,h-n,r-s,z)
-      double precision a(nn), aflag(8)
+      implicit ${real_t}$(a-b,g,p,t-y),integer(c,f,h-n,r-s,z)
+      ${real_t}$ a(nn), aflag(8)
       integer snr(nn), rnr(nn1), ha(iha,11), iflag(10)
       mode=iflag(4)
       ifail=0
@@ -20,7 +26,7 @@ c
       if(mode.lt.0)ifail=16
       if(mode.gt.2)ifail=16
       if(ifail.ne.0) go to 22
-      gt1=0.0d0
+      gt1=${zero}$
       do 10 i=1,n
       ha(i,2)=0
       ha(i,3)=0
@@ -122,3 +128,5 @@ c
       iflag(1)=-1
 22    return
       end
+c
+#:endfor

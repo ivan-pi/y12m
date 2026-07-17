@@ -1,6 +1,11 @@
-      subroutine y12mde(n,a,nn,b,pivot,snr,ha,iha,iflag,ifail)
-      implicit real(a-b,g,p,t-y),integer (c,f,h-n,r-s,z)
-      real a(nn), pivot(n), b(n)
+#! SPDX-License-Identifier: GPL-2.0-only
+#! Assisted-by: Claude Code
+#:set postfix = ['e', 'f']
+#:set type = ['real', 'double precision']
+#:for pf, real_t in zip(postfix,type)
+      subroutine y12md${pf}$(n,a,nn,b,pivot,snr,ha,iha,iflag,ifail)
+      implicit ${real_t}$(a-b,g,p,t-y),integer (c,f,h-n,r-s,z)
+      ${real_t}$ a(nn), pivot(n), b(n)
       integer snr(nn), ha(iha,11), iflag(10)
       ifail=0
       if(iflag(1).eq.-2)go to 1000
@@ -60,3 +65,5 @@ c
  1100 b(r1)=t
  1110 return
       end
+c
+#:endfor

@@ -1,11 +1,20 @@
-      subroutine y12mcf(n,z,a,snr,nn,rnr,nn1,pivot,b,ha,iha,aflag,iflag
+#! SPDX-License-Identifier: GPL-2.0-only
+#! Assisted-by: Claude Code
+#:set postfix = ['e', 'f']
+#:set type = ['real', 'double precision']
+#:set zero = ['0.0', '0.0d0']
+#:set one = ['1.0', '1.0d0']
+#:set stab = ['1.0005', '1.0005d0']
+#:set grow = ['1.0e+5', '1.0d+5']
+#:for pf, real_t, zero, one, stab, grow in zip(postfix,type,zero,one,stab,grow)
+      subroutine y12mc${pf}$(n,z,a,snr,nn,rnr,nn1,pivot,b,ha,iha,aflag,iflag
      1,ifail)
 c
 c  systems of linear equations are solved by use of sparse matrix tech-
 c  nique and by gaussian elimination.
 c
-      implicit double precision(a-b,g,p,t-y),integer(c,f,h-n,r-s,z)
-      double precision a(nn),b(n),pivot(n),aflag(8)
+      implicit ${real_t}$(a-b,g,p,t-y),integer(c,f,h-n,r-s,z)
+      ${real_t}$ a(nn),b(n),pivot(n),aflag(8)
       integer snr(nn),rnr(nn1),ha(iha,11), iflag(10)
 c
 c  information which is necessary to begin the elimination is stored.
@@ -15,9 +24,9 @@ c
       zz=z
       ifail=0
       if(iflag(1).ne.-1)ifail=2
-      if(aflag(1).lt.1.0d0)aflag(1)=1.0005d0
-      if(aflag(3).lt.1.0d+5)aflag(3)=1.0d+5
-      if(aflag(4).lt.0.0d0)aflag(4)=-aflag(4)
+      if(aflag(1).lt.${one}$)aflag(1)=${stab}$
+      if(aflag(3).lt.${grow}$)aflag(3)=${grow}$
+      if(aflag(4).lt.${zero}$)aflag(4)=-aflag(4)
       if(iflag(2).lt.1)ifail=19
       if(iflag(3).lt.0.or.iflag(3).gt.2)ifail=20
       if(iflag(5).lt.1.or.iflag(5).gt.3)ifail=21
@@ -78,7 +87,7 @@ c
       aflag(7)=aflag(6)
       aflag(8)=aflag(6)
       do 110 i=1,n
-      pivot(i)=0.0d0
+      pivot(i)=${zero}$
       ha(i,2)=ha(i,1)
   110 ha(i,5)=ha(i,4)
       index=ha(n,8)
@@ -103,7 +112,7 @@ c
       rpivot=i
       go to 170
   130 r=nr
-      v=0.0d0
+      v=${zero}$
       index=iflag(2)
       do 160 kk=1,index
       l1=i-1+kk
@@ -112,7 +121,7 @@ c
       r7=ha(j,2)
       r8=ha(j,3)
       r9=r8-r7
-      t=0.0d0
+      t=${zero}$
       do 140 k=r7,r8
       td=abs(a(k))
   140 if(t.lt.td)t=td
@@ -288,8 +297,8 @@ c
       do 460 l=r,rr2
       l1=snr(l)
       td=pivot(l1)
-      if(td.eq.0.0d0)go to 450
-      pivot(l1)=0.0d0
+      if(td.eq.${zero}$)go to 450
+      pivot(l1)=${zero}$
       td=a(l)-td*t
       a(l)=td
       td1=abs(td)
@@ -328,7 +337,7 @@ c
       r2=snr(r)
       tol2=pivot(r2)
       pivot(r2)=a(r)
-      if(tol2.eq.0.0d0)go to 740
+      if(tol2.eq.${zero}$)go to 740
       tol3=-tol2*t
       tol1=abs(tol3)
       if(tol1.lt.aflag(2))go to 740
@@ -563,7 +572,7 @@ c
       if(r9.le.0)go to 882
       do 881 j=rr3,rr4
       index=snr(j)
-  881 pivot(index)=0.0d0
+  881 pivot(index)=${zero}$
   882 continue
       cr3=ha(i,4)
       do 890 j=cr3,cr4
@@ -594,7 +603,7 @@ c
   950 continue
       index=ha(n,2)
       pivot(n)=a(index)
-      a(index)=0.0d0
+      a(index)=${zero}$
       td=abs(pivot(n))
       if(td.gt.aflag(7))aflag(7)=td
       if(td.lt.aflag(8))aflag(8)=td
@@ -622,3 +631,5 @@ c
  1110 continue
       return
       end
+c
+#:endfor
