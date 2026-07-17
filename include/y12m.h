@@ -111,6 +111,14 @@ extern void FNAME(y12mfe)(int *n,
                           float *b, float *b1, float *x, float *y,
                           float *aflag, int *iflag, int *ifail);
 
+extern void FNAME(y12mff)(int *n,
+                          double *a, int *snr, int *nn,
+                          int *rnr, int *nn1,
+                          double *a1, int *sn, int *nz,
+                          int *ha, int *iha,
+                          double *b, double *b1, double *x, double *y,
+                          double *aflag, int *iflag, int *ifail);
+
 extern void FNAME(y12mge)(int *n, int *nn,
                           float *a, int *snr,
                           float *w, float *pivot,
@@ -243,6 +251,20 @@ static inline int y12mfe(int n,
 {
    int ifail;
    FNAME(y12mfe)(&n, a, snr, &nn, rnr, &nn1, a1, sn, &nz, ha, &iha,
+                 b, b1, x, y, aflag, iflag, &ifail);
+   return ifail;
+}
+
+static inline int y12mff(int n,
+                         double a[], int snr[], int nn,
+                         int rnr[], int nn1,
+                         double a1[], int sn[], int nz,
+                         int ha[], int iha,
+                         double b[], double b1[], double x[], double y[],
+                         double aflag[], int iflag[])
+{
+   int ifail;
+   FNAME(y12mff)(&n, a, snr, &nn, rnr, &nn1, a1, sn, &nz, ha, &iha,
                  b, b1, x, y, aflag, iflag, &ifail);
    return ifail;
 }

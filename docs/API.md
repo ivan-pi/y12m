@@ -345,18 +345,27 @@ Black-box driver with **iterative refinement**.  Solves **Ax = b** and
 improves the solution by computing successive corrections
 **d(k) = QU⁻¹L⁻¹Pr(k-1)** where **r(k-1) = b − Ax(k-1)**.
 
-> Only a **single-precision** version (`Y12MFE`) is available.  Inner products
-> in the refinement loop are accumulated in double precision and rounded back to
-> single precision.
+> Residuals must be accumulated in higher than working precision for the
+> refinement to be meaningful.  `Y12MFE` (single precision) accumulates in
+> double precision and rounds back to single.  `Y12MFF` (double precision)
+> accumulates in **quad precision** (`selected_real_kind(33)`) when the
+> compiler provides it, and otherwise falls back to a **double-double**
+> compensated accumulation (TwoProd via `IEEE_FMA` + TwoSum).  The strategy
+> is fixed at compile time; the module constants `y12mff_has_quad`
+> (logical) and `y12mff_accum_kind` (integer kind value) report which one
+> was built in.  The CMake option `-DY12M_FORCE_DOUBLE_DOUBLE=ON` forces the
+> double-double path even when quad precision is available (useful for
+> reproducibility across compilers and for testing the fallback); the
+> configure step prints which accumulator was selected.
 
 ```fortran
-subroutine y12mfe(n, a, snr, nn, rnr, nn1, a1, sn, nz, ha, iha, b, b1, x, y, aflag, iflag, ifail)
-  integer, intent(in)    :: n, nn, nn1, nz, iha
-  real,    intent(inout) :: a(nn), aflag(11)
-  integer, intent(inout) :: snr(nn), rnr(nn1), ha(iha,13), sn(nz), iflag(12)
-  real,    intent(inout) :: a1(nz), b(n)
-  real,    intent(out)   :: b1(n), x(n), y(n)
-  integer, intent(out)   :: ifail
+subroutine y12mf[e|f](n, a, snr, nn, rnr, nn1, a1, sn, nz, ha, iha, b, b1, x, y, aflag, iflag, ifail)
+  integer,            intent(in)    :: n, nn, nn1, nz, iha
+  real(kind=[sp,dp]), intent(inout) :: a(nn), aflag(11)
+  integer,            intent(inout) :: snr(nn), rnr(nn1), ha(iha,13), sn(nz), iflag(12)
+  real(kind=[sp,dp]), intent(inout) :: a1(nz), b(n)
+  real(kind=[sp,dp]), intent(out)   :: b1(n), x(n), y(n)
+  integer,            intent(out)   :: ifail
 ```
 
 **Arguments:**

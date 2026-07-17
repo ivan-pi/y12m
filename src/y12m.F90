@@ -23,6 +23,32 @@ module y12m
   ! Error string
   public :: y12m_get_error_msg
 
+  ! -------------------------------------------------------------------------
+  ! Residual accumulation strategy of y12mff (double precision iterative
+  ! refinement).  y12mff accumulates the residuals b - A*x in higher than
+  ! working precision: native quad when available, otherwise a double-double
+  ! (compensated) accumulation.  The selection is fixed at compile time and
+  ! must match src/y12mff.F90, so the same Y12M_ACCUM_QUAD / Y12M_ACCUM_DD
+  ! macros drive both files (the CMake build defines exactly one of them).
+  ! -------------------------------------------------------------------------
+
+  !> True when y12mff accumulates residuals in native quad precision;
+  !> false when it uses the double-double emulation.
+#if defined(Y12M_ACCUM_DD)
+  logical, parameter, public :: y12mff_has_quad = .false.
+#elif defined(Y12M_ACCUM_QUAD)
+  logical, parameter, public :: y12mff_has_quad = .true.
+#else
+  logical, parameter, public :: y12mff_has_quad = selected_real_kind(33) > 0
+#endif
+
+  !> Kind parameter of the y12mff residual accumulator.  Equal to
+  !> selected_real_kind(33) when y12mff_has_quad is true; otherwise equal to
+  !> kind(1.0d0), the working kind on which the double-double arithmetic is
+  !> built.
+  integer, parameter, public :: y12mff_accum_kind = &
+      merge(selected_real_kind(33), kind(1.0d0), y12mff_has_quad)
+
 
   !> Solve a sparse system of linear equations Ax=b by Gaussian elimination.
   !>
@@ -161,6 +187,24 @@ module y12m
       real, intent(inout) :: x(n)
       real, intent(inout) :: y(n)
       real, intent(inout) :: aflag(11)
+      integer, intent(inout) :: iflag(12)
+      integer, intent(out) :: ifail
+    end subroutine
+    subroutine y12mff(n, a, snr, nn, rnr, nn1, a1, sn, nz, &
+        ha, iha, b, b1, x, y, aflag, iflag, ifail)
+      implicit none
+      integer, intent(in) :: n, nn, nn1, nz, iha
+      double precision, intent(inout) :: a(nn)
+      integer, intent(inout) :: snr(nn)
+      integer, intent(inout) :: rnr(nn1)
+      double precision, intent(inout) :: a1(nz)
+      integer, intent(inout) :: sn(nz)
+      integer, intent(inout) :: ha(iha,13)
+      double precision, intent(inout) :: b(n)
+      double precision, intent(inout) :: b1(n)
+      double precision, intent(inout) :: x(n)
+      double precision, intent(inout) :: y(n)
+      double precision, intent(inout) :: aflag(11)
       integer, intent(inout) :: iflag(12)
       integer, intent(out) :: ifail
     end subroutine
