@@ -15,3 +15,13 @@ source-dir = "src"
 auto-tests = false
 auto-examples = false
 auto-executables = false
+
+# Opt out of fpm's modern-Fortran defaults (free form, no implicit typing,
+# no implicit interfaces): the legacy fixed-form routines in src/legacy/
+# rely on implicit typing and are called through implicit interfaces.
+# "default" lets the compiler infer the source form from the file
+# extension (.f fixed-form, .f90 free-form).
+[fortran]
+implicit-typing = true
+implicit-external = true
+source-form = "default"
