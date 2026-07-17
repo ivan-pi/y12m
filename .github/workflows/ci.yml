@@ -45,11 +45,16 @@ jobs:
           - os: ubuntu-latest
             gcc: 14
           # Exercise the double-double fallback path of y12mff even though
-          # gfortran has quad precision.
+          # gfortran has quad precision, with both TwoProd variants
+          # (default Dekker splitting, and the IEEE_FMA intrinsic).
           - os: ubuntu-latest
             gcc: 14
             cmake_args: -DY12M_FORCE_DOUBLE_DOUBLE=ON
             suffix: " (double-double)"
+          - os: ubuntu-latest
+            gcc: 14
+            cmake_args: -DY12M_FORCE_DOUBLE_DOUBLE=ON -DY12M_USE_IEEE_FMA=ON
+            suffix: " (double-double, ieee_fma)"
           - os: macos-latest
             gcc: 14
 

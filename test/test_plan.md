@@ -25,7 +25,7 @@ Files with a `.f90` extension produce a single executable.
 | `test_y12mc_z_intent.F90` | `test_y12mc_z_intent_sp`, `test_y12mc_z_intent_dp` | y12mc | SP + DP | regression: `z` must be unchanged on success path, on early-error exit, and when passed as an integer literal |
 | `test_y12md_errors.F90` | `test_y12md_errors_sp`, `test_y12md_errors_dp` | y12mb + y12mc + y12md | SP + DP | error-path coverage (IFAIL=1); success with IFLAG(5)=1 and IFLAG(5)=2; multiple-RHS reuse (IFLAG(5)=3) on 6×6 reference matrix |
 | `test_y12mf_sp.f90` | `test_y12mf_sp` | y12mf | SP | tridiagonal n=3,5,7,10 |
-| `test_y12mf_dp.f90` | `test_y12mf_dp` | y12mf | DP | tridiagonal n=3,5,7,10, arrow n=6,10; reports/validates the `y12mff_has_quad` / `y12mff_accum_kind` accumulator constants |
+| `test_y12mf_dp.f90` | `test_y12mf_dp` | y12mf | DP | tridiagonal n=3,5,7,10, arrow n=6,10; reports/validates the `y12mff_uses_quad` / `y12mff_accumulator_kind` accumulator constants |
 | `test_y12mf_errors.f90` | `test_y12mf_errors` | y12mf | SP | 6×6 reference; error-path (IFAIL=10,23); output-parameter invariants (IFLAG(12), AFLAG(9–11), B, B1); LU-reuse (IFLAG(5)=3) |
 | `test_y12mg_mh.f90` | `test_y12mg_mh` | y12mg + y12mh | SP + DP | 1-norm of n=5 (SP) and n=10 (DP) tridiagonal; condition estimate after full y12mb→y12mc→y12md→y12mg sequence |
 | `test_y12ma_y12mf_bench_sp.f90` | `test_y12ma_y12mf_bench_sp` | y12ma + y12mf | SP | UMFPACK 5×5, Harwell-Boeing 4×4, Pardiso 8×8, Templates 6×6 |

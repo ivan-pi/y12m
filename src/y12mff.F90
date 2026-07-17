@@ -4,19 +4,21 @@
 ! y12mff.F90 - Double precision version of y12mfe.
 !
 ! Solves a sparse system Ax = b by Gaussian elimination with subsequent
-! iterative refinement.  The algorithm and the control flow follow the
-! single precision routine y12mfe (src/legacy/y12mfe.f) exactly; only the
-! working precision and the residual accumulation differ.
+! iterative refinement.  The algorithm is that of the single precision
+! routine y12mfe (src/legacy/y12mfe.f); the goto-based control flow of the
+! original is expressed here with a named block, a bounded refinement loop,
+! and early exits, with identical semantics (same stopping tests, same
+! IFLAG/AFLAG outputs).
 !
 ! y12mfe accumulates the residuals r = b - A*x in double precision and
 ! rounds back to single.  For a double precision working type the
 ! accumulator must be wider than double.  Two strategies are provided:
 !
 !   * quad precision, selected_real_kind(33), when the compiler offers it;
-!   * a double-double compensated accumulation (TwoProd via IEEE_FMA plus
-!     TwoSum, error terms carried in a low-order word) which yields a
-!     residual as accurate as if it were computed in twice double
-!     precision (Ogita/Rump/Oishi "Dot2").
+!   * a double-double compensated accumulation (TwoProd + TwoSum, error
+!     terms carried in a low-order word) which yields a residual as
+!     accurate as if it were computed in twice double precision
+!     (Ogita/Rump/Oishi "Dot2").
 !
 ! The strategy is fixed at compile time:
 !
@@ -25,27 +27,41 @@
 !   neither          defined: compile both paths and pick quad when
 !                             selected_real_kind(33) > 0 (the unused path
 !                             is dead code behind a constant condition).
-!                             This mode requires IEEE_FMA (Fortran 2018).
 !
-! The CMake build always defines exactly one of the two macros, driven by
-! a configure-time capability check and the Y12M_FORCE_DOUBLE_DOUBLE
-! option; the self-detecting mode serves build systems that do not
-! preprocess capability checks (e.g. fpm).
+! The exact product splitting (TwoProd) in the double-double path uses
+! Dekker's algorithm by default: portable Fortran, no library calls.
+! Define Y12M_USE_IEEE_FMA to use the Fortran 2018 IEEE_FMA intrinsic
+! instead (one fma per element instead of Dekker's 17 flops; worthwhile
+! only when the compiler inlines it to a hardware instruction rather than
+! dispatching to a runtime call).
 !
-! WARNING: the double-double path is destroyed by value-unsafe floating
-! point optimisation (-ffast-math, -Ofast, ifx's default -fp-model=fast,
-! nvfortran without -Kieee).  The compensation terms are algebraically
-! zero, so a compiler licensed to reassociate eliminates them and the
-! accumulation silently degrades to plain double precision.  The CMake
-! build pins value-safe flags for this file; keep that in mind when
-! compiling it by other means.
+! The CMake build selects the macros from a configure-time capability
+! check and the Y12M_FORCE_DOUBLE_DOUBLE / Y12M_USE_IEEE_FMA options; the
+! self-detecting mode serves build systems that do not preprocess
+! capability checks (e.g. fpm).
+!
+! WARNING: the double-double path relies on IEEE-compliant evaluation.
+!
+!   * Value-unsafe optimisation (-ffast-math, -Ofast, ifx's default
+!     -fp-model=fast, nvfortran without -Kieee) eliminates the
+!     compensation terms, which are algebraically zero, and the
+!     accumulation silently degrades to plain double precision.
+!   * FMA contraction (gfortran/flang default -ffp-contract=fast on
+!     hardware with fma instructions) breaks Dekker's splitting: fusing
+!     t - aj with t = splitter*aj skips exactly the rounding the split
+!     depends on.  The IEEE_FMA variant is immune to contraction.
+!
+! The CMake build pins the required flags on this file (e.g. for gfortran
+! -fno-unsafe-math-optimizations, plus -ffp-contract=off for the Dekker
+! variant); when compiling the double-double path by other means, apply
+! the equivalent flags yourself.
 !
 #if defined(Y12M_ACCUM_QUAD) && defined(Y12M_ACCUM_DD)
 #error "Y12M_ACCUM_QUAD and Y12M_ACCUM_DD are mutually exclusive"
 #endif
 subroutine y12mff(n, a, snr, nn, rnr, nn1, a1, sn, nz, &
       ha, iha, b, b1, x, y, aflag, iflag, ifail)
-#ifndef Y12M_ACCUM_QUAD
+#if !defined(Y12M_ACCUM_QUAD) && defined(Y12M_USE_IEEE_FMA)
    use, intrinsic :: ieee_arithmetic, only: ieee_fma
 #endif
    implicit none
@@ -82,140 +98,147 @@ subroutine y12mff(n, a, snr, nn, rnr, nn1, a1, sn, nz, &
 
    external y12mbf, y12mcf, y12mdf
 
-   real(dp) :: d, dd, dres, gt1, gt2, xx, xm, dcor, er
+   real(dp) :: d, dd, dres, gt1, gt2, xx, xm, er
    integer :: nres, state, kit, it
-   integer :: i, j, l1, l2
+   integer :: i, j, l1, l2, pass
 
-   ! Store the non-zero elements, their column numbers, information about
-   ! row starts, information about row ends, and the right-hand side.
    ifail = 0
    nres = 0
+   dd = 0.0_dp
    dres = 0.0_dp
+   xm = 0.0_dp
    state = iflag(5)
    kit = 1
    it = iflag(11)
-   if (state == 1) ifail = 10
-   if (it < 2) ifail = 23
-   if (ifail /= 0) go to 160
 
-   do i = 1, n
-      b1(i) = b(i)
-   end do
+   solve: block
 
-   if (state == 3) go to 70
+      if (state == 1) ifail = 10
+      if (it < 2) ifail = 23
+      if (ifail /= 0) exit solve
 
-   call y12mbf(n, nz, a, snr, nn, rnr, nn1, ha, iha, aflag, iflag, ifail)
-   if (ifail /= 0) go to 160
+      ! Save the right-hand side; b is overwritten by the solves.
+      b1(1:n) = b(1:n)
 
-   do i = 1, nz
-      sn(i) = snr(i)
-      a1(i) = a(i)
-   end do
+      ! state == 3 reuses an existing factorization: skip straight to the
+      ! back-substitution for the new right-hand side.
+      if (state /= 3) then
 
-   do i = 1, n
-      ha(i,12) = ha(i,1)
-      ha(i,13) = ha(i,3)
-   end do
+         call y12mbf(n, nz, a, snr, nn, rnr, nn1, ha, iha, aflag, iflag, ifail)
+         if (ifail /= 0) exit solve
 
-   if (aflag(2) >= 0.0_dp) go to 60
+         ! Keep a row-ordered copy of the original matrix (and its row
+         ! start/end positions) for the residual computation: y12mcf
+         ! overwrites a/snr with the factors.
+         a1(1:nz) = a(1:nz)
+         sn(1:nz) = snr(1:nz)
+         do i = 1, n
+            ha(i,12) = ha(i,1)
+            ha(i,13) = ha(i,3)
+         end do
 
-   gt1 = aflag(6)
-   do i = 1, n
-      l1 = ha(i,1)
-      l2 = ha(i,3)
-      gt2 = 0.0_dp
-      do j = l1, l2
-         d = abs(a(j))
-         if (gt2 < d) gt2 = d
-      end do
-      if (gt2 < gt1) gt1 = gt2
-   end do
-   aflag(2) = -gt1*aflag(2)
+         ! A negative aflag(2) requests a relative drop tolerance: scale it
+         ! by the smallest row maximum (but never above aflag(6) = max|A|).
+         if (aflag(2) < 0.0_dp) then
+            gt1 = aflag(6)
+            do i = 1, n
+               l1 = ha(i,1)
+               l2 = ha(i,3)
+               gt2 = 0.0_dp
+               do j = l1, l2
+                  d = abs(a(j))
+                  if (gt2 < d) gt2 = d
+               end do
+               if (gt2 < gt1) gt1 = gt2
+            end do
+            aflag(2) = -gt1*aflag(2)
+         end if
 
-   ! Find the first solution.
-60 call y12mcf(n, nz, a, snr, nn, rnr, nn1, y, b, ha, iha, aflag, iflag, ifail)
-   if (ifail /= 0) go to 160
+         ! Factorize and find the first solution.
+         call y12mcf(n, nz, a, snr, nn, rnr, nn1, y, b, ha, iha, &
+             aflag, iflag, ifail)
+         if (ifail /= 0) exit solve
 
-70 call y12mdf(n, a, nn, b, y, snr, ha, iha, iflag, ifail)
-   if (ifail /= 0) go to 160
-
-   ! Prepare the data in order to begin the iterations.
-   dd = 0.0_dp
-   do i = 1, n
-      x(i) = b(i)
-      xx = abs(b(i))
-      if (dd < xx) dd = xx
-   end do
-   xm = dd
-   if (dd == 0.0_dp) go to 160
-
-   ! Begin to iterate.
-90 d = dd
-   dres = 0.0_dp
-   do i = 1, n
-      l1 = ha(i,12)
-      l2 = ha(i,13)
-#if defined(Y12M_ACCUM_DD)
-      er = residual_dd(b1(i), l1, l2)
-#elif defined(Y12M_ACCUM_QUAD)
-      er = residual_quad(b1(i), l1, l2)
-#else
-      if (use_quad) then
-         er = residual_quad(b1(i), l1, l2)
-      else
-         er = residual_dd(b1(i), l1, l2)
       end if
+
+      call y12mdf(n, a, nn, b, y, snr, ha, iha, iflag, ifail)
+      if (ifail /= 0) exit solve
+
+      ! Prepare the data in order to begin the iterations.
+      x(1:n) = b(1:n)
+      dd = maxval(abs(b(1:n)))
+      xm = dd
+      if (dd == 0.0_dp) exit solve
+
+      ! Refinement.  Pass k computes the residual r = b1 - A*x(k-1); unless
+      ! a stopping test fires it then performs the kit-th solve for the
+      ! correction d(k) and updates x.  When nres is set (correction
+      ! negligible, or iteration budget reached) one final residual-only
+      ! pass runs so that the reported dres and the residual left in b
+      ! belong to the final x; "it" therefore bounds the number of passes.
+      ! kit counts the solves (initial solution included) and cannot serve
+      ! as the loop index: the final pass does not advance it, and it is
+      ! reported in iflag(12).
+      refine: do pass = 1, it
+
+         d = dd
+         dres = 0.0_dp
+         do i = 1, n
+            l1 = ha(i,12)
+            l2 = ha(i,13)
+#if defined(Y12M_ACCUM_DD)
+            er = residual_dd(b1(i), l1, l2)
+#elif defined(Y12M_ACCUM_QUAD)
+            er = residual_quad(b1(i), l1, l2)
+#else
+            if (use_quad) then
+               er = residual_quad(b1(i), l1, l2)
+            else
+               er = residual_dd(b1(i), l1, l2)
+            end if
 #endif
-      ! Store residuals rounded to working (double) precision.
-      b(i) = er
-      xx = abs(er)
-      if (dres < xx) dres = xx
-   end do
-   if (dres == 0.0_dp) go to 160
-   if (nres == 1) go to 150
-   if (dres > 1.0e4_dp*xm) go to 150
+            ! Store residuals rounded to working (double) precision.
+            b(i) = er
+            xx = abs(er)
+            if (dres < xx) dres = xx
+         end do
+         if (dres == 0.0_dp) exit refine
 
-   kit = kit + 1
-   iflag(5) = 3
-   call y12mdf(n, a, nn, b, y, snr, ha, iha, iflag, ifail)
-   if (ifail /= 0) go to 160
+         ! Final residual-only pass done, or residual blow-up.
+         if (nres == 1 .or. dres > 1.0e4_dp*xm) then
+            dd = abs(dd)
+            exit refine
+         end if
 
-   ! Compute the uniform norm of the current correction vector.
-   dd = 0.0_dp
-   do i = 1, n
-      xx = abs(b(i))
-      if (dd < xx) dd = xx
-   end do
-   if (dd == 0.0_dp) go to 160
+         ! Solve for the correction (in b) and measure it.
+         kit = kit + 1
+         iflag(5) = 3
+         call y12mdf(n, a, nn, b, y, snr, ha, iha, iflag, ifail)
+         if (ifail /= 0) exit refine
+         dd = maxval(abs(b(1:n)))
+         if (dd == 0.0_dp) exit refine
 
-   ! Check the convergence criterion.
-   if (dd > d .and. kit > 2) go to 160
+         ! Divergence: the corrections grow after the second solve.
+         if (dd > d .and. kit > 2) exit refine
 
-   ! Calculate an improved solution.
-   dcor = dd
-   xm = 0.0_dp
-   do i = 1, n
-      x(i) = x(i) + b(i)
-      xx = abs(x(i))
-      if (xx > xm) xm = xx
-   end do
+         ! Calculate an improved solution.
+         x(1:n) = x(1:n) + b(1:n)
+         xm = maxval(abs(x(1:n)))
 
-   ! Check the stopping criteria.
-   if (10.0_dp + dd/xm == 10.0_dp) go to 140
-   if (kit < it) go to 90
+         ! Stopping criteria: negligible correction, or no iterations left.
+         ! Either way one final residual-only pass follows.
+         if (10.0_dp + dd/xm == 10.0_dp .or. kit >= it) nres = 1
 
-   ! End of the iterations.
-140 nres = 1
-   go to 90
+      end do refine
 
-150 dd = abs(dd)
+   end block solve
 
-160 iflag(5) = state
+   ! Restore the caller's flags and report the diagnostics.
+   iflag(5) = state
    iflag(12) = kit
    aflag(9) = dd
    aflag(10) = dres
    aflag(11) = xm
-   return
 
 contains
 
@@ -240,28 +263,47 @@ contains
 #ifndef Y12M_ACCUM_QUAD
    !> Row residual b1i - sum_j a1(j)*x(sn(j)), j = l1..l2, accumulated in
    !> double-double arithmetic (compensated dot product, Ogita/Rump/Oishi
-   !> "Dot2").  Each product is split exactly into p + pe with IEEE_FMA
-   !> (TwoProd); the subtraction from the high word er_hi is made exact
-   !> with a TwoSum, and both error terms are collected in the low word
-   !> er_lo.  The result is as accurate as a residual computed in twice
-   !> double precision, using only *, +, - and one fma per element.
+   !> "Dot2").  Each product is split exactly into p + pe (TwoProd); the
+   !> subtraction from the high word er_hi is made exact with a TwoSum,
+   !> and both error terms are collected in the low word er_lo.  The
+   !> result is as accurate as a residual computed in twice double
+   !> precision.
    !>
-   !> Correctness relies on IEEE-compliant evaluation: the compensation
-   !> terms are algebraically zero and must not be simplified away (see
-   !> the file header note on -ffast-math).
+   !> Correctness relies on IEEE-compliant evaluation; see the file
+   !> header note on -ffast-math and -ffp-contract.
    pure function residual_dd(b1i, l1, l2) result(er)
       real(dp), intent(in) :: b1i
       integer, intent(in) :: l1, l2
       real(dp) :: er
-      real(dp) :: er_hi, er_lo, p, pe, s, z, e
+#ifndef Y12M_USE_IEEE_FMA
+      real(dp), parameter :: splitter = 134217729.0_dp  ! 2**27 + 1
+      real(dp) :: t, a_hi, a_lo, x_hi, x_lo
+#endif
+      real(dp) :: er_hi, er_lo, aj, xj, p, pe, s, z, e
       integer :: j, l3
       er_hi = b1i
       er_lo = 0.0_dp
       do j = l1, l2
          l3 = sn(j)
-         ! TwoProd: p + pe = a1(j)*x(l3) exactly
-         p = a1(j)*x(l3)
-         pe = ieee_fma(a1(j), x(l3), -p)
+         aj = a1(j)
+         xj = x(l3)
+         ! TwoProd: p + pe = aj*xj exactly
+         p = aj*xj
+#ifdef Y12M_USE_IEEE_FMA
+         pe = ieee_fma(aj, xj, -p)
+#else
+         ! Dekker splitting: both factors are cut into 26-bit halves whose
+         ! four partial products are exact, recovering the rounding error
+         ! of p.  Overflows for |aj| or |xj| >= 2**996; residuals of such
+         ! magnitude are far outside the solver's working range.
+         t = splitter*aj
+         a_hi = t - (t - aj)
+         a_lo = aj - a_hi
+         t = splitter*xj
+         x_hi = t - (t - xj)
+         x_lo = xj - x_hi
+         pe = ((a_hi*x_hi - p) + a_hi*x_lo + a_lo*x_hi) + a_lo*x_lo
+#endif
          ! TwoSum: s + e = er_hi - p exactly
          s = er_hi - p
          z = s - er_hi

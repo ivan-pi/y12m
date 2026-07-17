@@ -7,8 +7,8 @@
 ! elimination with iterative refinement.  Residuals are accumulated in
 ! higher-than-double precision: native quad when available, otherwise a
 ! double-double compensated accumulation (see src/y12mff.F90).  The
-! accumulator actually compiled in is reported via the y12mff_has_quad and
-! y12mff_accum_kind module constants.
+! accumulator actually compiled in is reported via the y12mff_uses_quad
+! and y12mff_accumulator_kind module constants.
 !
 ! Systems solved (all with known solution x = [1,...,1]):
 !   tridiagonal (diag=3, off-diag=-1): n = 3, 5, 7, 10
@@ -17,12 +17,16 @@
 ! The factored form is stored with IFLAG(5)=2 (keep L factors) as required
 ! by y12mf.  The refined solution is returned in array x (not b).
 !
-! Pass criteria: consistent accumulator constants, and IFAIL=0 with
-! max|x_i-1| < 1e-13 for all systems.
+! Also checks the input-validation exits: IFLAG(5)=1 must give IFAIL=10 and
+! IFLAG(11)<2 must give IFAIL=23, with IFLAG(5) restored on return.
+!
+! Pass criteria: consistent accumulator constants, expected IFAIL on the
+! error paths, and IFAIL=0 with max|x_i-1| < 1e-13 for all systems.
 !
 program test_y12mf_dp
-   use y12m, only: y12mf, y12mff_has_quad, y12mff_accum_kind
-   use y12m_test_helpers, only: build_tridiag, build_arrow, check_solution
+   use y12m, only: y12mf, y12mff_uses_quad, y12mff_accumulator_kind
+   use y12m_test_helpers, only: build_tridiag, build_arrow, check_solution, &
+       check_ifail
    implicit none
 
    integer, parameter :: dp = kind(1.0d0)
@@ -39,18 +43,18 @@ program test_y12mf_dp
    nfail = 0
 
    ! Report and sanity-check the accumulator selected at compile time.
-   if (y12mff_has_quad) then
+   if (y12mff_uses_quad) then
       write(*,'(a,i0,a)') 'y12mff accumulator: quad precision (kind=', &
-          y12mff_accum_kind, ')'
-      if (y12mff_accum_kind /= selected_real_kind(33)) then
-         write(*,'(a)') 'FAIL y12mff_accum_kind inconsistent with quad selection'
+          y12mff_accumulator_kind, ')'
+      if (y12mff_accumulator_kind /= selected_real_kind(33)) then
+         write(*,'(a)') 'FAIL y12mff_accumulator_kind inconsistent with quad selection'
          nfail = nfail + 1
       end if
    else
       write(*,'(a,i0,a)') 'y12mff accumulator: double-double (kind=', &
-          y12mff_accum_kind, ')'
-      if (y12mff_accum_kind /= dp) then
-         write(*,'(a)') 'FAIL y12mff_accum_kind inconsistent with double-double selection'
+          y12mff_accumulator_kind, ')'
+      if (y12mff_accumulator_kind /= dp) then
+         write(*,'(a)') 'FAIL y12mff_accumulator_kind inconsistent with double-double selection'
          nfail = nfail + 1
       end if
    end if
@@ -64,6 +68,10 @@ program test_y12mf_dp
    ! Arrow systems: n = 6, 10
    call run_arrow(6)
    call run_arrow(10)
+
+   ! Input-validation exits (on a 5x5 tridiagonal system).
+   call run_error('y12mf_dp ifail=23 (it<2)', iflag5=2, iflag11=1, ifail_exp=23)
+   call run_error('y12mf_dp ifail=10 (iflag5=1)', iflag5=1, iflag11=10, ifail_exp=10)
 
    if (nfail /= 0) then
       write(*,'(i0,a)') nfail, ' test(s) FAILED'
@@ -128,5 +136,39 @@ contains
 
       call check_solution(label, n, x, ifail, TOL, nfail)
    end subroutine solve_and_check
+
+   !> Call y12mf with an invalid IFLAG setting and verify the expected
+   !> IFAIL and that IFLAG(5) is restored on return.
+   subroutine run_error(label, iflag5, iflag11, ifail_exp)
+      character(len=*), intent(in) :: label
+      integer, intent(in) :: iflag5, iflag11, ifail_exp
+
+      n = 5
+      call build_tridiag(n, NNP, NN1P, z, a, snr, rnr, b)
+      nn = NNP
+      nn1 = NN1P
+      iha = NMAX
+
+      aflag(1) = 16.0_dp
+      aflag(2) = 1.0e-12_dp
+      aflag(3) = 1.0e+16_dp
+      aflag(4) = 1.0e-12_dp
+
+      iflag(1) = 0
+      iflag(2) = 3
+      iflag(3) = 1
+      iflag(4) = 1
+      iflag(5) = iflag5
+      iflag(11) = iflag11
+
+      call y12mf(n, a, snr, nn, rnr, nn1, a1, sn, z, ha, iha, &
+          b, b1, x, y, aflag, iflag, ifail)
+
+      call check_ifail(label, ifail, ifail_exp, nfail)
+      if (iflag(5) /= iflag5) then
+         write(*,'(3a,i0)') 'FAIL ', label, ' iflag(5) not restored: ', iflag(5)
+         nfail = nfail + 1
+      end if
+   end subroutine run_error
 
 end program test_y12mf_dp

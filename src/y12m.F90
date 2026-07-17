@@ -33,21 +33,23 @@ module y12m
   ! -------------------------------------------------------------------------
 
   !> True when y12mff accumulates residuals in native quad precision;
-  !> false when it uses the double-double emulation.
+  !> false when it uses the double-double emulation.  Note "uses", not
+  !> "has": with the double-double path forced at build time this is false
+  !> even on a compiler that supports quad precision.
 #if defined(Y12M_ACCUM_DD)
-  logical, parameter, public :: y12mff_has_quad = .false.
+  logical, parameter, public :: y12mff_uses_quad = .false.
 #elif defined(Y12M_ACCUM_QUAD)
-  logical, parameter, public :: y12mff_has_quad = .true.
+  logical, parameter, public :: y12mff_uses_quad = .true.
 #else
-  logical, parameter, public :: y12mff_has_quad = selected_real_kind(33) > 0
+  logical, parameter, public :: y12mff_uses_quad = selected_real_kind(33) > 0
 #endif
 
   !> Kind parameter of the y12mff residual accumulator.  Equal to
-  !> selected_real_kind(33) when y12mff_has_quad is true; otherwise equal to
-  !> kind(1.0d0), the working kind on which the double-double arithmetic is
-  !> built.
-  integer, parameter, public :: y12mff_accum_kind = &
-      merge(selected_real_kind(33), kind(1.0d0), y12mff_has_quad)
+  !> selected_real_kind(33) when y12mff_uses_quad is true; otherwise equal
+  !> to kind(1.0d0), the working kind on which the double-double arithmetic
+  !> is built.
+  integer, parameter, public :: y12mff_accumulator_kind = &
+      merge(selected_real_kind(33), kind(1.0d0), y12mff_uses_quad)
 
 
   !> Solve a sparse system of linear equations Ax=b by Gaussian elimination.

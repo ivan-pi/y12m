@@ -350,10 +350,12 @@ improves the solution by computing successive corrections
 > double precision and rounds back to single.  `Y12MFF` (double precision)
 > accumulates in **quad precision** (`selected_real_kind(33)`) when the
 > compiler provides it, and otherwise falls back to a **double-double**
-> compensated accumulation (TwoProd via `IEEE_FMA` + TwoSum).  The strategy
-> is fixed at compile time; the module constants `y12mff_has_quad`
-> (logical) and `y12mff_accum_kind` (integer kind value) report which one
-> was built in.  The CMake option `-DY12M_FORCE_DOUBLE_DOUBLE=ON` forces the
+> compensated accumulation (TwoProd + TwoSum; Dekker's splitting by
+> default, or the Fortran 2018 `IEEE_FMA` intrinsic with
+> `-DY12M_USE_IEEE_FMA=ON`).  The strategy is fixed at compile time; the
+> module constants `y12mff_uses_quad` (logical) and
+> `y12mff_accumulator_kind` (integer kind value) report which one was
+> built in.  The CMake option `-DY12M_FORCE_DOUBLE_DOUBLE=ON` forces the
 > double-double path even when quad precision is available (useful for
 > reproducibility across compilers and for testing the fallback); the
 > configure step prints which accumulator was selected.

@@ -112,16 +112,19 @@ The library (without tests and examples) can also be built with
 At configure time CMake detects whether the Fortran compiler supports quad
 precision (`selected_real_kind(33)`) and reports which residual accumulator
 the double-precision iterative-refinement routine `Y12MFF` will use: native
-quad precision, or a double-double emulation built on `IEEE_FMA` (requires a
-Fortran 2018 compiler, e.g. gfortran ≥ 13).  Pass
-`-DY12M_FORCE_DOUBLE_DOUBLE=ON` to force the double-double path even when
-quad precision is available — useful for bit-reproducible results across
-compilers and for testing the fallback.  The module constants
-`y12mff_has_quad` and `y12mff_accum_kind` expose the compiled-in choice to
-user code.  Note that the double-double arithmetic requires value-safe
-floating-point semantics; the CMake build compiles `src/y12mff.F90` with the
-appropriate compiler flag (e.g. `-fno-unsafe-math-optimizations` for
-gfortran) so that a global `-ffast-math`/`-Ofast` cannot break it.
+quad precision, or a double-double emulation (Dekker's product splitting by
+default; pass `-DY12M_USE_IEEE_FMA=ON` to use the Fortran 2018 `IEEE_FMA`
+intrinsic instead, worthwhile only when the compiler inlines it to a
+hardware instruction).  Pass `-DY12M_FORCE_DOUBLE_DOUBLE=ON` to force the
+double-double path even when quad precision is available — useful for
+bit-reproducible results across compilers and for testing the fallback.
+The module constants `y12mff_uses_quad` and `y12mff_accumulator_kind`
+expose the compiled-in choice to user code.  Note that the double-double
+arithmetic requires IEEE-compliant evaluation; the CMake build compiles
+`src/y12mff.F90` with the appropriate flags (for gfortran:
+`-fno-unsafe-math-optimizations -ffp-contract=off`) so that a global
+`-ffast-math`/`-Ofast` — or FMA contraction on fma-capable hardware —
+cannot silently break it (see `cmake/Y12mffAccumulator.cmake`).
 
 > **Note for contributors:** most fixed-form sources in `src/legacy/` are
 > generated from the [Fypp](https://github.com/aradi/fypp) templates in
