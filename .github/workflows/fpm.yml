@@ -1,0 +1,29 @@
+name: fpm
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  fpm-build:
+    name: ubuntu-latest / fpm
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup fpm
+        uses: fortran-lang/setup-fpm@v10
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Versions
+        run: |
+          fpm --version
+          gfortran --version
+
+      # Only the library is built: the test suite and the example programs
+      # rely on CMake-specific layout and preprocessing (see fpm.toml,
+      # auto-tests/auto-examples are disabled).
+      - name: Build library
+        run: fpm build --verbose

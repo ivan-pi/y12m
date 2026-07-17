@@ -8,5 +8,10 @@ description = "Solution of Large and Sparse Systems of Linear Algebraic Equation
 [library]
 source-dir = "src"
 
+# The test suite and example programs are built with CMake; they do not
+# follow the fpm layout conventions (shared helper modules, preprocessor
+# double-compilation), so only the library is exposed to fpm.
 [build]
 auto-tests = false
+auto-examples = false
+auto-executables = false

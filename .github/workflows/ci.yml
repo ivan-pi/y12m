@@ -5,6 +5,27 @@ on:
   pull_request:
 
 jobs:
+  check-generated:
+    name: generated sources in sync
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install fypp
+        run: pip install fypp
+
+      - name: Regenerate legacy sources from templates
+        run: make -C templates
+
+      - name: Verify templates and generated sources have not diverged
+        run: |
+          git diff --exit-code || {
+            echo "::error::Generated sources in src/legacy/ are out of sync with templates/*.fpp."
+            echo "Run 'make -C templates' and commit the regenerated files."
+            exit 1
+          }
+
   build-and-test:
     name: ${{ matrix.os }} / gfortran-${{ matrix.gcc }}
     runs-on: ${{ matrix.os }}
