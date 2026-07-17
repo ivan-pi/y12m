@@ -6,6 +6,11 @@
 #:set one = ['1.0', '1.0d0']
 #:set stab = ['1.0005', '1.0005d0']
 #:set grow = ['1.0e+5', '1.0d+5']
+c  =================================================================
+c  GENERATED FILE -- DO NOT EDIT.
+c  Produced from templates/y12mc.fpp by Fypp.
+c  To change it, edit the template and run `make -C templates`.
+c  =================================================================
 #:for pf, real_t, zero, one, stab, grow in zip(postfix,type,zero,one,stab,grow)
       subroutine y12mc${pf}$(n,z,a,snr,nn,rnr,nn1,pivot,b,ha,iha,aflag,iflag
      1,ifail)

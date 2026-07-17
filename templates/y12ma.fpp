@@ -5,6 +5,11 @@
 #:set stab = ['16.0e0', '16.0d0']
 #:set drop = ['1.0e-12', '1.0d-12']
 #:set grow = ['1.0e+16', '1.0d+16']
+c  =================================================================
+c  GENERATED FILE -- DO NOT EDIT.
+c  Produced from templates/y12ma.fpp by Fypp.
+c  To change it, edit the template and run `make -C templates`.
+c  =================================================================
 #:for pf, real_t, stab, drop, grow in zip(postfix,type,stab,drop,grow)
       subroutine y12ma${pf}$(n, z, a, snr, nn, rnr, nn1, pivot, ha,
      1iha,aflag,iflag,b,ifail)

@@ -1,3 +1,8 @@
+c  =================================================================
+c  GENERATED FILE -- DO NOT EDIT.
+c  Produced from templates/y12md.fpp by Fypp.
+c  To change it, edit the template and run `make -C templates`.
+c  =================================================================
       subroutine y12mde(n,a,nn,b,pivot,snr,ha,iha,iflag,ifail)
       implicit real(a-b,g,p,t-y),integer (c,f,h-n,r-s,z)
       real a(nn), pivot(n), b(n)

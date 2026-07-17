@@ -3,6 +3,11 @@
 #:set postfix = ['e', 'f']
 #:set type = ['real', 'double precision']
 #:set zero = ['0.0e0', '0.0d0']
+c  =================================================================
+c  GENERATED FILE -- DO NOT EDIT.
+c  Produced from templates/y12mb.fpp by Fypp.
+c  To change it, edit the template and run `make -C templates`.
+c  =================================================================
 #:for pf, real_t, zero in zip(postfix,type,zero)
       subroutine y12mb${pf}$(n, z, a, snr, nn, rnr, nn1, ha, iha, aflag,
      1 iflag,ifail)

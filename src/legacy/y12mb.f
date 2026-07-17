@@ -1,3 +1,8 @@
+c  =================================================================
+c  GENERATED FILE -- DO NOT EDIT.
+c  Produced from templates/y12mb.fpp by Fypp.
+c  To change it, edit the template and run `make -C templates`.
+c  =================================================================
       subroutine y12mbe(n, z, a, snr, nn, rnr, nn1, ha, iha, aflag,
      1 iflag,ifail)
 c

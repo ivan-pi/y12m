@@ -2,6 +2,11 @@
 #! Assisted-by: Claude Code:claude-fable-5
 #:set postfix = ['e', 'f']
 #:set type = ['real', 'double precision']
+c  =================================================================
+c  GENERATED FILE -- DO NOT EDIT.
+c  Produced from templates/y12md.fpp by Fypp.
+c  To change it, edit the template and run `make -C templates`.
+c  =================================================================
 #:for pf, real_t in zip(postfix,type)
       subroutine y12md${pf}$(n,a,nn,b,pivot,snr,ha,iha,iflag,ifail)
       implicit ${real_t}$(a-b,g,p,t-y),integer (c,f,h-n,r-s,z)
