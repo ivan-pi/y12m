@@ -1,5 +1,5 @@
 #! SPDX-License-Identifier: GPL-2.0-only
-#! Assisted-by: Claude Code
+#! Assisted-by: Claude Code:claude-fable-5
 #:set postfix = ['e', 'f']
 #:set type = ['real', 'double precision']
 #:set stab = ['16.0e0', '16.0d0']

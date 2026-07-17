@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0-only
+# Assisted-by: Claude Code:claude-fable-5
 #
 # Regenerates the fixed-form sources in ../src/legacy from the Fypp
 # templates in this directory.  Each template expands to a single .f
