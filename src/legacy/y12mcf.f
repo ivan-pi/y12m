@@ -15,7 +15,7 @@ c
       zz=z
       ifail=0
       if(iflag(1).ne.-1)ifail=2
-      if(aflag(1).lt.1.0d0)aflag(1)=1.0005 d0
+      if(aflag(1).lt.1.0d0)aflag(1)=1.0005d0
       if(aflag(3).lt.1.0d+5)aflag(3)=1.0d+5
       if(aflag(4).lt.0.0d0)aflag(4)=-aflag(4)
       if(iflag(2).lt.1)ifail=19
@@ -78,7 +78,7 @@ c
       aflag(7)=aflag(6)
       aflag(8)=aflag(6)
       do 110 i=1,n
-      pivot(i)=0.0 d0
+      pivot(i)=0.0d0
       ha(i,2)=ha(i,1)
   110 ha(i,5)=ha(i,4)
       index=ha(n,8)
@@ -103,7 +103,7 @@ c
       rpivot=i
       go to 170
   130 r=nr
-      v=0.0 d0
+      v=0.0d0
       index=iflag(2)
       do 160 kk=1,index
       l1=i-1+kk
@@ -112,13 +112,13 @@ c
       r7=ha(j,2)
       r8=ha(j,3)
       r9=r8-r7
-      t=0.0 d0
+      t=0.0d0
       do 140 k=r7,r8
-      td=dabs(a(k))
+      td=abs(a(k))
   140 if(t.lt.td)t=td
       t=t/u
       do 160 k=r7,r8
-      td=dabs(a(k))
+      td=abs(a(k))
       if(td.lt.t)go to 150
       r6=snr(k)
       r3=r9*(ha(r6,6)-ha(r6,5))
@@ -234,7 +234,7 @@ c
       go to 1110
   370 v=a(rr)
       pivot(i)=v
-      td=dabs(v)
+      td=abs(v)
       if(td.lt.aflag(8))aflag(8)=td
       if(td.ge.grmin)go to 380
       ifail=3
@@ -289,10 +289,10 @@ c
       l1=snr(l)
       td=pivot(l1)
       if(td.eq.0.0d0)go to 450
-      pivot(l1)=0.0 d0
+      pivot(l1)=0.0d0
       td=a(l)-td*t
       a(l)=td
-      td1=dabs(td)
+      td1=abs(td)
       if(td1.gt.aflag(7))aflag(7)=td1
 c
 c  too small element is created.remove it from the lists.
@@ -330,7 +330,7 @@ c
       pivot(r2)=a(r)
       if(tol2.eq.0.0d0)go to 740
       tol3=-tol2*t
-      tol1=dabs(tol3)
+      tol1=abs(tol3)
       if(tol1.lt.aflag(2))go to 740
       c2=ha(r2,4)
       cr2=ha(r2,6)
@@ -420,7 +420,7 @@ c
       a(i1)=a(l1)
   610 a(l1)=tol3
       snr(l1)=snr(r)
-      td=dabs(a(l1))
+      td=abs(a(l1))
       if(td.gt.aflag(7))aflag(7)=td
       zz=zz+1
       if(iflag(8).lt.zz) iflag(8)=zz
@@ -563,7 +563,7 @@ c
       if(r9.le.0)go to 882
       do 881 j=rr3,rr4
       index=snr(j)
-  881 pivot(index)=0.0 d0
+  881 pivot(index)=0.0d0
   882 continue
       cr3=ha(i,4)
       do 890 j=cr3,cr4
@@ -594,8 +594,8 @@ c
   950 continue
       index=ha(n,2)
       pivot(n)=a(index)
-      a(index)=0.0 d0
-      td=dabs(pivot(n))
+      a(index)=0.0d0
+      td=abs(pivot(n))
       if(td.gt.aflag(7))aflag(7)=td
       if(td.lt.aflag(8))aflag(8)=td
       if(td.gt.grmin)go to 960

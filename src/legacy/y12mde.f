@@ -2,11 +2,13 @@
       implicit real(a-b,g,p,t-y),integer (c,f,h-n,r-s,z)
       real a(nn), pivot(n), b(n)
       integer snr(nn), ha(iha,11), iflag(10)
+      ifail=0
       if(iflag(1).eq.-2)go to 1000
       ifail=1
       go to 1110
 1000  mode=iflag(4)
       ipiv=iflag(3)
+      n8=n+1
       n7=n-1
       state=iflag(5)
 c
@@ -34,7 +36,7 @@ c
 c
 c  solve the system with upper triagular matrix.
 c
- 1051 n8=n+1
+ 1051 continue
       do 1090 i=1,n
       r1=n8-i
       rr1=ha(r1,2)
