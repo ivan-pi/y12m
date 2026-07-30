@@ -6,6 +6,7 @@
 !   parse_range        — CLI range parser (VALUE | BEGIN:END | BEGIN:END:STEP)
 !   rms_diff           — root-mean-square of element-wise differences (1D and 2D)
 !   write_field_output — write a 2D numerical + exact solution to a gnuplot file
+!   write_three_column_output — write 1D x, numerical, exact columns
 
 module y12m_example_helpers
    use, intrinsic :: iso_fortran_env, only: error_unit
@@ -17,6 +18,7 @@ module y12m_example_helpers
    public :: parse_range
    public :: rms_diff
    public :: write_field_output
+   public :: write_three_column_output
    public :: compress_matrix
 
    !> Root-mean-square of element-wise differences.
@@ -155,6 +157,40 @@ contains
       close(funit)
    end subroutine write_field_output
 
+   ! -----------------------------------------------------------------------
+   !> Write a three-column 1-D dataset to a text file.
+   !>
+   !> Arguments:
+   !>   x, y_num, y_ex  — vectors of equal length
+   !>   filename        — output file name
+   !>   header          — comment lines written at the top (prefix "# " is added)
+   !>   nhr             — number of header lines
+   !>   columns         — column description line (written with "# " prefix)
+   subroutine write_three_column_output(x, y_num, y_ex, filename, header, nhr, columns)
+      real(dp), intent(in) :: x(:), y_num(:), y_ex(:)
+      character(len=*), intent(in) :: filename
+      integer, intent(in) :: nhr
+      character(len=*), intent(in) :: header(nhr)
+      character(len=*), intent(in) :: columns
+
+      integer :: file_unit, idx, header_idx
+
+      if (size(x) /= size(y_num) .or. size(x) /= size(y_ex)) then
+         write(error_unit, '(a)') 'Error: write_three_column_output size mismatch'
+         stop 1
+      end if
+
+      open(newunit=file_unit, file=filename, status='unknown', action='write')
+      do header_idx = 1, nhr
+         write(file_unit, '("# ",a)') trim(header(header_idx))
+      end do
+      write(file_unit, '("# ",a)') trim(columns)
+
+      do idx = 1, size(x)
+         write(file_unit, '(3(1x,es14.6))') x(idx), y_num(idx), y_ex(idx)
+      end do
+      close(file_unit)
+   end subroutine write_three_column_output
 
    ! -----------------------------------------------------------------------
    !> Sort and merge duplicate (row,col) entries in a COO sparse matrix.
